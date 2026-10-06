@@ -1,0 +1,43 @@
+<!-- Dashboard Template -->
+<div class="dashboard">
+  <section class="hero-section">
+    <h2>Portfolio Overview</h2>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Portfolio Value</span>
+        <span class="stat-value">${{ portfolioValue().toLocaleString() }}</span>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-label">Account Balance</span>
+        <span class="stat-value">${{ accountBalance().toLocaleString() }}</span>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-label">Holdings</span>
+        <span class="stat-value">{{ holdingsCount() }}</span>
+      </div>
+
+      <div class="stat-card" [style.border-left-color]="statusColor()">
+        <span class="stat-label">Status</span>
+        <span class="stat-value" [style.color]="statusColor()">
+          {{ accountStatus() | uppercase }}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  @if (accountStatus() === 'low') {
+    <div class="alert alert-warning">
+      <p>⚠️ Your account balance is low. Consider depositing funds.</p>
+    </div>
+  }
+
+  <section class="actions-section">
+    <h3>Quick Actions</h3>
+    <button class="action-btn" (click)="togglePortfolioVisibility()">
+      View Holdings
+    </button>
+  </section>
+</div>
