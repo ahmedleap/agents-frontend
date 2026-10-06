@@ -30,6 +30,13 @@ Modern Angular 22+ trading platform frontend built with cutting-edge technologie
 - AXE checks pass
 
 ## Getting Started
+1. Install dependencies:
+npm install
+
+2. Start development server:
+npm start
+
+3. Open browser: http://localhost:4200
 
 ### Prerequisites
 - Node.js 18+ (v20+ recommended)
