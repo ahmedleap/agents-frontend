@@ -12,11 +12,11 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(160deg, var(--fidelity-surface-100) 0%, var(--fidelity-surface-200) 100%);
 }
 
 .app-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--fidelity-green-700);
   color: white;
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -31,7 +31,7 @@
   p {
     margin: 0.5rem 0 0;
     font-size: 1rem;
-    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.92);
     font-weight: 400;
   }
 }
@@ -49,5 +49,5 @@
   width: 100%;
   height: 100%;
   font-size: 1.2rem;
-  color: #666;
+  color: var(--fidelity-text-700);
 }

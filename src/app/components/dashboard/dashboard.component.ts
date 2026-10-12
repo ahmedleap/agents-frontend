@@ -34,10 +34,10 @@ export class DashboardComponent {
   protected readonly statusColor = computed(() => {
     const status = this.accountStatus();
     return {
-      'low': '#ff6b6b',
-      'moderate': '#ffd43b',
-      'healthy': '#51cf66'
-    }[status] || '#666';
+      'low': '#b75d0f',
+      'moderate': '#0a7a4b',
+      'healthy': '#0a7a4b'
+    }[status] || '#37556f';
   });
 
   togglePortfolioVisibility(): void {

@@ -14,7 +14,7 @@
   h2 {
     margin-bottom: 2rem;
     font-size: 2rem;
-    color: #333;
+    color: var(--fidelity-navy-900);
   }
 }
 
@@ -26,11 +26,11 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--fidelity-card);
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--fidelity-green-700);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -44,7 +44,7 @@
 
 .stat-label {
   font-size: 0.875rem;
-  color: #666;
+  color: var(--fidelity-text-700);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -53,7 +53,7 @@
 .stat-value {
   font-size: 1.75rem;
   font-weight: 600;
-  color: #333;
+  color: var(--fidelity-text-900);
 }
 
 .alert {
@@ -63,9 +63,9 @@
   font-weight: 500;
 
   &.alert-warning {
-    background: #fff3cd;
-    border: 1px solid #ffc107;
-    color: #856404;
+    background: var(--fidelity-warning-bg);
+    border: 1px solid var(--fidelity-warning-border);
+    color: var(--fidelity-warning-text);
   }
 
   p {
@@ -76,12 +76,12 @@
 .actions-section {
   h3 {
     margin-bottom: 1rem;
-    color: #333;
+    color: var(--fidelity-navy-900);
   }
 }
 
 .action-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--fidelity-green-600);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -93,7 +93,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(10, 122, 75, 0.35);
   }
 
   &:active {
