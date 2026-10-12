@@ -22,7 +22,8 @@ import { CommonModule } from '@angular/common';
   }
 })
 export class AppComponent {
-  protected readonly title = signal('Agents of Leap');
+  protected readonly title = signal('S.T.A.S.H');
+  protected readonly subtitle = signal('Stash Your Cash');
   protected readonly appInitialized = signal(false);
 
   constructor() {
