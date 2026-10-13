@@ -1,0 +1,111 @@
+<section class="page">
+  <div class="toolbar">
+    <div>
+      <h2>{{ account }}</h2>
+      <p>Portfolio</p>
+    </div>
+    <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
+  </div>
+
+  <div class="summary">
+    <div class="card hero">
+      <span class="label">Total Portfolio Value</span>
+      <span class="value">{{ totals().value | currency }}</span>
+      <span class="change">
+        {{ totals().gain >= 0 ? '▲ +' : '▼ ' }}{{ totals().gain | currency }}
+        ({{ totals().gain >= 0 ? '+' : '' }}{{ totals().ret | number: '1.2-2' }}%)
+      </span>
+    </div>
+
+    <div class="card alloc">
+      <h3>Asset Allocation</h3>
+      <p class="sub">By market value</p>
+      @for (a of allocation(); track a.ticker) {
+        <div class="alloc-row">
+          <span class="badge" [style.background]="a.color">{{ a.ticker[0] }}</span>
+          <div class="alloc-info">
+            <div class="alloc-top">
+              <span><strong>{{ a.ticker }}</strong> <small>{{ a.name }}</small></span>
+              <strong>{{ a.weight | number: '1.1-1' }}%</strong>
+            </div>
+            <div class="track"><div class="fill" [style.width.%]="a.weight" [style.background]="a.color"></div></div>
+            <small class="alloc-value">{{ a.value | currency }}</small>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="card stat">
+      <span class="stat-label">Total Cost Basis</span>
+      <strong>{{ totals().cost | currency }}</strong>
+    </div>
+    <div class="card stat">
+      <span class="stat-label">Total Gain/Loss</span>
+      <strong [class.gain]="totals().gain >= 0" [class.loss]="totals().gain < 0">
+        {{ totals().gain >= 0 ? '+' : '' }}{{ totals().gain | currency }}
+      </strong>
+    </div>
+    <div class="card stat">
+      <span class="stat-label">Total Return</span>
+      <strong [class.gain]="totals().ret >= 0" [class.loss]="totals().ret < 0">
+        {{ totals().ret >= 0 ? '+' : '' }}{{ totals().ret | number: '1.2-2' }}%
+      </strong>
+    </div>
+    <div class="card stat">
+      <span class="stat-label">Holdings</span>
+      <strong>{{ totals().count }}</strong>
+    </div>
+  </div>
+
+  <div class="card holdings">
+    <div class="holdings-head">
+      <h3>Holdings</h3>
+      <div class="controls">
+        <input type="search" placeholder="Search holdings..." (input)="onSearch($event)" aria-label="Search holdings">
+        <select (change)="onSort($event)" aria-label="Sort holdings">
+          <option value="value">Sort by Value</option>
+          <option value="ticker">Sort by Ticker</option>
+          <option value="return">Sort by Return</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticker</th><th>Company</th><th>Shares</th><th>Avg Cost</th>
+            <th>Current Price</th><th>Market Value</th><th>Gain/Loss</th><th>Return</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of visibleRows(); track r.ticker) {
+            <tr>
+              <td>
+                <span class="ticker">
+                  <span class="badge small" [style.background]="r.color">{{ r.ticker[0] }}</span>
+                  {{ r.ticker }}
+                </span>
+              </td>
+              <td>{{ r.name }}</td>
+              <td>{{ r.shares | number: '1.2-2' }}</td>
+              <td>{{ r.avgCost | currency }}</td>
+              <td>{{ r.price | currency }}</td>
+              <td>{{ r.value | currency }}</td>
+              <td [class.gain]="r.gain >= 0" [class.loss]="r.gain < 0">
+                {{ r.gain >= 0 ? '+' : '' }}{{ r.gain | currency }}
+              </td>
+              <td [class.gain]="r.ret >= 0" [class.loss]="r.ret < 0">
+                {{ r.ret >= 0 ? '+' : '' }}{{ r.ret | number: '1.1-1' }}%
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="8" class="empty">No holdings match your search.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
