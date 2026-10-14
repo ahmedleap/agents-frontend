@@ -19,13 +19,13 @@
 
     <div class="card alloc">
       <h3>Asset Allocation</h3>
-      <p class="sub">By market value</p>
-      @for (a of allocation(); track a.ticker) {
+      <p class="sub">By sector</p>
+      @for (a of allocation(); track a.sector) {
         <div class="alloc-row">
-          <span class="badge" [style.background]="a.color">{{ a.ticker[0] }}</span>
+          <span class="badge" [style.background]="a.color">{{ a.sector[0] }}</span>
           <div class="alloc-info">
             <div class="alloc-top">
-              <span><strong>{{ a.ticker }}</strong> <small>{{ a.name }}</small></span>
+              <span><strong>{{ a.sector }}</strong> <small>{{ a.tickers.join(', ') }}</small></span>
               <strong>{{ a.weight | number: '1.1-1' }}%</strong>
             </div>
             <div class="track"><div class="fill" [style.width.%]="a.weight" [style.background]="a.color"></div></div>
