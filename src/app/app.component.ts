@@ -16,7 +16,7 @@ import { ThemeService } from './core/services/theme.service';
   }
 })
 export class AppComponent {
-  protected readonly title = signal('S.T.A.S.H');
+  protected readonly title = signal('S.T.A.S.H.');
   protected readonly subtitle = signal('Stash Your Cash');
   protected readonly appInitialized = signal(false);
   protected readonly accounts = inject(DashboardService).accounts;
