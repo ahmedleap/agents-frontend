@@ -60,7 +60,7 @@ h2, h3, p { margin: 0; }
 
 .main {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 1rem;
   min-width: 0;
   min-height: 0;
@@ -96,9 +96,19 @@ h2, h3, p { margin: 0; }
 
 .lists {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  // Recent Trades running the full height on the left,
+  // Watchlist and Market Movers stacked in equal halves on the right
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "trades watchlist"
+    "trades movers";
   gap: 1rem;
   min-height: 0;
+
+  .watchlist { grid-area: watchlist; }
+  .movers { grid-area: movers; }
+  .recent-trades { grid-area: trades; }
 }
 
 /* ---------- Hero: today's P/L ---------- */
@@ -268,6 +278,10 @@ tbody tr:hover { background: var(--pf-inset); }
   :host, .page { flex: 1 0 auto; }
   .page, .main { grid-template-rows: none; }
   .top, .lists { grid-template-columns: 1fr; }
+  .lists {
+    grid-template-rows: none;
+    grid-template-areas: "watchlist" "movers" "trades";
+  }
   .hero { aspect-ratio: auto; }
   .chart-wrap { min-height: 15rem; }
 }
