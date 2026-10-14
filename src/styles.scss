@@ -29,10 +29,18 @@ html, body {
   height: 100%;
 }
 
+/* Fluid root size: every rem in the app scales with the viewport,
+   so layouts keep the same proportions on any screen.
+   ~13px on 1366x768, 16px on 1920x1080, ~19px on 2560x1440. */
+html {
+  font-size: clamp(12px, 0.25vw + 0.45vh + 6.3px, 20px);
+}
+
 body {
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, Tahoma, sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.5;
+  overflow: hidden;
   color: #1c2b23;
   background-color: #f4f7f5;
   -webkit-font-smoothing: antialiased;

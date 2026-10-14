@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { filter } from 'rxjs';
+import { DashboardService } from './core/services/dashboard.service';
 
 @Component({
   selector: 'app-root',
@@ -16,13 +18,27 @@ export class AppComponent {
   protected readonly title = signal('S.T.A.S.H');
   protected readonly subtitle = signal('Stash Your Cash');
   protected readonly appInitialized = signal(false);
-  protected readonly navItems = [
-    { path: '/portfolio', label: 'Portfolio' },
-    { path: '/dashboard', label: 'Dashboard' }
-  ];
+  protected readonly accounts = inject(DashboardService).accounts;
+  protected readonly accountsOpen = signal(false);
+
+  private readonly router = inject(Router);
 
   constructor() {
     this.initializeApp();
+
+    // Keep the account list open while an account page is showing
+    const sub = this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(e => {
+        if (e.urlAfterRedirects.startsWith('/portfolio')) {
+          this.accountsOpen.set(true);
+        }
+      });
+    inject(DestroyRef).onDestroy(() => sub.unsubscribe());
+  }
+
+  protected toggleAccounts(): void {
+    this.accountsOpen.update(open => !open);
   }
 
   private initializeApp(): void {

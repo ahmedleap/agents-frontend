@@ -1,5 +1,9 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
+import { map } from 'rxjs';
+import { DashboardService } from '../../core/services/dashboard.service';
 
 interface Holding {
   ticker: string;
@@ -31,7 +35,17 @@ const DEFAULT_COLOR = '#5f7267';
   styleUrls: ['./portfolio.component.scss']
 })
 export class PortfolioComponent {
-  protected readonly account = 'Premium Trading Account';
+  private readonly accounts = inject(DashboardService).accounts;
+  private readonly accountId = toSignal(
+    inject(ActivatedRoute).paramMap.pipe(map(p => p.get('accountId'))),
+    { initialValue: null }
+  );
+
+  // Falls back to the first account for /portfolio or an unknown id
+  protected readonly account = computed(() => {
+    const list = this.accounts();
+    return (list.find(a => a.id === this.accountId()) ?? list[0])?.name ?? '';
+  });
   protected readonly asOf = new Date();
 
   // Replace with your real holdings

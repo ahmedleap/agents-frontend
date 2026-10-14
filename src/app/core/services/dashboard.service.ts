@@ -78,10 +78,10 @@ export class DashboardService {
   });
 
   readonly accounts = signal<AccountSummary[]>([
-    summarise('premium', 'Premium Trading Account', buildHistory(64912.5, 1.0)),
-    summarise('retirement', 'Retirement Growth', buildHistory(128430.18, 0.6)),
-    summarise('swing', 'Swing Trading', buildHistory(21845.6, 1.6, -1.4)),
-    summarise('dividend', 'Dividend Income', buildHistory(87210.75, 0.4))
+    summarise('roth-ira', 'Roth IRA', buildHistory(64912.5, 1.0)),
+    summarise('401k', '401k', buildHistory(128430.18, 0.6)),
+    summarise('hsa', 'HSA', buildHistory(21845.6, 1.6, -1.4)),
+    summarise('529', '529', buildHistory(87210.75, 0.4))
   ]);
 
   readonly watchlist = signal<WatchItem[]>([
@@ -93,11 +93,11 @@ export class DashboardService {
   ]);
 
   readonly trades = signal<Trade[]>([
-    { id: 't1', time: daysAgo(1), side: 'Buy', ticker: 'AAPL', shares: 25, price: 177.9, account: 'Premium Trading Account' },
-    { id: 't2', time: daysAgo(3), side: 'Sell', ticker: 'TSLA', shares: 10, price: 196.4, account: 'Swing Trading' },
-    { id: 't3', time: daysAgo(6), side: 'Buy', ticker: 'MSFT', shares: 12, price: 376.2, account: 'Retirement Growth' },
-    { id: 't4', time: daysAgo(27), side: 'Buy', ticker: 'KO', shares: 80, price: 59.15, account: 'Dividend Income' },
-    { id: 't5', time: daysAgo(30), side: 'Sell', ticker: 'AMD', shares: 40, price: 123.8, account: 'Swing Trading' }
+    { id: 't1', time: daysAgo(1), side: 'Buy', ticker: 'AAPL', shares: 25, price: 177.9, account: 'Roth IRA' },
+    { id: 't2', time: daysAgo(3), side: 'Sell', ticker: 'TSLA', shares: 10, price: 196.4, account: 'HSA' },
+    { id: 't3', time: daysAgo(6), side: 'Buy', ticker: 'MSFT', shares: 12, price: 376.2, account: '401k' },
+    { id: 't4', time: daysAgo(27), side: 'Buy', ticker: 'KO', shares: 80, price: 59.15, account: '529' },
+    { id: 't5', time: daysAgo(30), side: 'Sell', ticker: 'AMD', shares: 40, price: 123.8, account: 'HSA' }
   ]);
 
   readonly movers = signal<Mover[]>([

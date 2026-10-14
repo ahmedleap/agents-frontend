@@ -22,6 +22,14 @@
   border-top: 4px solid #2f6f2a;
   border-bottom: 1px solid #dbe5de;
 
+  .logo-link {
+    flex: none;
+    display: flex;
+    border-radius: 6px;
+
+    &:focus-visible { outline: 2px solid #2f6f2a; outline-offset: 2px; }
+  }
+
   .logo {
     flex: none;
     width: 4.5rem;
@@ -60,7 +68,7 @@
   flex-direction: column;
   flex: none;
   gap: 0.25rem;
-  width: 12rem;
+  width: 15rem;
   padding: 1rem 0.75rem;
   background: #fff;
   border-right: 1px solid #dbe5de;
@@ -85,15 +93,62 @@
       font-weight: 600;
     }
   }
+
+  .nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    .chevron {
+      width: 0.45rem;
+      height: 0.45rem;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(45deg);
+      transition: transform 0.15s;
+    }
+
+    &.open .chevron { transform: rotate(-135deg); }
+  }
+
+  .sub-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-left: 0.9rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid #e3ebe5;
+  }
+
+  .sub-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.7rem;
+    font-variant-numeric: tabular-nums;
+
+    .acct-name { font-size: 0.92rem; }
+    .acct-value { font-size: 1rem; font-weight: 700; color: #1c2b23; }
+    .acct-pl { font-size: 0.8rem; font-weight: 600; }
+    .gain { color: #1f7a3a; }
+    .loss { color: #c0392b; }
+  }
 }
 
 .app-main {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
   min-height: 0;
-  overflow: auto;
-  padding: 1.25rem 2rem;
+  overflow: hidden;
+  padding: 2.5rem clamp(2rem, 4vw, 4rem);
 }
 
 .loading-state {
@@ -122,6 +177,12 @@
 
   .app-sidebar {
     flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+
+    .nav-toggle { width: auto; gap: 0.6rem; }
+    .sub-nav { flex-direction: row; flex-wrap: wrap; margin-left: 0; border-left: 0; }
+
     width: auto;
     padding: 0.5rem 1rem;
     border-right: 0;
@@ -129,5 +190,6 @@
     overflow-x: auto;
   }
 
-  .app-main { padding: 1rem; }
+  // Too narrow to fit everything on one screen, so let the page scroll
+  .app-main { padding: 1rem; overflow: auto; }
 }
