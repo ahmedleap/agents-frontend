@@ -1,5 +1,3 @@
-/* App Component Styles */
-
 :host {
   display: flex;
   flex-direction: column;
@@ -12,34 +10,44 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: linear-gradient(160deg, var(--fidelity-surface-100) 0%, var(--fidelity-surface-200) 100%);
+  background: linear-gradient(160deg, #f4f7f5 0%, #e3ebe5 100%);
 }
 
 .app-header {
-  background: var(--fidelity-green-700);
-  color: white;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 1rem clamp(1.25rem, 5vw, 4rem);
+  background: #fff;
+  border-top: 4px solid #2f6f2a;
+  border-bottom: 1px solid #dbe5de;
 
   h1 {
     margin: 0;
-    font-size: 2rem;
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    font-size: 2.6rem;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    color: #245a20;
   }
 
   p {
-    margin: 0.5rem 0 0;
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.92);
-    font-weight: 400;
+    margin: 0;
+    padding-left: 1rem;
+    border-left: 1px solid #dbe5de;
+    font-size: 1.15rem;
+    color: #5f7267;
   }
 }
 
 .app-main {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-height: 0;
   overflow: auto;
-  padding: 2rem;
+  padding: 1.25rem 2rem;
 }
 
 .loading-state {
@@ -49,5 +57,19 @@
   width: 100%;
   height: 100%;
   font-size: 1.2rem;
-  color: var(--fidelity-text-700);
+  color: #2b3a33;
+}
+
+@media (max-width: 800px) {
+  .app-header {
+    flex-direction: column;
+    gap: 0.5rem;
+
+    p {
+      padding-left: 0;
+      border-left: 0;
+    }
+  }
+
+  .app-main { padding: 1rem; }
 }

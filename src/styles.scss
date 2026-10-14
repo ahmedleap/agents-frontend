@@ -1,10 +1,10 @@
 /* Global Styles for Agents of Leap Trading Platform */
 
 :root {
-  --fidelity-green-800: #00552f;
-  --fidelity-green-700: #006b3f;
-  --fidelity-green-600: #0a7a4b;
-  --fidelity-green-500: #1b8f5a;
+  --fidelity-green-800: #245a20;
+  --fidelity-green-700: #2f6f2a;
+  --fidelity-green-600: #3a8233;
+  --fidelity-green-500: #4c9a43;
   --fidelity-navy-900: #0f2b46;
   --fidelity-navy-700: #214664;
   --fidelity-surface-100: #f3f8f5;
@@ -12,7 +12,7 @@
   --fidelity-card: #ffffff;
   --fidelity-text-900: #17324a;
   --fidelity-text-700: #37556f;
-  --fidelity-focus: #0a7a4b;
+  --fidelity-focus: #2f6f2a;
   --fidelity-warning-bg: #fff6e6;
   --fidelity-warning-border: #e4be72;
   --fidelity-warning-text: #6d4d10;
@@ -30,11 +30,17 @@ html, body {
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, Tahoma, sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--fidelity-text-900);
-  background-color: var(--fidelity-surface-100);
+  color: #1c2b23;
+  background-color: #f4f7f5;
+  -webkit-font-smoothing: antialiased;
+}
+
+app-root {
+  display: block;
+  height: 100%;
 }
 
 /* Scrollbar Styling */
@@ -44,20 +50,20 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--fidelity-surface-200);
+  background: #e3ebe5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--fidelity-green-600);
-  border-radius: 4px;
+  background: #2f6f2a;
+  border-radius: 0;
 
   &:hover {
-    background: var(--fidelity-green-700);
+    background: #245a20;
   }
 }
 
 /* Focus styles for accessibility */
 :focus-visible {
-  outline: 2px solid var(--fidelity-focus);
+  outline: 2px solid #2f6f2a;
   outline-offset: 2px;
 }
