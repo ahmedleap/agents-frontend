@@ -3,6 +3,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs';
 import { DashboardService } from './core/services/dashboard.service';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +21,7 @@ export class AppComponent {
   protected readonly appInitialized = signal(false);
   protected readonly accounts = inject(DashboardService).accounts;
   protected readonly accountsOpen = signal(false);
+  protected readonly theme = inject(ThemeService);
 
   private readonly router = inject(Router);
 

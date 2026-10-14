@@ -1,14 +1,4 @@
 :host {
-  --pf-card: #fff;
-  --pf-border: #dbe5de;
-  --pf-text: #1c2b23;
-  --pf-muted: #5f7267;
-  --pf-inset: #f3f7f4;
-  --pf-gain: #1f7a3a;
-  --pf-loss: #c0392b;
-  --pf-green: #2f6f2a;
-  --pf-green-dark: #245a20;
-
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
@@ -29,7 +19,7 @@
   background: var(--pf-card);
   border: 1px solid var(--pf-border);
   border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(16, 40, 28, 0.05), 0 6px 20px rgba(16, 40, 28, 0.05);
+  box-shadow: var(--pf-shadow);
   min-width: 0;
 }
 
