@@ -3,8 +3,6 @@
     <header class="app-header">
       <svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
         <g fill="#fff" stroke="#245a20" stroke-width="5" stroke-linejoin="round">
-          <g transform="translate(86 100) rotate(-32)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
-          <g transform="translate(170 100) rotate(32)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
           <g transform="translate(94 102) rotate(-18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
           <g transform="translate(162 102) rotate(18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
           <g transform="translate(128 98)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
@@ -20,9 +18,17 @@
       <p>{{ subtitle() }}</p>
     </header>
 
-    <main class="app-main">
-      <router-outlet></router-outlet>
-    </main>
+    <div class="app-body">
+      <nav class="app-sidebar" aria-label="Main navigation">
+        @for (item of navItems; track item.path) {
+          <a class="nav-link" [routerLink]="item.path" routerLinkActive="active" ariaCurrentWhenActive="page">{{ item.label }}</a>
+        }
+      </nav>
+
+      <main class="app-main">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
   } @else {
     <div class="loading-state">
       <p>Initializing application...</p>
