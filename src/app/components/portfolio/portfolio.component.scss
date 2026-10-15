@@ -229,3 +229,20 @@ tbody tr:hover { background: var(--pf-inset); }
   .summary { grid-template-columns: 1fr; }
   .hero { aspect-ratio: auto; }
 }
+
+.toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.trade-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 2px;
+  background: var(--pf-green);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+
+  &:hover { background: var(--pf-green-dark); }
+}

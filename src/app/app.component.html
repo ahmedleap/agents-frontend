@@ -43,6 +43,10 @@
     <div class="app-body">
       <nav class="app-sidebar" aria-label="Main navigation">
         <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
+        <a class="nav-link trade-link" [routerLink]="['/trades', accounts()[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <span class="trade-icon" aria-hidden="true">↗</span>
+          Trade
+        </a>
 
         <button
           type="button"

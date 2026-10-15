@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 
@@ -30,21 +30,27 @@ const DEFAULT_COLOR = '#5f7267';
 @Component({
   selector: 'app-portfolio',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink],
   templateUrl: './portfolio.component.html',
   styleUrls: ['./portfolio.component.scss']
 })
 export class PortfolioComponent {
   private readonly accounts = inject(DashboardService).accounts;
-  private readonly accountId = toSignal(
-    inject(ActivatedRoute).paramMap.pipe(map(p => p.get('accountId'))),
-    { initialValue: null }
+  private readonly route = inject(ActivatedRoute);
+  private readonly accountIdParam = toSignal(
+    this.route.paramMap.pipe(map(p => p.get('accountId'))),
+    { initialValue: this.route.snapshot.paramMap.get('accountId') }
   );
 
   // Falls back to the first account for /portfolio or an unknown id
+  protected readonly accountId = computed(() => {
+    const list = this.accounts();
+    return list.find(account => account.id === this.accountIdParam())?.id ?? list[0]?.id ?? '';
+  });
+
   protected readonly account = computed(() => {
     const list = this.accounts();
-    return (list.find(a => a.id === this.accountId()) ?? list[0])?.name ?? '';
+    return list.find(account => account.id === this.accountId())?.name ?? '';
   });
   protected readonly asOf = new Date();
 

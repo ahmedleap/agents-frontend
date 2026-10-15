@@ -4,7 +4,10 @@
       <h2>{{ account() }}</h2>
       <p>Portfolio</p>
     </div>
-    <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
+    <div class="toolbar-actions">
+      <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
+      <a class="trade-link" [routerLink]="['/trades', accountId()]">Place a trade <span aria-hidden="true">&#8594;</span></a>
+    </div>
   </div>
 
   <div class="summary">

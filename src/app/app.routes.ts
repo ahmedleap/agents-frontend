@@ -15,6 +15,14 @@ export const routes: Routes = [
     loadComponent: () => import('./components/portfolio/portfolio.component').then(m => m.PortfolioComponent)
   },
   {
+    path: 'trades',
+    loadComponent: () => import('./components/trades/trades.component').then(m => m.TradesComponent)
+  },
+  {
+    path: 'trades/:accountId',
+    loadComponent: () => import('./components/trades/trades.component').then(m => m.TradesComponent)
+  },
+  {
   path: 'dashboard',
   loadComponent: () =>
     import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
