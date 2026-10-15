@@ -1,7 +1,7 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
@@ -11,7 +11,7 @@ type SortKey = 'side' | 'kind' | 'quantity' | 'limitPrice' | 'status' | 'created
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe],
   templateUrl: './history.component.html',
   styleUrls: ['./history.component.scss']
 })

@@ -1,0 +1,108 @@
+<section class="page">
+  <div class="toolbar">
+    <div>
+      <p class="eyebrow">CASH ACTIVITY</p>
+      <h2>Transactions</h2>
+      <p class="intro">Manage and review cash moving in and out of this account.</p>
+    </div>
+    <div class="account-context">
+      <label class="account-label" for="transaction-account">Account</label>
+      <select id="transaction-account" class="account-select" [value]="accountId()" (change)="switchAccount($event)" aria-label="Select account transactions">
+        @for (availableAccount of accounts(); track availableAccount.id) {
+          <option [value]="availableAccount.id">{{ availableAccount.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card balance-card">
+      <span class="summary-label">Available cash balance</span>
+      <strong>{{ cashBalance() | currency }}</strong>
+      <span class="summary-caption">{{ account()?.name }}</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Total deposits</span>
+      <strong>{{ transactions().filter(t => t.txnType === 'DEPOSIT').length }}</strong>
+      <span class="summary-caption">{{ transactions().filter(t => t.txnType === 'DEPOSIT').length === 1 ? 'deposit' : 'deposits' }} recorded</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Total withdrawals</span>
+      <strong>{{ transactions().filter(t => t.txnType === 'WITHDRAWAL').length }}</strong>
+      <span class="summary-caption">{{ transactions().filter(t => t.txnType === 'WITHDRAWAL').length === 1 ? 'withdrawal' : 'withdrawals' }} recorded</span>
+    </div>
+  </div>
+
+  <section class="transactions-panel">
+    <div class="panel-heading">
+      <div>
+        <h3>Cash transactions</h3>
+        <p>Deposits and withdrawals for this account</p>
+      </div>
+      <button type="button" class="primary-button" (click)="showDepositForm.set(!showDepositForm())">
+        {{ showDepositForm() ? 'Cancel' : 'Add or withdraw cash' }}
+      </button>
+    </div>
+
+    <div class="table-tools">
+      <label class="search-field">
+        <span class="visually-hidden">Search transactions</span>
+        <input type="search" placeholder="Search deposits or withdrawals" [value]="query()" (input)="onSearch($event)" aria-label="Search transactions">
+      </label>
+      <select [value]="sortBy()" (change)="onSort($event)" aria-label="Sort transactions">
+        <option value="createdAt">Sort by Newest</option>
+        <option value="amount">Sort by Amount</option>
+        <option value="type">Sort by Type</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Type</th><th>Amount</th><th>Created</th></tr>
+        </thead>
+        <tbody>
+          @for (transaction of visibleTransactions(); track transaction.transactionId) {
+            <tr>
+              <td><span class="transaction-type" [class.withdrawal]="transaction.txnType === 'WITHDRAWAL'">{{ transaction.txnType }}</span></td>
+              <td class="amount" [class.withdrawal-amount]="transaction.txnType === 'WITHDRAWAL'">
+                {{ transaction.txnType === 'DEPOSIT' ? '+' : '-' }}{{ transaction.amount | currency }}
+              </td>
+              <td>{{ transaction.createdAt | date: 'MMM d, y, h:mm a' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="empty"><strong>{{ transactions().length ? 'No matching transactions' : 'No transactions yet' }}</strong><span>{{ transactions().length ? 'Try a different search.' : 'Add cash to create the first deposit.' }}</span></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+@if (showDepositForm()) {
+  <div class="modal-backdrop" (click)="showDepositForm.set(false)">
+    <section class="cash-modal" role="dialog" aria-modal="true" aria-labelledby="cash-modal-title" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">CASH MOVEMENT</p>
+          <h2 id="cash-modal-title">{{ transactionAction() === 'DEPOSIT' ? 'Add cash' : 'Withdraw cash' }}</h2>
+        </div>
+        <button type="button" class="close-button" aria-label="Close cash movement dialog" (click)="showDepositForm.set(false)">&#10005;</button>
+      </div>
+
+      <form class="deposit-form" (submit)="$event.preventDefault(); addCash()">
+        <div class="action-toggle" role="group" aria-label="Cash transaction type">
+          <button type="button" [class.active]="transactionAction() === 'DEPOSIT'" (click)="setTransactionAction('DEPOSIT')">Add cash</button>
+          <button type="button" [class.active]="transactionAction() === 'WITHDRAWAL'" (click)="setTransactionAction('WITHDRAWAL')">Withdraw cash</button>
+        </div>
+        <label for="deposit-amount">{{ transactionAction() === 'DEPOSIT' ? 'Deposit amount' : 'Withdrawal amount' }}</label>
+        <input id="deposit-amount" type="number" min="0.01" step="0.01" placeholder="0.00" [value]="depositAmount() || ''" (input)="setDepositAmount($event)">
+        <p class="available-cash">Available cash: {{ cashBalance() | currency }}</p>
+        @if (transactionAction() === 'WITHDRAWAL' && depositAmount() > cashBalance()) {
+          <p class="form-error">Withdrawal cannot exceed the available cash balance.</p>
+        }
+        <button type="submit" class="primary-button full" [disabled]="!canSubmitTransaction()">{{ transactionAction() === 'DEPOSIT' ? 'Add to cash balance' : 'Withdraw from cash balance' }}</button>
+      </form>
+    </section>
+  </div>
+}

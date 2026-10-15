@@ -50,6 +50,9 @@
         <a class="nav-link" [routerLink]="['/history', accounts()[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           History
         </a>
+        <a class="nav-link" [routerLink]="['/transactions', accounts()[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+          Transactions
+        </a>
 
         <button
           type="button"
@@ -74,6 +77,7 @@
                 </span>
               </a>
               <a class="account-history-link" [routerLink]="['/history', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">View history</a>
+              <a class="account-history-link" [routerLink]="['/transactions', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">View transactions</a>
             }
           </div>
         }
