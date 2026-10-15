@@ -25,8 +25,8 @@ h2, h3, p { margin: 0; }
 .deposit-form { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem 1.25rem; background: var(--pf-inset); }
 .deposit-form label { color: var(--pf-muted); font-size: 0.78rem; font-weight: 700; }
 .deposit-form input, .table-tools select { padding: 0.55rem 0.7rem; border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-card); color: var(--pf-text); font: inherit; font-size: 0.85rem; }
-.action-toggle { display: flex; padding: 0.2rem; background: var(--pf-card); border: 1px solid var(--pf-border); }
-.action-toggle button { padding: 0.5rem 0.7rem; border: 0; background: transparent; color: var(--pf-muted); font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.action-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; width: 100%; padding: 0.25rem; background: var(--pf-card); border: 1px solid var(--pf-border); }
+.action-toggle button { padding: 0.6rem 0.7rem; border: 0; border-radius: 2px; background: transparent; color: var(--pf-muted); font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
 .action-toggle button.active { background: var(--pf-active); color: var(--pf-accent); }
 .form-error { align-self: center; color: var(--pf-loss); font-size: 0.78rem; }
 .available-cash { color: var(--pf-muted); font-size: 0.78rem; }
