@@ -1,9 +1,15 @@
+import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
+import { analystGuard } from './core/guards/analyst.guard';
+
+/** Analysts land on the analysis page; everyone else on their portfolio. */
+const home = () => (inject(AuthService).isAnalyst() ? 'analytics' : 'portfolio');
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'portfolio',
+    redirectTo: home,
     pathMatch: 'full'
   },
   {
@@ -20,8 +26,15 @@ export const routes: Routes = [
     import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
   {
+    // Only analysts get here; their sidebar shows just this page
+    path: 'analytics',
+    canActivate: [analystGuard],
+    loadComponent: () =>
+      import('./components/analytics/analytics.component').then(m => m.AnalyticsComponent)
+  },
+  {
     path: '**',
-    redirectTo: 'portfolio'
+    redirectTo: home
   }
 ];
 

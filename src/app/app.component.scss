@@ -22,13 +22,19 @@
   border-top: 4px solid var(--pf-green);
   border-bottom: 1px solid var(--pf-border);
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-left: auto;
+  }
+
   .theme-toggle {
     flex: none;
     display: grid;
     place-items: center;
     width: 2.6rem;
     height: 2.6rem;
-    margin-left: auto;
     border: 1px solid var(--pf-border);
     border-radius: 6px;
     background: var(--pf-inset);

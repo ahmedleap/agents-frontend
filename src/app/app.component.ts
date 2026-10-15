@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs';
 import { DashboardService } from './core/services/dashboard.service';
 import { ThemeService } from './core/services/theme.service';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -22,6 +23,7 @@ export class AppComponent {
   protected readonly accounts = inject(DashboardService).accounts;
   protected readonly accountsOpen = signal(false);
   protected readonly theme = inject(ThemeService);
+  protected readonly isAnalyst = inject(AuthService).isAnalyst;
 
   private readonly router = inject(Router);
 

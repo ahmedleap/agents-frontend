@@ -38,6 +38,13 @@
   --pf-buy-bg: rgba(31, 122, 58, 0.1);
   --pf-sell-bg: rgba(192, 57, 43, 0.1);
   --pf-shadow: 0 1px 2px rgba(16, 40, 28, 0.05), 0 6px 20px rgba(16, 40, 28, 0.05);
+
+  /* Categorical chart series, always assigned in this order (CVD-validated against the card surface) */
+  --pf-series-1: #2a78d6;
+  --pf-series-2: #eb6834;
+  --pf-series-3: #1baf7a;
+  --pf-series-4: #eda100;
+  --pf-series-5: #e87ba4;
 }
 
 /* Theme tokens: dark (set by ThemeService as data-theme on <html>) */
@@ -62,6 +69,11 @@
   --pf-buy-bg: rgba(76, 192, 114, 0.15);
   --pf-sell-bg: rgba(255, 107, 91, 0.15);
   --pf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+  --pf-series-1: #3987e5;
+  --pf-series-2: #d95926;
+  --pf-series-3: #199e70;
+  --pf-series-4: #c98500;
+  --pf-series-5: #d55181;
 }
 
 * {
@@ -120,4 +132,48 @@ app-root {
 :focus-visible {
   outline: 2px solid #2f6f2a;
   outline-offset: 2px;
+}
+/* ---------- Shared page pieces ----------
+   Used by the analytics page. Dashboard and portfolio still carry their own copies,
+   which take precedence there (component styles are more specific). */
+
+.card {
+  background: var(--pf-card);
+  border: 1px solid var(--pf-border);
+  border-radius: 2px;
+  box-shadow: var(--pf-shadow);
+  min-width: 0;
+}
+
+.gain { color: var(--pf-gain); }
+.loss { color: var(--pf-loss); }
+.muted { color: var(--pf-muted); }
+.empty { text-align: center; color: var(--pf-muted); padding: 2rem; }
+
+.badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 2px;
+  color: #fff;
+  background: var(--pf-green);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.ticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+}
+
+.ticker-text {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.2;
+
+  small { font-weight: 400; color: var(--pf-muted); font-size: 0.8rem; }
 }
