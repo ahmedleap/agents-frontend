@@ -181,7 +181,7 @@ export class AnalyticsComponent {
 
   // ---------- Most active instruments ----------
 
-  protected readonly instrumentSort = signal<InstrumentSort>('totalValue');
+  protected readonly instrumentSort = signal<InstrumentSort>('tradeCount');
   protected readonly sortOptions: { id: InstrumentSort; label: string }[] = [
     { id: 'totalValue', label: 'Value' },
     { id: 'totalQuantity', label: 'Volume' },

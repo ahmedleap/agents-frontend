@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { addDays, eachDayOfInterval, format, parseISO } from 'date-fns';
 
 import { ApiService } from './api.service';
@@ -36,10 +36,29 @@ export interface InstrumentTrendResponse {
   ticker: string;
   instrumentName?: string;
   assetClass?: string;
+  industry?: string;
   tradeCount: number;
   totalQuantity?: number;
   totalValue: number;
+  averagePrice?: number;
+  currentPrice?: number;
+  bidAskSpread?: number | null;
   uniqueTraders: number;
+}
+
+interface TopTradedInstrumentResponse {
+  ticker: string;
+  instrumentName?: string;
+  assetClass?: string;
+  industry?: string;
+  tradeCount: number;
+  totalVolume: number;
+  totalVolumeValue: number;
+  averagePrice: number;
+  currentPrice: number;
+  bidAskSpread: number | null;
+  uniqueTraders: number;
+  dayChangePercent: number;
 }
 
 export interface VolumeTrendResponse {
@@ -107,7 +126,22 @@ export class AnalyticsService {
 
   mostActiveInstruments(date: string, limit = 20): Observable<InstrumentTrendResponse[]> {
     if (this.mock) return of(mockInstruments(date).slice(0, limit));
-    return this.get('most-active-instruments', { date, limit });
+    return this.api
+      .get<TopTradedInstrumentResponse[]>('v1/analytics/instruments/top-traded', { params: { date, limit } })
+      .pipe(map(rows => rows.map(row => ({
+        date,
+        ticker: row.ticker,
+        instrumentName: row.instrumentName,
+        assetClass: row.assetClass,
+        industry: row.industry,
+        tradeCount: row.tradeCount,
+        totalQuantity: row.totalVolume,
+        totalValue: row.totalVolumeValue,
+        averagePrice: row.averagePrice,
+        currentPrice: row.currentPrice,
+        bidAskSpread: row.bidAskSpread,
+        uniqueTraders: row.uniqueTraders
+      }))));
   }
 
   volumeTrend(startDate: string, endDate: string): Observable<VolumeTrendResponse[]> {
