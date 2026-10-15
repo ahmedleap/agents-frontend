@@ -144,6 +144,14 @@
     border-left: 2px solid var(--pf-active);
   }
 
+  .sub-note {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.85rem;
+    color: var(--pf-muted);
+
+    &.error { color: var(--pf-loss); }
+  }
+
   .sub-link {
     display: flex;
     flex-direction: column;

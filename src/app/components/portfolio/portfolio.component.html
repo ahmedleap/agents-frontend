@@ -7,6 +7,17 @@
     <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
   </div>
 
+  @if (state(); as s) {
+    @if (s.status === 'loading') {
+      <div class="card notice" role="status">Loading portfolio from the backend...</div>
+    } @else if (s.status === 'error') {
+      <div class="card notice error" role="alert">
+        <strong>Couldn't load the portfolio.</strong>
+        <span>{{ s.message }}</span>
+      </div>
+    }
+  }
+
   <div class="summary">
     <div class="card hero">
       <span class="label">Total Portfolio Value</span>
@@ -25,7 +36,7 @@
           <span class="badge" [style.background]="a.color">{{ a.sector[0] }}</span>
           <div class="alloc-info">
             <div class="alloc-top">
-              <span><strong>{{ a.sector }}</strong> <small>{{ a.tickers.join(', ') }}</small></span>
+              <span><strong>{{ a.sector }}</strong></span>
               <strong>{{ a.weight | number: '1.1-1' }}%</strong>
             </div>
             <div class="track"><div class="fill" [style.width.%]="a.weight" [style.background]="a.color"></div></div>
