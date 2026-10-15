@@ -2,7 +2,7 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api',
+  apiUrl: '/api',
   wsUrl: 'ws://localhost:3000',
   logLevel: 'debug',
   features: {

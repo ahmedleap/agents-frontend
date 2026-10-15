@@ -47,6 +47,9 @@
           <span class="trade-icon" aria-hidden="true">↗</span>
           Trade
         </a>
+        <a class="nav-link" [routerLink]="['/history', accounts()[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+          History
+        </a>
 
         <button
           type="button"
@@ -70,6 +73,7 @@
                   ({{ a.dayPct >= 0 ? '+' : '' }}{{ a.dayPct | number: '1.2-2' }}%)
                 </span>
               </a>
+              <a class="account-history-link" [routerLink]="['/history', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">View history</a>
             }
           </div>
         }

@@ -23,6 +23,14 @@ export const routes: Routes = [
     loadComponent: () => import('./components/trades/trades.component').then(m => m.TradesComponent)
   },
   {
+    path: 'history',
+    loadComponent: () => import('./components/history/history.component').then(m => m.HistoryComponent)
+  },
+  {
+    path: 'history/:accountId',
+    loadComponent: () => import('./components/history/history.component').then(m => m.HistoryComponent)
+  },
+  {
   path: 'dashboard',
   loadComponent: () =>
     import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
