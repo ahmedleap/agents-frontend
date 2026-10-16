@@ -20,6 +20,10 @@ export const routes: Routes = [
     import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
   {
+    path: 'signup',
+    loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent)
+  },
+  {
     path: '**',
     redirectTo: 'portfolio'
   }

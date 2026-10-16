@@ -19,6 +19,10 @@
       <h1>{{ title() }}</h1>
       <p>{{ subtitle() }}</p>
 
+      @if (!isAuthPage()) {
+        <a class="header-link" routerLink="/signup">Sign up</a>
+      }
+
       <button
         type="button"
         class="theme-toggle"
@@ -41,6 +45,7 @@
     </header>
 
     <div class="app-body">
+      @if (!isAuthPage()) {
       <nav class="app-sidebar" aria-label="Main navigation">
         <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
 
@@ -86,6 +91,7 @@
           </div>
         }
       </nav>
+      }
 
       <main class="app-main">
         <router-outlet></router-outlet>
