@@ -53,8 +53,7 @@ export class PortfolioComponent {
 
   protected readonly asOf = new Date();
 
-  // A backend account UUID in the URL loads that account; anything else (/portfolio, or the
-  // sidebar's mock ids) loads the client's whole portfolio across all accounts.
+  // Loads the account whose UUID is in the URL (/portfolio/:accountId)
   protected readonly state = toSignal(
     inject(ActivatedRoute).paramMap.pipe(
       map(p => p.get('accountId')),
@@ -125,26 +124,20 @@ export class PortfolioComponent {
   }
 
   private load(accountId: string | null) {
+    if (!accountId || !UUID.test(accountId)) {
+      return of<LoadState>({ status: 'error', message: `"${accountId ?? ''}" isn't a valid account. Pick an account from the sidebar.` });
+    }
+
     const id = this.clientId;
-    const request = accountId && UUID.test(accountId)
-      ? forkJoin({
-          p: this.api.getAccountPortfolio(id, accountId),
-          allocation: this.api.getAccountAllocation(id, accountId)
-        }).pipe(map(({ p, allocation }): PortfolioView => ({
-          title: p.accountName,
-          holdings: p.holdings ?? [],
-          totals: { value: p.totalPortfolioValue, cost: p.totalCostBasis, gain: p.totalGainLossDollars, ret: p.totalGainLossPercent },
-          allocation
-        })))
-      : forkJoin({
-          p: this.api.getEntirePortfolio(id),
-          allocation: this.api.getAllocation(id)
-        }).pipe(map(({ p, allocation }): PortfolioView => ({
-          title: 'All Accounts',
-          holdings: (p.accounts ?? []).flatMap(a => a.holdings ?? []),
-          totals: { value: p.totalPortfolioValue, cost: p.totalCostBasis, gain: p.totalGainLossDollars, ret: p.totalGainLossPercent },
-          allocation
-        })));
+    const request = forkJoin({
+      p: this.api.getAccountPortfolio(id, accountId),
+      allocation: this.api.getAccountAllocation(id, accountId)
+    }).pipe(map(({ p, allocation }): PortfolioView => ({
+      title: p.accountName,
+      holdings: p.holdings ?? [],
+      totals: { value: p.totalPortfolioValue, cost: p.totalCostBasis, gain: p.totalGainLossDollars, ret: p.totalGainLossPercent },
+      allocation
+    })));
 
     return request.pipe(
       map((view): LoadState => ({ status: 'ready', view })),
