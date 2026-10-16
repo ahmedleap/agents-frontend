@@ -3,12 +3,14 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'portfolio',
+    redirectTo: 'dashboard',
     pathMatch: 'full'
   },
   {
+    // There is no combined all-accounts view; pick an account from the sidebar
     path: 'portfolio',
-    loadComponent: () => import('./components/portfolio/portfolio.component').then(m => m.PortfolioComponent)
+    redirectTo: 'dashboard',
+    pathMatch: 'full'
   },
   {
     path: 'portfolio/:accountId',
@@ -25,7 +27,7 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'portfolio'
+    redirectTo: 'dashboard'
   }
 ];
 

@@ -62,10 +62,6 @@
 
         @if (accountsOpen()) {
           <div id="account-list" class="sub-nav">
-            <a class="nav-link sub-link" routerLink="/portfolio" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page">
-              <span class="acct-name">All Accounts</span>
-            </a>
-
             @switch (accounts().status) {
               @case ('loading') {
                 <span class="sub-note">Loading accounts...</span>
