@@ -43,6 +43,12 @@ export class AppComponent {
     this.accountsOpen.update(open => !open);
   }
 
+  protected openHistory(event: Event, accountId: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.router.navigate(['/history', accountId]);
+  }
+
   private initializeApp(): void {
     console.log('App initialized:', this.title());
     this.appInitialized.set(true);

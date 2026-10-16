@@ -76,7 +76,7 @@
                   ({{ a.dayPct >= 0 ? '+' : '' }}{{ a.dayPct | number: '1.2-2' }}%)
                 </span>
               </a>
-              <a class="account-history-link" [routerLink]="['/history', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">View history</a>
+              <a class="account-history-link" [routerLink]="['/history', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="openHistory($event, a.id)">View history</a>
               <a class="account-history-link" [routerLink]="['/transactions', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">View transactions</a>
             }
           </div>
