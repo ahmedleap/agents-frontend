@@ -2,9 +2,13 @@ import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { analystGuard } from './core/guards/analyst.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 /** Analysts land on the analysis page; everyone else on their portfolio. */
-const home = () => (inject(AuthService).isAnalyst() ? 'analytics' : 'portfolio');
+const home = () => {
+  const auth = inject(AuthService);
+  return auth.isAdmin() ? 'admin' : auth.isAnalyst() ? 'analytics' : 'portfolio';
+};
 
 export const routes: Routes = [
   {
@@ -31,6 +35,11 @@ export const routes: Routes = [
     canActivate: [analystGuard],
     loadComponent: () =>
       import('./components/analytics/analytics.component').then(m => m.AnalyticsComponent)
+  },
+  {
+    path: 'admin',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)
   },
   {
     path: '**',

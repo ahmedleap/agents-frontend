@@ -1,5 +1,6 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { ApiService } from './api.service';
+import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
@@ -34,16 +35,18 @@ export class AuthService {
    * `user.roles` array from the login response, e.g. 'ANALYST' or 'ROLE_ANALYST'.
    */
   readonly isAnalyst = computed(() => {
-    // TODO(analytics access): role check is disabled so the analytics page can be viewed
-    // before sign-in exists. Everyone is treated as an analyst until this is restored:
-    // delete the `return true;` below and uncomment the check.
-    return true;
-
-    // const user = this.currentUser();
-    // if (!this.isAuthenticated() || !user) return false;
-    // const roles: unknown[] = Array.isArray(user.roles) ? user.roles : [user.role];
-    // return roles.some(r => typeof r === 'string' && r.toUpperCase().replace(/^ROLE_/, '') === 'ANALYST');
+    return !environment.features.enableMocking && this.hasRole('ANALYST');
   });
+
+  /** Development mode opens the admin workspace without requiring backend login. */
+  readonly isAdmin = computed(() => environment.features.enableMocking || this.hasRole('ADMIN'));
+
+  private hasRole(role: 'ANALYST' | 'ADMIN'): boolean {
+    const user = this.currentUser();
+    if (!this.isAuthenticated() || !user) return false;
+    const roles: unknown[] = Array.isArray(user.roles) ? user.roles : [user.role];
+    return roles.some(value => typeof value === 'string' && value.toUpperCase().replace(/^ROLE_/, '') === role);
+  }
 
   /**
    * Login with email and password

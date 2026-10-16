@@ -23,7 +23,9 @@ export class AppComponent {
   protected readonly accounts = inject(DashboardService).accounts;
   protected readonly accountsOpen = signal(false);
   protected readonly theme = inject(ThemeService);
-  protected readonly isAnalyst = inject(AuthService).isAnalyst;
+  private readonly auth = inject(AuthService);
+  protected readonly isAnalyst = this.auth.isAnalyst;
+  protected readonly isAdmin = this.auth.isAdmin;
 
   private readonly router = inject(Router);
 
