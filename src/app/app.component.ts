@@ -44,6 +44,8 @@ export class AppComponent {
   );
   protected readonly accountsOpen = signal(false);
   protected readonly theme = inject(ThemeService);
+  // Full-width pages with no sidebar (sign up, later log in)
+  protected readonly isAuthPage = signal(false);
 
   private readonly router = inject(Router);
 
@@ -54,6 +56,7 @@ export class AppComponent {
     const sub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => {
+        this.isAuthPage.set(e.urlAfterRedirects.startsWith('/signup'));
         if (e.urlAfterRedirects.startsWith('/portfolio')) {
           this.accountsOpen.set(true);
         }
