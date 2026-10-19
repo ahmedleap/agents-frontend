@@ -204,52 +204,6 @@ fieldset {
   &.block { width: 100%; margin-top: 0.25rem; }
   &:hover { filter: brightness(1.08); }
   &:active { transform: translateY(1px); }
-  &.ghost {
-    color: var(--pf-accent);
-    background: var(--pf-inset);
-    border: 1px solid var(--pf-border);
-  }
-}
-
-.actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
-
-/* ---------- Success ---------- */
-
-.success {
-  display: grid;
-  justify-items: center;
-  gap: 0.6rem;
-  height: 100%;
-  align-content: center;
-  text-align: center;
-  padding: 2rem 0;
-
-  h2 {
-    font-family: 'Fredoka', 'Baloo 2', sans-serif;
-    font-size: 1.7rem;
-    color: var(--pf-accent);
-  }
-  .actions { margin-top: 0.75rem; }
-}
-
-.success-icon {
-  position: relative;
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  background: var(--pf-buy-bg);
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 1.3rem;
-    top: 0.8rem;
-    width: 0.8rem;
-    height: 1.5rem;
-    border: solid var(--pf-gain);
-    border-width: 0 3px 3px 0;
-    transform: rotate(45deg);
-  }
 }
 
 /* ---------- Responsive ---------- */

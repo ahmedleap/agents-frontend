@@ -22,21 +22,7 @@
   border-top: 4px solid var(--pf-green);
   border-bottom: 1px solid var(--pf-border);
 
-  // Header actions sit at the right edge; the theme toggle is alone there on /signup
-  .header-link {
-    flex: none;
-    margin-left: auto;
-    padding: 0.55rem 1.1rem;
-    border-radius: 6px;
-    color: #fff;
-    background: var(--pf-green);
-    font-weight: 600;
-    text-decoration: none;
-    transition: filter 0.15s;
-
-    &:hover { filter: brightness(1.1); }
-  }
-
+  // The theme toggle sits alone at the right edge
   .theme-toggle {
     flex: none;
     display: grid;
@@ -54,8 +40,6 @@
     svg { width: 1.3rem; height: 1.3rem; }
     &:hover { background: var(--pf-active); }
   }
-
-  .header-link + .theme-toggle { margin-left: 0.75rem; }
 
   .logo-link {
     flex: none;
@@ -150,6 +134,12 @@
     }
 
     &.open .chevron { transform: rotate(-135deg); }
+  }
+
+  // Top-level items (Dashboard, Account); the account links under them keep their own size
+  > .nav-link {
+    font-size: 1.1rem;
+    font-weight: 700;
   }
 
   .sub-nav {
