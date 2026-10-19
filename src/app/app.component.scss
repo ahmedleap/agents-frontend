@@ -10,7 +10,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: linear-gradient(160deg, #f4f7f5 0%, #e3ebe5 100%);
+  background: linear-gradient(160deg, var(--pf-bg) 0%, var(--pf-bg-2) 100%);
 }
 
 .app-header {
@@ -18,9 +18,52 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem clamp(1.25rem, 5vw, 4rem) 1rem 1rem;
-  background: #fff;
-  border-top: 4px solid #2f6f2a;
-  border-bottom: 1px solid #dbe5de;
+  background: var(--pf-card);
+  border-top: 4px solid var(--pf-green);
+  border-bottom: 1px solid var(--pf-border);
+
+  // Header actions sit at the right edge; the theme toggle is alone there on /signup
+  .header-link {
+    flex: none;
+    margin-left: auto;
+    padding: 0.55rem 1.1rem;
+    border-radius: 6px;
+    color: #fff;
+    background: var(--pf-green);
+    font-weight: 600;
+    text-decoration: none;
+    transition: filter 0.15s;
+
+    &:hover { filter: brightness(1.1); }
+  }
+
+  .theme-toggle {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    margin-left: auto;
+    border: 1px solid var(--pf-border);
+    border-radius: 6px;
+    background: var(--pf-inset);
+    color: var(--pf-accent);
+    cursor: pointer;
+    transition: background 0.15s;
+
+    svg { width: 1.3rem; height: 1.3rem; }
+    &:hover { background: var(--pf-active); }
+  }
+
+  .header-link + .theme-toggle { margin-left: 0.75rem; }
+
+  .logo-link {
+    flex: none;
+    display: flex;
+    border-radius: 6px;
+
+    &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+  }
 
   .logo {
     flex: none;
@@ -37,15 +80,15 @@
     font-size: 2.6rem;
     letter-spacing: 0.02em;
     line-height: 1;
-    color: #245a20;
+    color: var(--pf-accent);
   }
 
   p {
     margin: 0;
     padding-left: 1rem;
-    border-left: 1px solid #dbe5de;
+    border-left: 1px solid var(--pf-border);
     font-size: 1.15rem;
-    color: #5f7267;
+    color: var(--pf-muted);
   }
 }
 
@@ -60,30 +103,84 @@
   flex-direction: column;
   flex: none;
   gap: 0.25rem;
-  width: 12rem;
+  width: 15rem;
   padding: 1rem 0.75rem;
-  background: #fff;
-  border-right: 1px solid #dbe5de;
+  background: var(--pf-card);
+  border-right: 1px solid var(--pf-border);
 
   .nav-link {
     padding: 0.6rem 0.9rem;
     border-radius: 6px;
     font-size: 1rem;
     font-weight: 500;
-    color: #5f7267;
+    color: var(--pf-muted);
     text-decoration: none;
     transition: background 0.15s, color 0.15s;
 
     &:hover {
-      background: #f4f7f5;
-      color: #245a20;
+      background: var(--pf-hover);
+      color: var(--pf-accent);
     }
 
     &.active {
-      background: #e3ebe5;
-      color: #245a20;
+      background: var(--pf-active);
+      color: var(--pf-accent);
       font-weight: 600;
     }
+  }
+
+  .nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    .chevron {
+      width: 0.45rem;
+      height: 0.45rem;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(45deg);
+      transition: transform 0.15s;
+    }
+
+    &.open .chevron { transform: rotate(-135deg); }
+  }
+
+  .sub-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-left: 0.9rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid var(--pf-active);
+  }
+
+  .sub-note {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.85rem;
+    color: var(--pf-muted);
+
+    &.error { color: var(--pf-loss); }
+  }
+
+  .sub-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.7rem;
+    font-variant-numeric: tabular-nums;
+
+    .acct-name { font-size: 0.92rem; }
+    .acct-value { font-size: 1rem; font-weight: 700; color: var(--pf-text); }
+    .acct-pl { font-size: 0.8rem; font-weight: 600; }
+    .gain { color: var(--pf-gain); }
+    .loss { color: var(--pf-loss); }
   }
 }
 
@@ -91,9 +188,10 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
   min-height: 0;
-  overflow: auto;
-  padding: 1.25rem 2rem;
+  overflow: hidden;
+  padding: 2.5rem clamp(2rem, 4vw, 4rem);
 }
 
 .loading-state {
@@ -103,7 +201,7 @@
   width: 100%;
   height: 100%;
   font-size: 1.2rem;
-  color: #2b3a33;
+  color: var(--pf-text);
 }
 
 @media (max-width: 800px) {
@@ -122,12 +220,19 @@
 
   .app-sidebar {
     flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+
+    .nav-toggle { width: auto; gap: 0.6rem; }
+    .sub-nav { flex-direction: row; flex-wrap: wrap; margin-left: 0; border-left: 0; }
+
     width: auto;
     padding: 0.5rem 1rem;
     border-right: 0;
-    border-bottom: 1px solid #dbe5de;
+    border-bottom: 1px solid var(--pf-border);
     overflow-x: auto;
   }
 
-  .app-main { padding: 1rem; }
+  // Too narrow to fit everything on one screen, so let the page scroll
+  .app-main { padding: 1rem; overflow: auto; }
 }

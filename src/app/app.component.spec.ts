@@ -24,7 +24,7 @@ describe('AppComponent', () => {
   it('should render the title and subtitle', () => {
     const element: HTMLElement = fixture.nativeElement;
 
-    expect(element.querySelector('h1')?.textContent).toContain('S.T.A.S.H');
+    expect(element.querySelector('h1')?.textContent).toContain('S.T.A.S.H.');
     expect(element.querySelector('header p')?.textContent).toContain('Stash Your Cash');
   });
 });

@@ -16,6 +16,52 @@
   --fidelity-warning-bg: #fff6e6;
   --fidelity-warning-border: #e4be72;
   --fidelity-warning-text: #6d4d10;
+
+  /* Theme tokens: light (default) */
+  color-scheme: light;
+  --pf-bg: #f4f7f5;
+  --pf-bg-2: #e3ebe5;
+  --pf-card: #fff;
+  --pf-border: #dbe5de;
+  --pf-text: #1c2b23;
+  --pf-muted: #5f7267;
+  --pf-inset: #f3f7f4;
+  --pf-hover: #f4f7f5;
+  --pf-active: #e3ebe5;
+  --pf-gain: #1f7a3a;
+  --pf-loss: #c0392b;
+  --pf-green: #2f6f2a;
+  --pf-green-dark: #245a20;
+  --pf-accent: #245a20;
+  --pf-chart: #2f6f2a;
+  --pf-chart-fill: rgba(47, 111, 42, 0.12);
+  --pf-buy-bg: rgba(31, 122, 58, 0.1);
+  --pf-sell-bg: rgba(192, 57, 43, 0.1);
+  --pf-shadow: 0 1px 2px rgba(16, 40, 28, 0.05), 0 6px 20px rgba(16, 40, 28, 0.05);
+}
+
+/* Theme tokens: dark (set by ThemeService as data-theme on <html>) */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --pf-bg: #0e1512;
+  --pf-bg-2: #121b17;
+  --pf-card: #18221d;
+  --pf-border: #2a3a31;
+  --pf-text: #e3ece6;
+  --pf-muted: #93a69a;
+  --pf-inset: #1f2b25;
+  --pf-hover: #1f2b25;
+  --pf-active: #24372b;
+  --pf-gain: #4cc072;
+  --pf-loss: #ff6b5b;
+  --pf-green: #2f6f2a;
+  --pf-green-dark: #245a20;
+  --pf-accent: #8fd18a;
+  --pf-chart: #6fbf68;
+  --pf-chart-fill: rgba(111, 191, 104, 0.15);
+  --pf-buy-bg: rgba(76, 192, 114, 0.15);
+  --pf-sell-bg: rgba(255, 107, 91, 0.15);
+  --pf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -29,12 +75,20 @@ html, body {
   height: 100%;
 }
 
+/* Fluid root size: every rem in the app scales with the viewport,
+   so layouts keep the same proportions on any screen.
+   ~13px on 1366x768, 16px on 1920x1080, ~19px on 2560x1440. */
+html {
+  font-size: clamp(12px, 0.25vw + 0.45vh + 6.3px, 20px);
+}
+
 body {
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, Tahoma, sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.5;
-  color: #1c2b23;
-  background-color: #f4f7f5;
+  overflow: hidden;
+  color: var(--pf-text);
+  background-color: var(--pf-bg);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -50,11 +104,11 @@ app-root {
 }
 
 ::-webkit-scrollbar-track {
-  background: #e3ebe5;
+  background: var(--pf-bg-2);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2f6f2a;
+  background: var(--pf-green);
   border-radius: 0;
 
   &:hover {

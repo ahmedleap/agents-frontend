@@ -1,102 +1,277 @@
-/* Dashboard Component Styles */
-
 :host {
-  display: block;
-  width: 100%;
-}
-
-.dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.hero-section {
-  h2 {
-    margin-bottom: 2rem;
-    font-size: 2rem;
-    color: var(--fidelity-navy-900);
-  }
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: var(--fidelity-card);
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid var(--fidelity-green-700);
   display: flex;
   flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  color: var(--pf-text);
+}
+
+.page {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.card {
+  background: var(--pf-card);
+  border: 1px solid var(--pf-border);
+  border-radius: 2px;
+  box-shadow: var(--pf-shadow);
+  min-width: 0;
+}
+
+h2, h3, p { margin: 0; }
+
+.gain { color: var(--pf-gain); }
+.loss { color: var(--pf-loss); }
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  h2 {
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--pf-green-dark);
+  }
+  p, .asof { font-size: 0.9rem; color: var(--pf-muted); }
+  p { margin-top: 0.2rem; font-size: 1.5rem; font-weight: 700; }
+}
+
+/* ---------- Layout ---------- */
+
+.main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+  min-width: 0;
+  min-height: 0;
+
+  // Table cards fill their row and scroll their own rows
+  > .card, .lists > .card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  // Compact title bar and column headers on the table cards
+  > .card, .lists > .card {
+    .card-head {
+      padding: 0.5rem 1rem;
+
+      h3 { font-size: 0.95rem; }
+    }
+
+    th {
+      padding-top: 0.4rem;
+      padding-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
   }
 }
 
-.stat-label {
-  font-size: 0.875rem;
-  color: var(--fidelity-text-700);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.top {
+  display: grid;
+  grid-template-columns: minmax(15rem, 18.75rem) minmax(0, 1fr);
+  gap: 1rem;
 }
 
-.stat-value {
-  font-size: 1.75rem;
+.lists {
+  display: grid;
+  // Recent Trades running the full height on the left,
+  // Watchlist and Market Movers stacked in equal halves on the right
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "trades watchlist"
+    "trades movers";
+  gap: 1rem;
+  min-height: 0;
+
+  .watchlist { grid-area: watchlist; }
+  .movers { grid-area: movers; }
+  .recent-trades { grid-area: trades; }
+}
+
+/* ---------- Hero: today's P/L ---------- */
+
+.hero {
+  align-self: start;
+  aspect-ratio: 1;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #fff;
+  border: 0;
+  background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
+
+  &.down { background: linear-gradient(135deg, #c0392b 0%, #962d22 100%); }
+
+  .label { font-size: 0.95rem; opacity: 0.85; }
+  .value {
+    font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .change {
+    align-self: flex-start;
+    padding: 0.3rem 0.85rem;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.16);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .hero-total {
+    margin-top: 0.3rem;
+    font-size: 0.88rem;
+    opacity: 0.85;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ---------- Card headers ---------- */
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.9rem 1.25rem;
+
+  h3 { font-size: 1.15rem; }
+  .sub { font-size: 0.85rem; color: var(--pf-muted); margin-top: 0.1rem; }
+  strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+}
+
+/* ---------- Chart ---------- */
+
+.chart-card { display: flex; flex-direction: column; }
+
+.chart-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding: 0 1.25rem 1.25rem;
+}
+
+/* ---------- Tables ---------- */
+
+.table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+
+  // Still scrolls with the wheel / touch, just without a visible bar
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+
+th {
+  padding: 0.7rem 1rem;
+  text-align: right;
   font-weight: 600;
-  color: var(--fidelity-text-900);
+  font-size: 0.82rem;
+  color: var(--pf-muted);
+  background: var(--pf-inset);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-top: 1px solid var(--pf-border);
+  border-bottom: 1px solid var(--pf-border);
+  white-space: nowrap;
 }
 
-.alert {
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  font-weight: 500;
-
-  &.alert-warning {
-    background: var(--fidelity-warning-bg);
-    border: 1px solid var(--fidelity-warning-border);
-    color: var(--fidelity-warning-text);
-  }
-
-  p {
-    margin: 0;
-  }
+td {
+  padding: 0.8rem 1rem;
+  text-align: right;
+  border-bottom: 1px solid var(--pf-border);
+  white-space: nowrap;
 }
 
-.actions-section {
-  h3 {
-    margin-bottom: 1rem;
-    color: var(--fidelity-navy-900);
-  }
+th:first-child, td:first-child { text-align: left; padding-left: 1.25rem; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: var(--pf-inset); }
+
+.trades {
+  min-width: 36rem;
+
+  th:nth-child(2), td:nth-child(2),
+  th:nth-child(3), td:nth-child(3) { text-align: left; }
 }
 
-.action-btn {
-  background: var(--fidelity-green-600);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 2px;
+  color: #fff;
+  background: var(--pf-green);
+  font-weight: 700;
+  font-size: 0.9rem;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(10, 122, 75, 0.35);
-  }
+  &.small { width: 1.625rem; height: 1.625rem; font-size: 0.78rem; }
+}
 
-  &:active {
-    transform: translateY(0);
+.ticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+}
+
+.ticker-text {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.2;
+
+  small { font-weight: 400; color: var(--pf-muted); font-size: 0.8rem; }
+}
+
+.side {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  &.buy { color: var(--pf-gain); background: var(--pf-buy-bg); }
+  &.sell { color: var(--pf-loss); background: var(--pf-sell-bg); }
+}
+
+.empty { text-align: center; color: var(--pf-muted); padding: 2rem; }
+
+/* ---------- Responsive ---------- */
+
+// Too narrow to fit on one screen: stack everything and let the page scroll
+@media (max-width: 860px) {
+  :host, .page { flex: 1 0 auto; }
+  .page, .main { grid-template-rows: none; }
+  .top, .lists { grid-template-columns: 1fr; }
+  .lists {
+    grid-template-rows: none;
+    grid-template-areas: "watchlist" "movers" "trades";
   }
+  .hero { aspect-ratio: auto; }
+  .chart-wrap { min-height: 15rem; }
 }
