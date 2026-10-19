@@ -1,0 +1,366 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  color: var(--pf-text);
+  overflow-y: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+// Auto margins centre the card but keep its top reachable on short windows.
+// Vertical spacing below uses clamp(…, vh, …) so the card grows to fill taller windows.
+.page {
+  width: 100%;
+  max-width: 72rem;
+  margin: auto;
+  padding: 1rem 0;
+}
+
+h2, h3, p { margin: 0; }
+
+.card {
+  background: var(--pf-card);
+  border: 1px solid var(--pf-border);
+  border-radius: 10px;
+  box-shadow: var(--pf-shadow);
+  overflow: hidden;
+}
+
+/* ---------- Header band ---------- */
+
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: clamp(1.25rem, 3.5vh, 2.25rem) 2.5rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
+  overflow: hidden;
+
+  // Soft decorative circles, like the sign-up brand panel
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+  }
+  &::before { width: 14rem; height: 14rem; right: -4rem; top: -7rem; }
+  &::after { width: 8rem; height: 8rem; right: 6rem; bottom: -5rem; }
+
+  h2 {
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: clamp(1.85rem, 3.2vh, 2.4rem);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  p { margin-top: 0.25rem; font-size: 1.05rem; opacity: 0.85; }
+}
+
+.hero-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(3rem, 6vh, 3.75rem);
+  height: clamp(3rem, 6vh, 3.75rem);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+
+  svg { width: 1.7rem; height: 1.7rem; }
+}
+
+/* ---------- Form body ---------- */
+
+fieldset {
+  display: grid;
+  gap: clamp(1.35rem, 4vh, 2.5rem);
+  margin: 0;
+  padding: clamp(1.5rem, 4vh, 2.75rem) 2.5rem;
+  border: 0;
+  min-width: 0;
+}
+
+.step {
+  display: grid;
+  gap: clamp(0.75rem, 1.8vh, 1.1rem);
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pf-accent);
+  }
+}
+
+.num {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--pf-buy-bg);
+  color: var(--pf-gain);
+  font-size: 0.85rem;
+}
+
+// Account type tiles
+.types {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.type {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 0.25rem;
+  padding: clamp(0.8rem, 2.6vh, 1.5rem) 0.95rem;
+  border: 1.5px solid var(--pf-border);
+  border-radius: 8px;
+  background: var(--pf-inset);
+  color: var(--pf-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
+
+  &:hover { border-color: var(--pf-green); transform: translateY(-1px); }
+  &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+
+  &.selected {
+    border-color: var(--pf-green);
+    background: var(--pf-buy-bg);
+    box-shadow: 0 0 0 3px var(--pf-buy-bg);
+
+    .badge { background: var(--pf-green); color: #fff; }
+  }
+}
+
+.badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(2.4rem, 4.8vh, 3rem);
+  height: clamp(2.4rem, 4.8vh, 3rem);
+  margin-bottom: clamp(0.35rem, 1vh, 0.6rem);
+  border-radius: 8px;
+  background: var(--pf-active);
+  color: var(--pf-accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  transition: background 0.15s, color 0.15s;
+}
+
+.type {
+  strong { font-size: 0.98rem; }
+  small { color: var(--pf-muted); font-size: 0.8rem; line-height: 1.3; }
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+  font-size: 1rem;
+  font-weight: 600;
+
+  input {
+    width: 100%;
+    // Fixed height so the name and (larger-text) deposit inputs line up side by side
+    height: clamp(3.4rem, 6.2vh, 4rem);
+    padding: 0 1.1rem;
+    border: 1.5px solid var(--pf-border);
+    border-radius: 8px;
+    background: var(--pf-inset);
+    color: var(--pf-text);
+    font: inherit;
+    font-weight: 400;
+    font-size: 1.15rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &::placeholder { color: var(--pf-muted); opacity: 0.7; }
+    &:focus { outline: none; border-color: var(--pf-green); box-shadow: 0 0 0 3px var(--pf-buy-bg); }
+  }
+
+  &.has-error input {
+    border-color: var(--pf-loss);
+    &:focus { box-shadow: 0 0 0 3px var(--pf-sell-bg); }
+  }
+}
+
+.money {
+  position: relative;
+  display: block;
+
+  .prefix {
+    position: absolute;
+    left: 1.1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--pf-muted);
+    font-size: 1.15rem;
+    font-weight: 500;
+  }
+  input {
+    padding-left: 2.1rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Account name | deposit (with quick amounts under it)
+.details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 1.5rem;
+  align-items: start;
+}
+
+.field-group { display: grid; gap: 0.6rem; }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  padding: 0.45rem 1rem;
+  border: 1.5px solid var(--pf-border);
+  border-radius: 999px;
+  background: var(--pf-card);
+  color: var(--pf-accent);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover { border-color: var(--pf-green); }
+  &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+  &.selected { border-color: var(--pf-green); background: var(--pf-buy-bg); color: var(--pf-gain); }
+}
+
+.err { color: var(--pf-loss); font-weight: 500; font-size: 0.9rem; }
+
+.alert {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--pf-loss);
+  border-radius: 8px;
+  background: var(--pf-sell-bg);
+  color: var(--pf-loss);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+// "Opening Roth IRA with $2,500.00"
+.summary {
+  flex: 1;
+  min-width: 0;
+  padding: 0.95rem 1.2rem;
+  border: 1.5px dashed var(--pf-border);
+  border-radius: 8px;
+  color: var(--pf-muted);
+  font-size: 1rem;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+
+  &.ready {
+    border-style: solid;
+    border-color: var(--pf-green);
+    background: var(--pf-buy-bg);
+    color: var(--pf-text);
+
+    strong { color: var(--pf-gain); }
+  }
+}
+
+// Summary on the left, buttons on the right
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-top: clamp(1.35rem, 3vh, 2rem);
+  border-top: 1px solid var(--pf-border);
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.95rem 1.9rem;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.05s, box-shadow 0.15s;
+
+  &.primary {
+    color: #fff;
+    background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
+    box-shadow: 0 4px 14px -4px var(--pf-green);
+  }
+  &.ghost {
+    color: var(--pf-accent);
+    background: var(--pf-inset);
+    border: 1px solid var(--pf-border);
+  }
+  &:hover { filter: brightness(1.08); }
+  &:active { transform: translateY(1px); }
+}
+
+fieldset:disabled .btn { opacity: 0.75; cursor: progress; }
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .type, .chip, .summary, .btn { transition: none; }
+  .type:hover { transform: none; }
+  .spinner { animation-duration: 2s; }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1180px) {
+  .types { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .details { grid-template-columns: 1fr; }
+  .footer { flex-direction: column; align-items: stretch; }
+}
+
+@media (max-width: 600px) {
+  .hero { padding: 1.5rem; }
+  .hero h2 { font-size: 1.8rem; }
+  fieldset { padding: 1.5rem; }
+  .types { grid-template-columns: 1fr; }
+  .actions { flex-direction: column-reverse; }
+}
