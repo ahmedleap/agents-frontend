@@ -1,0 +1,153 @@
+<section class="signup">
+  <div class="card shell">
+    <!-- Left: brand panel -->
+    <aside class="brand" aria-hidden="true">
+      <div class="brand-top">
+        <span class="eyebrow">S.T.A.S.H.</span>
+        <h2>Start stashing your cash.</h2>
+        <p>One place to track every account, every holding, and every trade.</p>
+      </div>
+
+      <ul class="perks">
+        <li><span class="tick"></span>All your accounts in one dashboard</li>
+        <li><span class="tick"></span>Live prices and allocation breakdowns</li>
+        <li><span class="tick"></span>Roth IRA, 401k, 529, HSA and more</li>
+      </ul>
+
+      <p class="fine">Your password is encrypted before it's stored. We never see it.</p>
+    </aside>
+
+    <!-- Right: form / success -->
+    <div class="panel">
+      @if (created(); as body) {
+        <div class="success" role="status">
+          <span class="success-icon" aria-hidden="true"></span>
+          <h2>Looks good, {{ body.firstName }}!</h2>
+          <p class="muted">Sign-up isn't connected yet. This is what will be sent to the server:</p>
+          <pre class="payload">{{ preview(body) }}</pre>
+          <div class="actions">
+            <button type="button" class="btn ghost" (click)="startOver()">Start over</button>
+            <a class="btn primary" routerLink="/dashboard">Go to dashboard</a>
+          </div>
+        </div>
+      } @else {
+        <header class="panel-head">
+          <h2>Create your account</h2>
+          <p class="muted">It only takes a minute. All fields are required.</p>
+        </header>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <fieldset>
+            <!-- Left two columns: personal details. Right column: password, confirm, rules -->
+            <div class="fields">
+              <label class="field a-first" [class.has-error]="invalid('firstName')">
+                <span>First name <span class="req">*</span></span>
+                <input formControlName="firstName" autocomplete="given-name" placeholder="Jane">
+                @if (invalid('firstName')) { <small class="err">First name is required</small> }
+              </label>
+
+              <label class="field a-last" [class.has-error]="invalid('lastName')">
+                <span>Last name <span class="req">*</span></span>
+                <input formControlName="lastName" autocomplete="family-name" placeholder="Doe">
+                @if (invalid('lastName')) { <small class="err">Last name is required</small> }
+              </label>
+
+              <label class="field a-email" [class.has-error]="invalid('email')">
+                <span>Email <span class="req">*</span></span>
+                <input type="email" formControlName="email" autocomplete="email" placeholder="you@example.com">
+                @if (form.controls.email.hasError('taken')) {
+                  <small class="err">That email is already registered</small>
+                } @else if (invalid('email')) {
+                  <small class="err">Enter a valid email address</small>
+                }
+              </label>
+
+              <label class="field a-phone" [class.has-error]="invalid('phoneNumber')">
+                <span>Phone <span class="req">*</span></span>
+                <input
+                  type="tel"
+                  formControlName="phoneNumber"
+                  (input)="onPhoneInput($event)"
+                  inputmode="numeric"
+                  maxlength="14"
+                  autocomplete="tel-national"
+                  placeholder="(202) 555-0123">
+                @if (form.controls.phoneNumber.hasError('phoneInvalid')) {
+                  <small class="err">That isn't a valid US phone number</small>
+                } @else if (invalid('phoneNumber')) {
+                  <small class="err">Enter a 10-digit phone number</small>
+                }
+              </label>
+
+              <label class="field a-dob" [class.has-error]="invalid('dateOfBirth')">
+                <span>Date of birth <span class="req">*</span></span>
+                <input type="date" formControlName="dateOfBirth" [max]="today" autocomplete="bday">
+                @if (form.controls.dateOfBirth.hasError('tooYoung')) {
+                  <small class="err">You must be at least {{ minAge }}</small>
+                } @else if (invalid('dateOfBirth')) {
+                  <small class="err">Enter your date of birth</small>
+                }
+              </label>
+
+              <label class="field a-ssn" [class.has-error]="invalid('ssn')">
+                <span>Social Security number <span class="req">*</span></span>
+                <span class="input-wrap">
+                  <input
+                    [type]="showSsn() ? 'text' : 'password'"
+                    formControlName="ssn"
+                    (input)="onSsnInput($event)"
+                    inputmode="numeric"
+                    maxlength="11"
+                    autocomplete="off"
+                    placeholder="XXX-XX-XXXX">
+                  <button type="button" class="reveal" (click)="showSsn.set(!showSsn())"
+                          [attr.aria-label]="showSsn() ? 'Hide SSN' : 'Show SSN'">
+                    {{ showSsn() ? 'Hide' : 'Show' }}
+                  </button>
+                </span>
+                @if (form.controls.ssn.hasError('ssnInvalid')) {
+                  <small class="err">That isn't a valid Social Security number</small>
+                } @else if (invalid('ssn')) {
+                  <small class="err">Enter all 9 digits</small>
+                } @else {
+                  <small class="hint">Required by law for brokerage accounts</small>
+                }
+              </label>
+
+              <label class="field a-pw" [class.has-error]="invalid('password')">
+                <span>Password <span class="req">*</span></span>
+                <span class="input-wrap">
+                  <input
+                    [type]="showPassword() ? 'text' : 'password'"
+                    formControlName="password"
+                    autocomplete="new-password"
+                    aria-describedby="pw-rules">
+                  <button type="button" class="reveal" (click)="showPassword.set(!showPassword())"
+                          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+                    {{ showPassword() ? 'Hide' : 'Show' }}
+                  </button>
+                </span>
+              </label>
+
+              <label class="field a-confirm" [class.has-error]="mismatch">
+                <span>Confirm password <span class="req">*</span></span>
+                <input [type]="showPassword() ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password">
+                @if (mismatch) { <small class="err">Passwords don't match</small> }
+              </label>
+
+              <ul id="pw-rules" class="rules a-rules" aria-live="polite">
+                @for (r of passwordRules(); track r.label) {
+                  <li [class.met]="r.met">{{ r.label }}</li>
+                }
+              </ul>
+            </div>
+
+            <button type="submit" class="btn primary block">Create account</button>
+
+            <p class="switch muted">Already have an account? <a class="link" routerLink="/login">Log in</a></p>
+          </fieldset>
+        </form>
+      }
+    </div>
+  </div>
+</section>

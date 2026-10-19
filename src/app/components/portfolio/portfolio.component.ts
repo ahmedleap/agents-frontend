@@ -1,22 +1,31 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { map } from 'rxjs';
-import { DashboardService } from '../../core/services/dashboard.service';
-
-interface Holding {
-  ticker: string;
-  name: string;
-  sector: string;
-  shares: number;
-  avgCost: number;
-  price: number;
-}
+import { ActivatedRoute } from '@angular/router';
+import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import {
+  AllocationDto,
+  HoldingDto,
+  PortfolioApiService
+} from '../../core/services/portfolio-api.service';
 
 type SortKey = 'value' | 'ticker' | 'return';
 
-// One colour per sector. Add more sectors here as you need them.
+interface PortfolioView {
+  title: string;
+  holdings: HoldingDto[];
+  totals: { value: number; cost: number; gain: number; ret: number };
+  allocation: AllocationDto;
+}
+
+type LoadState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; view: PortfolioView };
+
+// One colour per industry. Add more here as you need them.
 const SECTOR_COLORS: Record<string, string> = {
   Technology: '#2b6cb0',
   Automotive: '#d97706',
@@ -25,7 +34,10 @@ const SECTOR_COLORS: Record<string, string> = {
   Energy: '#b7791f',
   'Consumer Goods': '#c05681'
 };
-const DEFAULT_COLOR = '#5f7267';
+// Used for industries not listed above, and for holding badges (the API has no sector per holding)
+const PALETTE = ['#2b6cb0', '#d97706', '#2f6f2a', '#6b46c1', '#b7791f', '#c05681', '#0e7c86', '#5f7267'];
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Component({
   selector: 'app-portfolio',
@@ -35,75 +47,61 @@ const DEFAULT_COLOR = '#5f7267';
   styleUrls: ['./portfolio.component.scss']
 })
 export class PortfolioComponent {
-  private readonly accounts = inject(DashboardService).accounts;
-  private readonly route = inject(ActivatedRoute);
-  private readonly accountIdParam = toSignal(
-    this.route.paramMap.pipe(map(p => p.get('accountId'))),
-    { initialValue: this.route.snapshot.paramMap.get('accountId') }
-  );
+  private readonly api = inject(PortfolioApiService);
+  // No login yet, so every request is made as the dev test client
+  private readonly clientId = environment.devClientId;
 
-  // Falls back to the first account for /portfolio or an unknown id
-  protected readonly accountId = computed(() => {
-    const list = this.accounts();
-    return list.find(account => account.id === this.accountIdParam())?.id ?? list[0]?.id ?? '';
-  });
-
-  protected readonly account = computed(() => {
-    const list = this.accounts();
-    return list.find(account => account.id === this.accountId())?.name ?? '';
-  });
   protected readonly asOf = new Date();
 
-  // Replace with your real holdings
-  private readonly holdings = signal<Holding[]>([
-    { ticker: 'AAPL', name: 'Apple Inc.', sector: 'Technology', shares: 150, avgCost: 145, price: 178.25 },
-    { ticker: 'MSFT', name: 'Microsoft Corp.', sector: 'Technology', shares: 75, avgCost: 310, price: 378.5 },
-    { ticker: 'TSLA', name: 'Tesla Inc.', sector: 'Automotive', shares: 50, avgCost: 240, price: 195.75 }
-  ]);
+  // Loads the account whose UUID is in the URL (/portfolio/:accountId)
+  protected readonly state = toSignal(
+    inject(ActivatedRoute).paramMap.pipe(
+      map(p => p.get('accountId')),
+      switchMap(accountId => this.load(accountId)),
+    ),
+    { initialValue: { status: 'loading' } as LoadState }
+  );
+
+  private readonly view = computed(() => {
+    const s = this.state();
+    return s.status === 'ready' ? s.view : null;
+  });
+
+  protected readonly account = computed(() => this.view()?.title ?? 'Portfolio');
 
   protected readonly query = signal('');
   protected readonly sortBy = signal<SortKey>('value');
 
   protected readonly rows = computed(() =>
-    this.holdings().map(h => {
-      const value = h.shares * h.price;
-      const cost = h.shares * h.avgCost;
-      const gain = value - cost;
-      return {
-        ...h,
-        value,
-        cost,
-        gain,
-        ret: (gain / cost) * 100,
-        color: SECTOR_COLORS[h.sector] ?? DEFAULT_COLOR
-      };
-    })
+    (this.view()?.holdings ?? []).map((h, i) => ({
+      ticker: h.ticker,
+      name: h.name,
+      shares: h.quantity,
+      avgCost: h.averageCostBasis,
+      price: h.currentPrice,
+      value: h.currentValue,
+      gain: h.gainLossDollars,
+      ret: h.gainLossPercent,
+      color: PALETTE[i % PALETTE.length]
+    }))
   );
 
   protected readonly totals = computed(() => {
-    const rows = this.rows();
-    const value = rows.reduce((s, r) => s + r.value, 0);
-    const cost = rows.reduce((s, r) => s + r.cost, 0);
-    const gain = value - cost;
-    return { value, cost, gain, ret: (gain / cost) * 100, count: rows.length };
+    const t = this.view()?.totals ?? { value: 0, cost: 0, gain: 0, ret: 0 };
+    return { ...t, count: this.rows().length };
   });
 
-  // Groups holdings by sector and works out each sector's share of the portfolio
-  protected readonly allocation = computed(() => {
-    const total = this.totals().value;
-    const groups = new Map<string, { sector: string; value: number; tickers: string[]; color: string }>();
-
-    for (const r of this.rows()) {
-      const group = groups.get(r.sector) ?? { sector: r.sector, value: 0, tickers: [], color: r.color };
-      group.value += r.value;
-      group.tickers.push(r.ticker);
-      groups.set(r.sector, group);
-    }
-
-    return [...groups.values()]
+  protected readonly allocation = computed(() =>
+    (this.view()?.allocation.industryBreakdown ?? [])
+      .slice()
       .sort((a, b) => b.value - a.value)
-      .map(g => ({ ...g, weight: (g.value / total) * 100 }));
-  });
+      .map((a, i) => ({
+        sector: a.industry,
+        value: a.value,
+        weight: a.percentage,
+        color: SECTOR_COLORS[a.industry] ?? PALETTE[i % PALETTE.length]
+      }))
+  );
 
   protected readonly visibleRows = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -124,4 +122,38 @@ export class PortfolioComponent {
   protected onSort(event: Event): void {
     this.sortBy.set((event.target as HTMLSelectElement).value as SortKey);
   }
+
+  private load(accountId: string | null) {
+    if (!accountId || !UUID.test(accountId)) {
+      return of<LoadState>({ status: 'error', message: `"${accountId ?? ''}" isn't a valid account. Pick an account from the sidebar.` });
+    }
+
+    const id = this.clientId;
+    const request = forkJoin({
+      p: this.api.getAccountPortfolio(id, accountId),
+      allocation: this.api.getAccountAllocation(id, accountId)
+    }).pipe(map(({ p, allocation }): PortfolioView => ({
+      title: p.accountName,
+      holdings: p.holdings ?? [],
+      totals: { value: p.totalPortfolioValue, cost: p.totalCostBasis, gain: p.totalGainLossDollars, ret: p.totalGainLossPercent },
+      allocation
+    })));
+
+    return request.pipe(
+      map((view): LoadState => ({ status: 'ready', view })),
+      catchError((err: HttpErrorResponse) => {
+        console.error('Portfolio request failed', err);
+        return of<LoadState>({ status: 'error', message: describeError(err) });
+      }),
+      startWith<LoadState>({ status: 'loading' })
+    );
+  }
+}
+
+function describeError(err: HttpErrorResponse): string {
+  // Status 0 means the browser never got a usable response: backend down, or blocked by CORS
+  if (err.status === 0) {
+    return `Couldn't reach the backend at ${environment.apiUrl}. If it is running, check the browser console for a CORS error.`;
+  }
+  return `The backend returned ${err.status} for ${err.url ?? 'the request'}.`;
 }
