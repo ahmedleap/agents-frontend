@@ -165,4 +165,4 @@ Follow the Angular style guide: https://angular.dev/style-guide
 
 ## License
 
-Proprietary - Agents of Leap
+Proprietary - Agents of Leaps
