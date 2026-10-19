@@ -144,6 +144,15 @@ h2, h3, p { margin: 0; }
 
   .stat-label { font-size: 0.88rem; color: var(--pf-muted); }
   strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+  .stat-sub { font-size: 0.8rem; color: var(--pf-muted); font-variant-numeric: tabular-nums; }
+
+  // Cash stands out from the holdings stats beside it
+  &.cash {
+    border-left-color: var(--pf-gain);
+    background: linear-gradient(135deg, var(--pf-buy-bg) 0%, var(--pf-card) 70%);
+
+    strong { color: var(--pf-gain); }
+  }
 }
 
 .notice {

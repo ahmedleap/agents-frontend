@@ -10,7 +10,7 @@
 }
 
 // Auto margins centre the card but keep its top reachable on short windows.
-// Vertical spacing below uses clamp(…, vh, …) so the card grows to fill taller windows.
+// Vertical spacing below uses clamp(min, vh, max) so the card grows to fill taller windows.
 .page {
   width: 100%;
   max-width: 72rem;

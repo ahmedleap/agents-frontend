@@ -20,6 +20,17 @@ export interface AccountDto {
   openDate: string;
 }
 
+// Mirrors com.agentsbackend.DTO.response.AccountsResponse.Summary
+export interface AccountSummaryDto {
+  cashBalance: number;
+  /** Cash minus money reserved for open buy orders */
+  availableBalance: number;
+  holdingsValue: number;
+  /** Cash + holdings */
+  totalValue: number;
+  summaryDate: string;
+}
+
 /** AccountController: /api/accounts */
 @Injectable({ providedIn: 'root' })
 export class AccountApiService {
@@ -28,6 +39,10 @@ export class AccountApiService {
 
   /** Emits after an account is added, so lists (like the sidebar) can reload. */
   readonly changed$ = this.changedSubject.asObservable();
+
+  getAccountSummary(accountId: string): Observable<AccountSummaryDto> {
+    return this.api.get<AccountSummaryDto>(`accounts/${accountId}/summary`);
+  }
 
   createAccount(request: CreateAccountRequest): Observable<AccountDto> {
     return this.api.post<AccountDto>('accounts', request).pipe(tap(() => this.changedSubject.next()));
