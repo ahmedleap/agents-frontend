@@ -1,4 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { ApiService } from './api.service';
+import { DashboardService } from './dashboard.service';
 
 export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL';
 
@@ -10,30 +12,32 @@ export interface Transaction {
   createdAt: string;
 }
 
-/** Account-scoped cash activity. Replace the mock source with the transactions API when available. */
+interface TransactionItemDto {
+  transactionId: string;
+  type: TransactionType;
+  amount: number;
+  createdAt: string;
+}
+
+interface CashMutationResponse {
+  message: string;
+  newCashBalance: number;
+  transactionType: TransactionType;
+}
+
+/** Account-scoped cash activity loaded from the accounts API. */
 @Injectable({ providedIn: 'root' })
 export class TransactionService {
-  private readonly transactionsByAccount = signal<Record<string, Transaction[]>>({
-    'roth-ira': [
-      { transactionId: 'txn-1001', accountId: 'roth-ira', txnType: 'DEPOSIT', amount: 5000, createdAt: '2026-10-15T09:30:00Z' },
-      { transactionId: 'txn-1002', accountId: 'roth-ira', txnType: 'WITHDRAWAL', amount: 750, createdAt: '2026-10-04T13:15:00Z' },
-      { transactionId: 'txn-1003', accountId: 'roth-ira', txnType: 'DEPOSIT', amount: 2500, createdAt: '2026-09-20T15:45:00Z' }
-    ],
-    '401k': [
-      { transactionId: 'txn-2001', accountId: '401k', txnType: 'DEPOSIT', amount: 3200, createdAt: '2026-10-10T12:00:00Z' }
-    ],
-    hsa: [],
-    '529': []
-  });
+  private readonly api = inject(ApiService);
+  private readonly dashboard = inject(DashboardService);
+  private readonly transactionsByAccount = signal<Record<string, Transaction[]>>({});
 
-  private readonly balancesByAccount = signal<Record<string, number>>({
-    'roth-ira': 16850.72,
-    '401k': 18420.15,
-    hsa: 11380.4,
-    '529': 9250.88
-  });
+  private readonly balancesByAccount = signal<Record<string, number>>({});
+
+  private readonly loadedAccounts = new Set<string>();
 
   transactionsForAccount(accountId: string): Transaction[] {
+    this.loadTransactions(accountId);
     return this.transactionsByAccount()[accountId] ?? [];
   }
 
@@ -42,21 +46,34 @@ export class TransactionService {
   }
 
   addTransaction(accountId: string, txnType: TransactionType, amount: number): void {
-    const transaction: Transaction = {
-      transactionId: crypto.randomUUID(),
-      accountId,
-      txnType,
-      amount,
-      createdAt: new Date().toISOString()
-    };
+    const endpoint = `accounts/${encodeURIComponent(accountId)}/${txnType === 'DEPOSIT' ? 'deposit' : 'withdraw'}`;
+    this.api.patch<CashMutationResponse>(endpoint, { amount }).subscribe({
+      next: response => {
+        this.balancesByAccount.update(balances => ({ ...balances, [accountId]: response.newCashBalance }));
+        this.dashboard.updateAvailableCash(accountId, response.newCashBalance);
+        this.loadTransactions(accountId, true);
+      },
+      error: error => console.error('Cash transaction request failed', error)
+    });
+  }
 
-    this.transactionsByAccount.update(transactions => ({
-      ...transactions,
-      [accountId]: [transaction, ...(transactions[accountId] ?? [])]
-    }));
-    this.balancesByAccount.update(balances => ({
-      ...balances,
-      [accountId]: (balances[accountId] ?? 0) + (txnType === 'DEPOSIT' ? amount : -amount)
-    }));
+  private loadTransactions(accountId: string, reload = false): void {
+    if (!accountId || (!reload && this.loadedAccounts.has(accountId))) return;
+    this.loadedAccounts.add(accountId);
+    this.api.get<TransactionItemDto[]>(`accounts/${encodeURIComponent(accountId)}/transactions`, {
+      params: { limit: 100 }
+    }).subscribe({
+      next: transactions => this.transactionsByAccount.update(current => ({
+        ...current,
+        [accountId]: transactions.map(transaction => ({
+          transactionId: transaction.transactionId,
+          accountId,
+          txnType: transaction.type,
+          amount: transaction.amount,
+          createdAt: transaction.createdAt
+        }))
+      })),
+      error: error => console.error('Transaction history request failed', error)
+    });
   }
 }

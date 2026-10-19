@@ -1,4 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { catchError, forkJoin, map, of } from 'rxjs';
+import { TradingApiService } from './trading-api.service';
 
 export type OrderStatus = 'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED';
 export type OrderType = 'BUY' | 'SELL';
@@ -14,25 +16,43 @@ export interface Order {
   status: OrderStatus;
 }
 
-/** Account-scoped order history. Replace the mock source with the orders endpoint when its URL is available. */
+/** Account-scoped order history loaded from the orders API. */
 @Injectable({ providedIn: 'root' })
 export class OrderHistoryService {
-  private readonly ordersByAccount = signal<Record<string, Order[]>>({
-    'roth-ira': [
-      { orderId: '550e8400-e29b-41d4-a716-446655440400', instrument: 'AAPL', createdAt: '2026-10-15T14:30:00Z', orderType: 'BUY', quantity: 100, limitPrice: 140, filledPrice: null, status: 'PENDING' },
-      { orderId: '550e8400-e29b-41d4-a716-446655440401', instrument: 'MSFT', createdAt: '2026-10-14T16:10:00Z', orderType: 'BUY', quantity: 25, limitPrice: 177.5, filledPrice: 177.5, status: 'FILLED' },
-      { orderId: '550e8400-e29b-41d4-a716-446655440403', instrument: 'TSLA', createdAt: '2026-10-13T11:45:00Z', orderType: 'SELL', quantity: 12, limitPrice: null, filledPrice: 196.4, status: 'FILLED' },
-      { orderId: '550e8400-e29b-41d4-a716-446655440404', instrument: 'VTI', createdAt: '2026-10-12T09:20:00Z', orderType: 'SELL', quantity: 30, limitPrice: 185, filledPrice: null, status: 'PENDING' }
-    ],
-    '401k': [
-      { orderId: '550e8400-e29b-41d4-a716-446655440402', instrument: 'MSFT', createdAt: '2026-10-15T10:15:00Z', orderType: 'SELL', quantity: 40, limitPrice: 380, filledPrice: 381.25, status: 'FILLED' },
-      { orderId: '550e8400-e29b-41d4-a716-446655440405', instrument: 'AAPL', createdAt: '2026-10-11T13:00:00Z', orderType: 'BUY', quantity: 8, limitPrice: null, filledPrice: null, status: 'PENDING' }
-    ],
-    hsa: [],
-    '529': []
-  });
+  private readonly api = inject(TradingApiService);
+  private readonly ordersByAccount = signal<Record<string, Order[]>>({});
 
   ordersForAccount(accountId: string): Order[] {
+    if (accountId && !this.loadedAccounts.has(accountId)) {
+      this.loadedAccounts.add(accountId);
+      this.api.getOrderHistory(accountId).subscribe({
+        next: orders => forkJoin(orders.map(order => this.api.getOrder(order.orderId).pipe(
+          map(detail => ({
+            orderId: detail.orderId,
+            instrument: detail.instrument?.ticker ?? 'Instrument unavailable',
+            createdAt: detail.createdAt,
+            orderType: detail.orderType,
+            quantity: detail.quantity,
+            limitPrice: detail.limitPrice ?? null,
+            filledPrice: detail.filledPrice ?? null,
+            status: detail.status as OrderStatus
+          })),
+          catchError(() => of({
+            orderId: order.orderId,
+            instrument: 'Instrument unavailable',
+            createdAt: '',
+            orderType: order.orderType,
+            quantity: order.quantity,
+            limitPrice: order.limitPrice ?? null,
+            filledPrice: order.filledPrice ?? null,
+            status: order.status as OrderStatus
+          }))
+        ))).subscribe(enriched => this.ordersByAccount.update(current => ({ ...current, [accountId]: enriched }))),
+        error: error => console.error('Order history request failed', error)
+      });
+    }
     return this.ordersByAccount()[accountId] ?? [];
   }
+
+  private readonly loadedAccounts = new Set<string>();
 }

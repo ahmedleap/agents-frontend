@@ -2,10 +2,12 @@ import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
 
 interface Instrument {
+  instrumentId: string;
   symbol: string;
   name: string;
   type: string;
@@ -29,6 +31,7 @@ type OrderType = 'market' | 'limit';
 export class TradesComponent {
   private readonly router = inject(Router);
   private readonly accounts = inject(DashboardService).accounts;
+  private readonly tradingApi = inject(TradingApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
@@ -39,13 +42,7 @@ export class TradesComponent {
     const accounts = this.accounts();
     return accounts.find(account => account.id === this.accountIdParam()) ?? accounts[0];
   });
-  private readonly cashBalances = signal<Record<string, number>>({
-    'roth-ira': 24850.72,
-    '401k': 18420.15,
-    hsa: 11380.4,
-    '529': 9250.88
-  });
-  protected readonly cashBalance = computed(() => this.cashBalances()[this.account()?.id ?? ''] ?? 24850.72);
+  protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
   protected readonly searchQuery = signal('');
   protected readonly selected = signal<Instrument | null>(null);
   protected readonly side = signal<Side>('buy');
@@ -53,13 +50,11 @@ export class TradesComponent {
   protected readonly limitPrice = signal(0);
   protected readonly quantity = signal(10);
   protected readonly confirmed = signal(false);
+  protected readonly loading = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly submitting = signal(false);
 
-  protected readonly instruments: Instrument[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', type: 'NASDAQ', price: 178.25, change: 2.41, changePct: 1.37, points: [18, 24, 21, 34, 31, 42, 50, 46, 58, 66, 62, 78], color: '#2f6f2a' },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', type: 'NASDAQ', price: 378.5, change: 4.82, changePct: 1.29, points: [70, 62, 64, 53, 58, 48, 44, 50, 37, 30, 34, 22], color: '#2b6cb0' },
-    { symbol: 'TSLA', name: 'Tesla Inc.', type: 'NASDAQ', price: 195.75, change: -3.16, changePct: -1.59, points: [24, 31, 28, 39, 36, 48, 43, 54, 50, 62, 59, 72], color: '#c0392b' },
-    { symbol: 'VTI', name: 'Vanguard Total Market ETF', type: 'NYSE Arca', price: 265.18, change: 1.08, changePct: 0.41, points: [46, 42, 50, 48, 54, 52, 58, 57, 63, 60, 67, 65], color: '#6b46c1' }
-  ];
+  protected readonly instruments = signal<Instrument[]>([]);
 
   protected readonly estimatedTotal = computed(() => {
     const instrument = this.selected();
@@ -73,17 +68,15 @@ export class TradesComponent {
     return this.orderType() === 'limit' ? this.limitPrice() : instrument.price;
   });
 
-  protected readonly visibleInstruments = computed(() => {
-    const query = this.searchQuery().trim().toLowerCase();
-    if (!query) return this.instruments;
-    return this.instruments.filter(instrument =>
-      instrument.symbol.toLowerCase().includes(query) || instrument.name.toLowerCase().includes(query)
-    );
-  });
+  protected readonly visibleInstruments = computed(() => this.instruments());
+
+  constructor() {
+    this.loadInstruments();
+  }
 
   protected readonly canSubmit = computed(() => {
     const total = this.estimatedTotal();
-    return !!this.selected() && this.quantity() > 0 && this.executionPrice() > 0 && (this.side() === 'sell' || total <= this.cashBalance());
+    return !!this.account() && !!this.selected() && this.quantity() > 0 && this.executionPrice() > 0 && (this.side() === 'sell' || total <= this.cashBalance());
   });
 
   protected openOrder(instrument: Instrument): void {
@@ -93,10 +86,37 @@ export class TradesComponent {
     this.limitPrice.set(instrument.price);
     this.quantity.set(10);
     this.confirmed.set(false);
+    this.error.set(null);
+    if (instrument.price > 0) return;
+    this.tradingApi.getQuote(instrument.symbol).subscribe({
+      next: quote => {
+        const updated = this.withQuote(instrument, quote);
+        this.selected.set(updated);
+        this.instruments.update(items => items.map(item => item.symbol === updated.symbol ? updated : item));
+      },
+      error: () => this.error.set('The latest quote could not be loaded. Review the order before submitting.')
+    });
   }
 
   protected onSearch(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
+    const query = (event.target as HTMLInputElement).value.trim();
+    this.searchQuery.set(query);
+    this.error.set(null);
+    if (!query) {
+      this.loadInstruments();
+      return;
+    }
+    this.loading.set(true);
+    this.tradingApi.searchInstruments(query).subscribe({
+      next: response => {
+        this.hydrateInstruments(response.results ?? []);
+      },
+      error: () => {
+        this.instruments.set([]);
+        this.loading.set(false);
+        this.error.set('Instrument search is unavailable. Check your session and try again.');
+      }
+    });
   }
 
   protected switchAccount(event: Event): void {
@@ -132,12 +152,101 @@ export class TradesComponent {
   }
 
   protected submitOrder(): void {
-    if (!this.canSubmit()) return;
-    if (this.side() === 'buy') {
-      const accountId = this.account()?.id ?? '';
-      this.cashBalances.update(balances => ({ ...balances, [accountId]: this.cashBalance() - this.estimatedTotal() }));
+    const instrument = this.selected();
+    const accountId = this.account()?.id;
+    if (!this.canSubmit() || !instrument || !accountId) return;
+    if (!instrument.instrumentId) {
+      this.error.set('The backend did not return an instrument UUID, so this order cannot be placed.');
+      return;
     }
-    this.confirmed.set(true);
+    this.submitting.set(true);
+    this.error.set(null);
+    this.tradingApi.createOrder({
+      accountId,
+      instrumentId: instrument.instrumentId,
+      quantity: this.quantity(),
+      price: this.orderType() === 'limit' ? this.limitPrice() : undefined,
+      orderType: this.side().toUpperCase() as 'BUY' | 'SELL'
+    }).subscribe({
+      next: (_response: CreateOrderResponse) => {
+        this.submitting.set(false);
+        this.confirmed.set(true);
+      },
+      error: () => {
+        this.submitting.set(false);
+        this.error.set('The order was rejected by the trading service. No local balance was changed.');
+      }
+    });
+  }
+
+  private toInstrument(result: InstrumentSearchResult, index: number): Instrument {
+    return {
+      instrumentId: result.instrumentId,
+      symbol: result.ticker,
+      name: result.name,
+      type: result.assetClass,
+      price: 0,
+      change: 0,
+      changePct: 0,
+      points: [42, 42],
+      color: ['#2f6f2a', '#2b6cb0', '#c0392b', '#6b46c1'][index % 4]
+    };
+  }
+
+  private loadInstruments(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.tradingApi.listInstruments().subscribe({
+      next: response => this.hydrateInstruments(response.results ?? []),
+      error: () => {
+        this.instruments.set([]);
+        this.loading.set(false);
+        this.error.set('Instrument list is unavailable. Check your session and try again.');
+      }
+    });
+  }
+
+  private hydrateInstruments(results: InstrumentSearchResult[]): void {
+    const instruments = results.map((result, index) => this.toInstrument(result, index));
+    if (!instruments.length) {
+      this.instruments.set([]);
+      this.loading.set(false);
+      return;
+    }
+
+    this.instruments.set(instruments);
+    this.loading.set(false);
+
+    forkJoin(instruments.map(instrument => this.tradingApi.getQuote(instrument.symbol).pipe(
+      map(quote => this.withQuote(instrument, quote)),
+      catchError(() => of(instrument)),
+    ).pipe(
+      map(quotedInstrument => quotedInstrument),
+      // History is independent from quote availability. A symbol can still show a trend if its quote is stale.
+      switchMap(quotedInstrument => forkJoin({
+        instrument: of(quotedInstrument),
+        history: this.tradingApi.getHistory(instrument.symbol).pipe(catchError(() => of(null as HistoryResponseDto | null)))
+      })),
+      map(({ instrument: quotedInstrument, history }) => history ? this.withHistory(quotedInstrument, history) : quotedInstrument)
+    ))).subscribe(updated => {
+      this.instruments.set(updated);
+    });
+  }
+
+  private withQuote(instrument: Instrument, quote: QuoteDto): Instrument {
+    return {
+      ...instrument,
+      price: quote.lastPrice ?? quote.ask ?? quote.bid ?? 0,
+      change: quote.priceChange ?? 0,
+      changePct: quote.priceChangePercent ?? 0
+    };
+  }
+
+  private withHistory(instrument: Instrument, history: HistoryResponseDto): Instrument {
+    const points = history.bars
+      .map(bar => bar.close)
+      .filter(price => Number.isFinite(price) && price > 0);
+    return points.length > 1 ? { ...instrument, points } : instrument;
   }
 
   protected chartPoints(points: number[]): string {

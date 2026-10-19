@@ -48,14 +48,14 @@
       @if (!isAuthPage()) {
       <nav class="app-sidebar" aria-label="Main navigation">
         <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
-        <a class="nav-link trade-link" [routerLink]="['/trades', accounts()[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           <span class="trade-icon" aria-hidden="true">↗</span>
           Trade
         </a>
-        <a class="nav-link" [routerLink]="['/history', accounts()[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           History
         </a>
-        <a class="nav-link" [routerLink]="['/transactions', accounts()[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           Transactions
         </a>
 

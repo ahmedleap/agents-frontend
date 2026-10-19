@@ -32,6 +32,8 @@ h2, p { margin: 0; }
 .search-icon { padding-left: 0.8rem; color: var(--pf-muted); font-size: 1.25rem; transform: rotate(-20deg); }
 .search-field input { width: 100%; padding: 0.65rem 0.75rem; border: 0; outline: 0; background: transparent; color: var(--pf-text); font: inherit; font-size: 0.88rem; }
 .result-count { color: var(--pf-muted); font-size: 0.78rem; }
+.status-message { color: var(--pf-muted); font-size: 0.82rem; }
+.error-banner { padding: 0.7rem 0.9rem; border-left: 4px solid var(--pf-loss); background: var(--pf-warning-bg); color: var(--pf-loss); font-size: 0.82rem; }
 
 .instrument-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .instrument-card { min-width: 0; padding: 1.1rem; border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-card); box-shadow: var(--pf-shadow); }

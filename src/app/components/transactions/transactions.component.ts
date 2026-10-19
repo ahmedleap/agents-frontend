@@ -32,7 +32,7 @@ export class TransactionsComponent {
   });
   protected readonly account = computed(() => this.accounts().find(account => account.id === this.accountId()));
   protected readonly transactions = computed(() => this.transactionService.transactionsForAccount(this.accountId()));
-  protected readonly cashBalance = computed(() => this.transactionService.balanceForAccount(this.accountId()));
+  protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
   protected readonly query = signal('');
   protected readonly sortBy = signal<SortKey>('createdAt');
   protected readonly sortDescending = signal(true);

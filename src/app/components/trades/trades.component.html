@@ -7,7 +7,7 @@
     </div>
     <div class="account-context">
       <label class="account-label" for="trade-account">Trading from</label>
-      <select id="trade-account" class="account-select" [value]="account()?.id" (change)="switchAccount($event)" aria-label="Select trading account">
+      <select id="trade-account" class="account-select" [value]="account()?.id ?? ''" (change)="switchAccount($event)" aria-label="Select trading account">
         @for (availableAccount of accounts(); track availableAccount.id) {
           <option [value]="availableAccount.id">{{ availableAccount.name }}</option>
         }
@@ -36,6 +36,13 @@
     <span class="result-count">{{ visibleInstruments().length }} instruments</span>
   </div>
 
+  @if (loading()) {
+    <p class="status-message">Searching instruments...</p>
+  }
+  @if (error(); as message) {
+    <p class="error-banner" role="alert">{{ message }}</p>
+  }
+
   <div class="instrument-grid">
     @for (instrument of visibleInstruments(); track instrument.symbol) {
       <article class="instrument-card">
@@ -51,11 +58,15 @@
         </div>
 
         <div class="price-row">
-          <strong>{{ instrument.price | currency }}</strong>
-          <span [class.gain]="instrument.change >= 0" [class.loss]="instrument.change < 0">
-            {{ instrument.change >= 0 ? '+' : '' }}{{ instrument.change | currency }}
-            ({{ instrument.changePct >= 0 ? '+' : '' }}{{ instrument.changePct | number: '1.2-2' }}%)
-          </span>
+          @if (instrument.price > 0) {
+            <strong>{{ instrument.price | currency }}</strong>
+            <span [class.gain]="instrument.change >= 0" [class.loss]="instrument.change < 0">
+              {{ instrument.change >= 0 ? '+' : '' }}{{ instrument.change | currency }}
+              ({{ instrument.changePct >= 0 ? '+' : '' }}{{ instrument.changePct | number: '1.2-2' }}%)
+            </span>
+          } @else {
+            <strong>Quote unavailable</strong>
+          }
         </div>
 
         <div class="chart" aria-label="Recent price trend">
@@ -94,7 +105,7 @@
           <div class="success-mark" aria-hidden="true">&#10003;</div>
           <p class="eyebrow">ORDER RECEIVED</p>
           <h2>Trade confirmed</h2>
-          <p class="confirmation-copy">Your {{ orderType() }} order to {{ side() }} {{ quantity() }} {{ instrument.symbol }} in {{ account()?.name }} has been placed successfully.</p>
+          <p class="confirmation-copy">Your {{ orderType() }} order to {{ side() }} {{ quantity() }} {{ instrument.symbol }} in {{ account()?.name ?? 'your account' }} has been placed successfully.</p>
           <div class="confirmation-summary">
             <span>Estimated total</span>
             <strong>{{ estimatedTotal() | currency }}</strong>
@@ -115,7 +126,11 @@
             <span class="symbol-badge" [style.background-color]="instrument.color">{{ instrument.symbol[0] }}</span>
             <div><strong>{{ instrument.name }}</strong><span>{{ instrument.type }}</span></div>
           </div>
-          <strong>{{ instrument.price | currency }}</strong>
+          @if (instrument.price > 0) {
+            <strong>{{ instrument.price | currency }}</strong>
+          } @else {
+            <strong>Quote unavailable</strong>
+          }
         </div>
 
         <div class="side-toggle" role="group" aria-label="Order side">
@@ -151,7 +166,10 @@
         @if (!canSubmit()) {
           <p class="error-text">This order is higher than your available cash balance.</p>
         }
-        <button type="button" class="primary-button full" [disabled]="!canSubmit()" (click)="submitOrder()">Review and place order</button>
+        <button type="button" class="primary-button full" [disabled]="!canSubmit() || submitting()" (click)="submitOrder()">{{ submitting() ? 'Submitting...' : 'Review and place order' }}</button>
+        @if (error(); as message) {
+          <p class="error-text" role="alert">{{ message }}</p>
+        }
         <p class="modal-disclaimer">By placing this order, you confirm the details are correct.</p>
       }
     </section>

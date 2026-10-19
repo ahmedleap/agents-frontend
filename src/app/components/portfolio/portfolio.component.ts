@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -52,10 +52,15 @@ export class PortfolioComponent {
   private readonly clientId = environment.devClientId;
 
   protected readonly asOf = new Date();
+  private readonly route = inject(ActivatedRoute);
+  protected readonly accountId = toSignal(
+    this.route.paramMap.pipe(map(params => params.get('accountId'))),
+    { initialValue: this.route.snapshot.paramMap.get('accountId') }
+  );
 
   // Loads the account whose UUID is in the URL (/portfolio/:accountId)
   protected readonly state = toSignal(
-    inject(ActivatedRoute).paramMap.pipe(
+    this.route.paramMap.pipe(
       map(p => p.get('accountId')),
       switchMap(accountId => this.load(accountId)),
     ),
