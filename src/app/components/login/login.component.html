@@ -1,0 +1,76 @@
+<section class="login">
+  <div class="card shell">
+    <!-- Left: brand panel -->
+    <aside class="brand" aria-hidden="true">
+      <div class="brand-top">
+        <span class="eyebrow">S.T.A.S.H.</span>
+        <h2>Welcome back.</h2>
+        <p>Pick up right where you left off with your accounts and trades.</p>
+      </div>
+
+      <p class="fine">Your password is encrypted before it's stored. We never see it.</p>
+    </aside>
+
+    <!-- Right: form / success -->
+    <div class="panel">
+      @if (loggedIn(); as email) {
+        <div class="success" role="status">
+          <span class="success-icon" aria-hidden="true"></span>
+          <h2>Looks good!</h2>
+          <p class="muted">Log in isn't connected yet. This would sign in <strong>{{ email }}</strong>.</p>
+          <div class="actions">
+            <button type="button" class="btn ghost" (click)="startOver()">Start over</button>
+            <a class="btn primary" routerLink="/dashboard">Go to dashboard</a>
+          </div>
+        </div>
+      } @else {
+        <header class="panel-head">
+          <h2>Log in</h2>
+          <p class="muted">Enter your email and password to continue.</p>
+        </header>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <fieldset>
+            @if (form.hasError('badCredentials')) {
+              <p class="alert" role="alert">Wrong email or password. Try again.</p>
+            }
+
+            <label class="field" [class.has-error]="invalid('email')">
+              <span>Email</span>
+              <input type="email" formControlName="email" autocomplete="email" placeholder="you@example.com">
+              @if (invalid('email')) { <small class="err">Enter a valid email address</small> }
+            </label>
+
+            <label class="field" [class.has-error]="invalid('password')">
+              <span>Password</span>
+              <span class="input-wrap">
+                <input
+                  [type]="showPassword() ? 'text' : 'password'"
+                  formControlName="password"
+                  autocomplete="current-password">
+                <button type="button" class="reveal" (click)="showPassword.set(!showPassword())"
+                        [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+                  {{ showPassword() ? 'Hide' : 'Show' }}
+                </button>
+              </span>
+              @if (invalid('password')) { <small class="err">Enter your password</small> }
+            </label>
+
+            <div class="row">
+              <label class="check">
+                <input type="checkbox" formControlName="remember">
+                <span>Remember me</span>
+              </label>
+              <!-- TODO: password reset page -->
+              <a class="link" href="#" (click)="$event.preventDefault()">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn primary block">Log in</button>
+
+            <p class="switch muted">Don't have an account? <a class="link" routerLink="/signup">Sign up</a></p>
+          </fieldset>
+        </form>
+      }
+    </div>
+  </div>
+</section>
