@@ -61,6 +61,11 @@ export interface CreateOrderResponse {
 
 export interface OrderSummaryDto {
   orderId: string;
+  accountId: string;
+  ticker?: string;
+  instrumentTicker?: string;
+  instrument?: string | { ticker?: string; symbol?: string };
+  submittedAt: string;
   orderType: 'BUY' | 'SELL';
   quantity: number;
   limitPrice?: number | null;
