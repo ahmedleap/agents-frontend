@@ -1,11 +1,13 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { catchError, filter, map, of, startWith } from 'rxjs';
 import { environment } from '../environments/environment';
 import { PortfolioApiService } from './core/services/portfolio-api.service';
 import { ThemeService } from './core/services/theme.service';
+
+const isAuthUrl = (url: string) => /^\/(login|signup)(\/|\?|#|$)/.test(url);
 
 @Component({
   selector: 'app-root',
@@ -44,8 +46,9 @@ export class AppComponent {
   );
   protected readonly accountsOpen = signal(false);
   protected readonly theme = inject(ThemeService);
-  // Full-width pages with no sidebar (sign up, later log in)
-  protected readonly isAuthPage = signal(false);
+  // Full-width pages with no sidebar (log in, sign up). Seeded from the URL so the
+  // sidebar doesn't flash on a direct load before the first navigation finishes.
+  protected readonly isAuthPage = signal(isAuthUrl(inject(Location).path()));
 
   private readonly router = inject(Router);
 
@@ -56,7 +59,7 @@ export class AppComponent {
     const sub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => {
-        this.isAuthPage.set(e.urlAfterRedirects.startsWith('/signup'));
+        this.isAuthPage.set(isAuthUrl(e.urlAfterRedirects));
         if (e.urlAfterRedirects.startsWith('/portfolio')) {
           this.accountsOpen.set(true);
         }
