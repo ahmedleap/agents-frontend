@@ -20,6 +20,14 @@
       <h1>{{ title() }}</h1>
       <p>{{ subtitle() }}</p>
 
+      @if (!isAuthPage()) {
+        <a class="header-link" routerLink="/signup">Sign up</a>
+      }
+
+      @if (!isAuthPage()) {
+        <a class="header-link" routerLink="/signup">Sign up</a>
+      }
+
       <div class="header-actions">
       <button
         type="button"
@@ -44,6 +52,7 @@
     </header>
 
     <div class="app-body">
+      @if (!isAuthPage()) {
       <nav class="app-sidebar" aria-label="Main navigation">
       @if (isAnalyst()) {
         <!-- Analysts only get the analysis view, not the client dashboard or accounts -->
@@ -64,20 +73,33 @@
 
         @if (accountsOpen()) {
           <div id="account-list" class="sub-nav">
-            @for (a of accounts(); track a.id) {
-              <a class="nav-link sub-link" [routerLink]="['/portfolio', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-                <span class="acct-name">{{ a.name }}</span>
-                <span class="acct-value">{{ a.value | currency }}</span>
-                <span class="acct-pl" [class.gain]="a.dayPL >= 0" [class.loss]="a.dayPL < 0">
-                  {{ a.dayPL >= 0 ? '+' : '' }}{{ a.dayPL | currency }}
-                  ({{ a.dayPct >= 0 ? '+' : '' }}{{ a.dayPct | number: '1.2-2' }}%)
-                </span>
-              </a>
+            @switch (accounts().status) {
+              @case ('loading') {
+                <span class="sub-note">Loading accounts...</span>
+              }
+              @case ('error') {
+                <span class="sub-note error">Couldn't load accounts</span>
+              }
+              @default {
+                @for (a of accounts().list; track a.id) {
+                  <a class="nav-link sub-link" [routerLink]="['/portfolio', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+                    <span class="acct-name">{{ a.name }}</span>
+                    <span class="acct-value">{{ a.value | currency }}</span>
+                    <span class="acct-pl" [class.gain]="a.gain >= 0" [class.loss]="a.gain < 0">
+                      {{ a.gain >= 0 ? '+' : '' }}{{ a.gain | currency }}
+                      ({{ a.pct >= 0 ? '+' : '' }}{{ a.pct | number: '1.2-2' }}%)
+                    </span>
+                  </a>
+                } @empty {
+                  <span class="sub-note">No accounts</span>
+                }
+              }
             }
           </div>
         }
       }
       </nav>
+      }
 
       <main class="app-main">
         <router-outlet></router-outlet>
