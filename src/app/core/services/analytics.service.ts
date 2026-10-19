@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { addDays, eachDayOfInterval, format, parseISO } from 'date-fns';
 
 import { ApiService } from './api.service';
@@ -13,13 +13,16 @@ export interface TotalVolumeResponse {
   totalOrdersExecuted: number;
   averageOrderQuantity: number;
   averageOrderValue: number;
+  percentChangeYTD: number;
 }
 
 export interface TotalTradesResponse {
   totalTrades: number;
   filledTrades: number;
   cancelledTrades: number;
+  pendingTrades: number;
   fulfillmentRate: number;
+  cancellationRate: number;
   buyPercentage: number;
   sellPercentage: number;
 }
@@ -29,6 +32,7 @@ export interface ActiveClientsResponse {
   totalClients: number;
   activeClientPercentage: number;
   activeAccounts: number;
+  newClientsToday: number;
 }
 
 export interface InstrumentTrendResponse {
@@ -44,21 +48,6 @@ export interface InstrumentTrendResponse {
   currentPrice?: number;
   bidAskSpread?: number | null;
   uniqueTraders: number;
-}
-
-interface TopTradedInstrumentResponse {
-  ticker: string;
-  instrumentName?: string;
-  assetClass?: string;
-  industry?: string;
-  tradeCount: number;
-  totalVolume: number;
-  totalVolumeValue: number;
-  averagePrice: number;
-  currentPrice: number;
-  bidAskSpread: number | null;
-  uniqueTraders: number;
-  dayChangePercent: number;
 }
 
 export interface VolumeTrendResponse {
@@ -86,6 +75,7 @@ export interface FulfillmentTrendResponse {
   totalOrders: number;
   filledOrders: number;
   cancelledOrders: number;
+  pendingOrders: number;
   fulfillmentRate: number;
   averageOrderDurationSeconds: number;
   peakTradingTime: string;
@@ -126,32 +116,17 @@ export class AnalyticsService {
 
   mostActiveInstruments(date: string, limit = 20): Observable<InstrumentTrendResponse[]> {
     if (this.mock) return of(mockInstruments(date).slice(0, limit));
-    return this.api
-      .get<TopTradedInstrumentResponse[]>('v1/analytics/instruments/top-traded', { params: { date, limit } })
-      .pipe(map(rows => rows.map(row => ({
-        date,
-        ticker: row.ticker,
-        instrumentName: row.instrumentName,
-        assetClass: row.assetClass,
-        industry: row.industry,
-        tradeCount: row.tradeCount,
-        totalQuantity: row.totalVolume,
-        totalValue: row.totalVolumeValue,
-        averagePrice: row.averagePrice,
-        currentPrice: row.currentPrice,
-        bidAskSpread: row.bidAskSpread,
-        uniqueTraders: row.uniqueTraders
-      }))));
+    return this.get('most-active-instruments', { date, limit });
   }
 
   volumeTrend(startDate: string, endDate: string): Observable<VolumeTrendResponse[]> {
     if (this.mock) return of(days(startDate, endDate).map(mockVolumeDay));
-    return this.get('volume-trend', { startDate, endDate });
+    return this.get('volume-trend', { arg0: startDate, arg1: endDate });
   }
 
   instrumentTrend(startDate: string, endDate: string): Observable<InstrumentTrendResponse[]> {
     if (this.mock) return of(days(startDate, endDate).flatMap(mockInstruments));
-    return this.get('instrument-trend', { startDate, endDate });
+    return this.get('instrument-trend', { arg0: startDate, arg1: endDate });
   }
 
   segmentTrends(segmentType: SegmentType, startDate: string, endDate: string): Observable<SegmentTrendResponse[]> {
@@ -245,6 +220,7 @@ function mockFulfillmentDay(date: string): FulfillmentTrendResponse {
     totalOrders,
     filledOrders,
     cancelledOrders,
+    pendingOrders: Math.max(0, totalOrders - filledOrders - cancelledOrders),
     fulfillmentRate,
     averageOrderDurationSeconds: Math.round(110 + rand(date + 'dur') * 80),
     peakTradingTime: rand(date + 'peak') > 0.5 ? '09:30' : '15:45'
@@ -258,7 +234,8 @@ function mockTotalVolume(date: string): TotalVolumeResponse {
     totalValueTraded: d.totalValueTraded,
     totalOrdersExecuted: d.tradeCount,
     averageOrderQuantity: d.totalQuantityTraded / d.tradeCount,
-    averageOrderValue: d.totalValueTraded / d.tradeCount
+    averageOrderValue: d.totalValueTraded / d.tradeCount,
+    percentChangeYTD: 0
   };
 }
 
@@ -269,7 +246,9 @@ function mockTotalTrades(date: string): TotalTradesResponse {
     totalTrades: f.totalOrders,
     filledTrades: f.filledOrders,
     cancelledTrades: f.cancelledOrders,
+    pendingTrades: Math.max(0, f.totalOrders - f.filledOrders - f.cancelledOrders),
     fulfillmentRate: f.fulfillmentRate,
+    cancellationRate: (f.cancelledOrders / f.totalOrders) * 100,
     buyPercentage: (v.buyCount / v.tradeCount) * 100,
     sellPercentage: (v.sellCount / v.tradeCount) * 100
   };
@@ -282,7 +261,8 @@ function mockActiveClients(date: string): ActiveClientsResponse {
     totalActiveClients,
     totalClients,
     activeClientPercentage: (totalActiveClients / totalClients) * 100,
-    activeAccounts: Math.round(totalActiveClients * 1.6)
+    activeAccounts: Math.round(totalActiveClients * 1.6),
+    newClientsToday: Math.round(2 + rand(date + 'new-clients') * 5)
   };
 }
 
