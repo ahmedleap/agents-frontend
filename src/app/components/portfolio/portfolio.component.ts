@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AccountApiService, AccountSummaryDto } from '../../core/services/account-api.service';
 import {
   AllocationDto,
   HoldingDto,
@@ -18,6 +19,8 @@ interface PortfolioView {
   holdings: HoldingDto[];
   totals: { value: number; cost: number; gain: number; ret: number };
   allocation: AllocationDto;
+  /** null if the cash summary couldn't be loaded; the rest of the page still shows */
+  cash: AccountSummaryDto | null;
 }
 
 type LoadState =
@@ -48,6 +51,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 })
 export class PortfolioComponent {
   private readonly api = inject(PortfolioApiService);
+  private readonly accountApi = inject(AccountApiService);
   // No login yet, so every request is made as the dev test client
   private readonly clientId = environment.devClientId;
 
@@ -96,6 +100,10 @@ export class PortfolioComponent {
     return { ...t, count: this.rows().length };
   });
 
+  protected readonly cash = computed(() => this.view()?.cash ?? null);
+  /** Hide the "available" line until the summary loads */
+  protected readonly cashLoaded = computed(() => this.view() !== null);
+
   protected readonly allocation = computed(() =>
     (this.view()?.allocation.industryBreakdown ?? [])
       .slice()
@@ -136,12 +144,19 @@ export class PortfolioComponent {
     const id = this.clientId;
     const request = forkJoin({
       p: this.api.getAccountPortfolio(id, accountId),
-      allocation: this.api.getAccountAllocation(id, accountId)
-    }).pipe(map(({ p, allocation }): PortfolioView => ({
+      allocation: this.api.getAccountAllocation(id, accountId),
+      cash: this.accountApi.getAccountSummary(accountId).pipe(
+        catchError(err => {
+          console.error('Account summary request failed', err);
+          return of(null);
+        })
+      )
+    }).pipe(map(({ p, allocation, cash }): PortfolioView => ({
       title: p.accountName,
       holdings: p.holdings ?? [],
       totals: { value: p.totalPortfolioValue, cost: p.totalCostBasis, gain: p.totalGainLossDollars, ret: p.totalGainLossPercent },
-      allocation
+      allocation,
+      cash
     })));
 
     return request.pipe(
