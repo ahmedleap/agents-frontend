@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { addDays, eachDayOfInterval, format, parseISO } from 'date-fns';
 
 import { ApiService } from './api.service';
@@ -48,10 +48,20 @@ export interface InstrumentTrendResponse {
   currentPrice?: number;
   bidAskSpread?: number | null;
   uniqueTraders: number;
+  dayChangePercent?: number | null;
 }
 
 export interface VolumeTrendResponse {
   date: string;
+  totalQuantityTraded: number;
+  totalValueTraded: number;
+  tradeCount: number;
+  buyCount: number;
+  sellCount: number;
+}
+
+export interface IntradayVolumeResponse {
+  bucketStart: string;
   totalQuantityTraded: number;
   totalValueTraded: number;
   tradeCount: number;
@@ -79,6 +89,21 @@ export interface FulfillmentTrendResponse {
   fulfillmentRate: number;
   averageOrderDurationSeconds: number;
   peakTradingTime: string;
+}
+
+interface TopInstrumentResponse {
+  ticker: string;
+  instrumentName: string;
+  assetClass: string;
+  industry: string;
+  tradeCount: number;
+  totalVolume: number;
+  totalVolumeValue: number;
+  averagePrice: number;
+  currentPrice: number;
+  bidAskSpread: number;
+  uniqueTraders: number;
+  dayChangePercent: number;
 }
 
 /** Dates are passed to the API as YYYY-MM-DD. */
@@ -114,19 +139,39 @@ export class AnalyticsService {
     return this.get('active-clients', { date });
   }
 
-  mostActiveInstruments(date: string, limit = 20): Observable<InstrumentTrendResponse[]> {
-    if (this.mock) return of(mockInstruments(date).slice(0, limit));
-    return this.get('most-active-instruments', { date, limit });
+  topTradedInstruments(limit = 20): Observable<InstrumentTrendResponse[]> {
+    if (this.mock) return of(mockInstruments(isoDate(new Date())).slice(0, limit));
+    return this.api.get<TopInstrumentResponse[]>('v1/analytics/instruments/top-traded', { params: { limit } }).pipe(
+      map(instruments => instruments.map(instrument => ({
+        date: isoDate(new Date()),
+        ticker: instrument.ticker,
+        instrumentName: instrument.instrumentName,
+        assetClass: instrument.assetClass,
+        industry: instrument.industry,
+        tradeCount: instrument.tradeCount,
+        totalQuantity: instrument.totalVolume,
+        totalValue: instrument.totalVolumeValue,
+        averagePrice: instrument.averagePrice,
+        currentPrice: instrument.currentPrice,
+        bidAskSpread: instrument.bidAskSpread,
+        uniqueTraders: instrument.uniqueTraders,
+        dayChangePercent: instrument.dayChangePercent
+      })))
+    );
   }
 
   volumeTrend(startDate: string, endDate: string): Observable<VolumeTrendResponse[]> {
     if (this.mock) return of(days(startDate, endDate).map(mockVolumeDay));
-    return this.get('volume-trend', { arg0: startDate, arg1: endDate });
+    return this.get('volume-trend', { startDate, endDate });
+  }
+
+  intradayVolume(date: string, interval = 'hour'): Observable<IntradayVolumeResponse[]> {
+    return this.get('intraday-volume', { date, interval });
   }
 
   instrumentTrend(startDate: string, endDate: string): Observable<InstrumentTrendResponse[]> {
     if (this.mock) return of(days(startDate, endDate).flatMap(mockInstruments));
-    return this.get('instrument-trend', { arg0: startDate, arg1: endDate });
+    return this.get('instrument-trend', { startDate, endDate });
   }
 
   segmentTrends(segmentType: SegmentType, startDate: string, endDate: string): Observable<SegmentTrendResponse[]> {

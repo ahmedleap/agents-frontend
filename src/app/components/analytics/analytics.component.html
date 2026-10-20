@@ -5,71 +5,46 @@
       <p>Trading activity across all clients</p>
     </div>
 
-    <div class="date-selector" role="group" aria-label="Date range">
-      <div class="segmented">
-        @for (p of presets; track p.id) {
-          <button type="button" [class.active]="preset() === p.id" [attr.aria-pressed]="preset() === p.id" (click)="setPreset(p.id)">
-            {{ p.label }}
-          </button>
-        }
-      </div>
-      @if (preset() === 'custom') {
-        <div class="custom-range">
-          <label>
-            <span>From</span>
-            <input type="date" [value]="customStart()" [max]="today" (change)="setCustom('start', $any($event.target).value)" />
-          </label>
-          <label>
-            <span>To</span>
-            <input type="date" [value]="customEnd()" [max]="today" (change)="setCustom('end', $any($event.target).value)" />
-          </label>
-        </div>
-      }
-    </div>
   </div>
 
-  <!-- ---------- Daily KPIs ---------- -->
+  <!-- ---------- Range KPIs ---------- -->
   <div class="kpis">
     @let k = kpis.value();
 
     <div class="card kpi hero">
-      <span class="label">Total Volume · {{ dayLabel() }}</span>
-      @if (k?.volume; as v) {
-        <span class="value">{{ usd(v.totalValueTraded) }}</span>
-        @if (volumeChange() !== null) {
-          <span class="change">
-            {{ volumeChange()! >= 0 ? '▲ +' : '▼ ' }}{{ volumeChange() | number: '1.1-1' }}% vs prior day
-          </span>
-        }
+      <span class="label">Total Volume · {{ range().label }}</span>
+      @if (volumeTrend.hasValue()) {
+        <span class="value">{{ usd(volumeTotals().value) }}</span>
         <span class="detail">
-          {{ v.totalQuantityTraded | number: '1.0-0' }} units · {{ v.totalOrdersExecuted | number }} orders
-          · avg {{ usd(v.averageOrderValue) }}
+          {{ volumeTotals().quantity | number: '1.0-0' }} units · {{ volumeTotals().trades | number }} trades
         </span>
       } @else {
-        <span class="value placeholder">{{ kpis.isLoading() ? 'Loading…' : 'Unavailable' }}</span>
+        <span class="value placeholder">{{ volumeTrend.isLoading() ? 'Loading…' : 'Unavailable' }}</span>
       }
     </div>
 
     <div class="card kpi">
-      <span class="label">Total Trades · {{ dayLabel() }}</span>
-      @if (k?.trades; as t) {
-        <span class="value">{{ t.totalTrades | number }}</span>
-        <span class="pill gain">✓ {{ percent(t.fulfillmentRate) | number: '1.0-0' }}% filled</span>
+      <span class="label">Total Trades · {{ range().label }}</span>
+      @if (volumeTrend.hasValue()) {
+        <span class="value">{{ volumeTotals().trades | number }}</span>
+        @if (fulfillment.hasValue()) {
+          <span class="pill gain">✓ {{ fulfillmentTotals().filledPct | number: '1.0-0' }}% filled</span>
+        }
         <span class="detail">
-          {{ t.filledTrades | number }} filled · {{ t.cancelledTrades | number }} cancelled
+          {{ fulfillmentTotals().filled | number }} filled · {{ fulfillmentTotals().cancelled | number }} cancelled
         </span>
         <div class="split" aria-label="Buy versus sell split">
           <div class="split-bar">
-            <span class="buy" [style.width.%]="percent(t.buyPercentage)"></span>
-            <span class="sell" [style.width.%]="percent(t.sellPercentage)"></span>
+            <span class="buy" [style.width.%]="volumeTotals().buyPercent"></span>
+            <span class="sell" [style.width.%]="volumeTotals().sellPercent"></span>
           </div>
           <div class="split-labels">
-            <span class="gain">Buy {{ percent(t.buyPercentage) | number: '1.0-0' }}%</span>
-            <span class="loss">Sell {{ percent(t.sellPercentage) | number: '1.0-0' }}%</span>
+            <span class="gain">Buy {{ volumeTotals().buyPercent | number: '1.0-0' }}%</span>
+            <span class="loss">Sell {{ volumeTotals().sellPercent | number: '1.0-0' }}%</span>
           </div>
         </div>
       } @else {
-        <span class="value placeholder">{{ kpis.isLoading() ? 'Loading…' : 'Unavailable' }}</span>
+        <span class="value placeholder">{{ volumeTrend.isLoading() ? 'Loading…' : 'Unavailable' }}</span>
       }
     </div>
 
@@ -91,12 +66,12 @@
     </div>
   </div>
 
-  <!-- ---------- Most active instruments + volume trend ---------- -->
+  <!-- ---------- Current top-traded instruments ---------- -->
   <div class="card instruments">
     <div class="card-head">
       <div>
-        <h3>Most Active Instruments</h3>
-        <p class="sub">{{ dayLabel() }} · % change in value vs prior day</p>
+        <h3>Top Traded Instruments</h3>
+        <p class="sub">Current trading leaders · daily value change</p>
       </div>
       <div class="segmented small" role="group" aria-label="Sort instruments by">
         @for (o of sortOptions; track o.id) {
@@ -145,7 +120,7 @@
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="8" class="empty">No trades on this day.</td></tr>
+              <tr><td colspan="8" class="empty">No current traded instruments.</td></tr>
             }
           }
         </tbody>
@@ -153,18 +128,40 @@
     </div>
   </div>
 
+  <div class="date-selector" role="group" aria-label="Date range">
+    <div class="segmented">
+      @for (p of presets; track p.id) {
+        <button type="button" [class.active]="preset() === p.id" [attr.aria-pressed]="preset() === p.id" (click)="setPreset(p.id)">
+          {{ p.label }}
+        </button>
+      }
+    </div>
+    @if (preset() === 'custom') {
+      <div class="custom-range">
+        <label>
+          <span>From</span>
+          <input type="date" [value]="customStart()" [max]="today" (change)="setCustom('start', $any($event.target).value)" />
+        </label>
+        <label>
+          <span>To</span>
+          <input type="date" [value]="customEnd()" [max]="today" (change)="setCustom('end', $any($event.target).value)" />
+        </label>
+      </div>
+    }
+  </div>
+
   <div class="card chart-card">
     <div class="card-head">
       <div>
         <h3>Trading Volume Trend</h3>
-        <p class="sub">{{ range().label }} · value traded per day</p>
+        <p class="sub">{{ range().label }} · value traded {{ preset() === 'today' ? 'per hour' : 'per day' }}</p>
       </div>
       @if (volumeTrend.hasValue()) {
         <strong>{{ usdCompact(volumeTotals().value) }} · {{ volumeTotals().trades | number }} trades</strong>
       }
     </div>
     <div class="chart-wrap">
-      <canvas #volumeCanvas role="img" aria-label="Area chart of value traded per day"></canvas>
+      <canvas #volumeCanvas role="img" [attr.aria-label]="'Area chart of value traded ' + (preset() === 'today' ? 'per hour' : 'per day')"></canvas>
       @if (volumeTrend.isLoading() && !volumeTrend.hasValue()) {
         <div class="overlay">Loading…</div>
       } @else if (volumeTrend.error()) {
@@ -255,4 +252,5 @@
       </dl>
     }
   </div>
+
 </section>

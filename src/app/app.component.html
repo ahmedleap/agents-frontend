@@ -20,7 +20,7 @@
       <h1>{{ title() }}</h1>
       <p>{{ subtitle() }}</p>
 
-      @if (!isAuthPage()) {
+      @if (!isAuthPage() && !isAnalyst()) {
         <a class="header-link" routerLink="/signup">Sign up</a>
       }
 

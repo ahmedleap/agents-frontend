@@ -37,6 +37,7 @@ export class AppComponent {
 
   protected readonly accountsOpen = signal(false);
   protected readonly theme = inject(ThemeService);
+  protected readonly isAnalyst = inject(AuthService).isAnalyst;
   // Full-width pages with no sidebar (log in, sign up). Seeded from the URL so the
   // sidebar doesn't flash on a direct load before the first navigation finishes.
   protected readonly isAuthPage = signal(isAuthUrl(inject(Location).path()));
@@ -75,30 +76,6 @@ export class AppComponent {
         return of({ status: 'error' as const, list: [] });
       }),
       startWith({ status: 'loading' as const, list: [] })
-    ),
-    { requireSync: true }
-  );
-  protected readonly accountsOpen = signal(false);
-  protected readonly theme = inject(ThemeService);
-  // Full-width pages with no sidebar (sign up, later log in)
-  protected readonly isAuthPage = signal(false);
-  protected readonly isAnalyst = inject(AuthService).isAnalyst;
-
-  private readonly router = inject(Router);
-
-  constructor() {
-    this.initializeApp();
-
-    // Keep the account list open while an account page is showing
-    const sub = this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe(e => {
-        this.isAuthPage.set(e.urlAfterRedirects.startsWith('/signup'));
-        if (e.urlAfterRedirects.startsWith('/portfolio')) {
-          this.accountsOpen.set(true);
-        }
-      });
-    inject(DestroyRef).onDestroy(() => sub.unsubscribe());
     );
   }
 
