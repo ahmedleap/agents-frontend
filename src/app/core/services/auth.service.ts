@@ -20,6 +20,24 @@ export interface LoginResponse {
   user: AuthenticatedUser;
 }
 
+export interface SignupRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  ssn: string;
+  phoneNumber?: string;
+  country?: string;
+}
+
+export interface SignupResponse {
+  success: boolean;
+  message: string;
+  clientId: string;
+  email: string;
+}
+
 interface JwtClaims {
   sub: string;
   email: string;
@@ -87,6 +105,10 @@ export class AuthService {
       }),
       finalize(() => this.isAuthenticatingState.set(false))
     );
+  }
+
+  signup(request: SignupRequest): Observable<SignupResponse> {
+    return this.http.post<SignupResponse>(`${environment.authUrl}/auth/signup`, request);
   }
 
   /**
