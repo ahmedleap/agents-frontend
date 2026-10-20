@@ -46,32 +46,24 @@ h2, h3, p { margin: 0; }
   p { margin-top: 0.2rem; font-size: 1.5rem; font-weight: 700; }
 }
 
-// Cash balance, then the last-updated date under it
-.toolbar-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.35rem;
-}
-
-// Cash in the top-right corner, starting level with the title
 .cash {
   display: grid;
-  justify-items: end;
+  box-sizing: border-box;
+  justify-items: start;
   align-content: center;
   gap: 0.1rem;
-  min-width: 17rem;
-  padding: 0.55rem 1.4rem;
-  border-right: 6px solid var(--pf-gain);
+  height: 18.75rem;
+  padding: 1.5rem;
+  border-top: 5px solid var(--pf-gain);
   border-radius: 2px;
   background: linear-gradient(225deg, var(--pf-buy-bg) 0%, var(--pf-card) 100%);
   box-shadow: var(--pf-shadow);
-  text-align: right;
+  text-align: left;
   font-weight: 700;
 
-  .cash-label { font-size: 0.9rem; color: var(--pf-muted); }
+  .cash-label { font-size: 0.95rem; color: var(--pf-muted); }
   strong {
-    font-size: 1.75rem;
+    font-size: clamp(1.6rem, 2.4vw, 2.1rem);
     font-weight: 800;
     line-height: 1.15;
     color: var(--pf-gain);
@@ -82,13 +74,14 @@ h2, h3, p { margin: 0; }
 
 .summary {
   display: grid;
-  grid-template-columns: minmax(15rem, 18.75rem) minmax(0, 1fr);
+  grid-template-columns: minmax(15rem, 18.75rem) minmax(15rem, 18.75rem) minmax(0, 1fr);
   gap: 1rem;
 }
 
 .hero {
   align-self: start;
-  aspect-ratio: 1;
+  height: 18.75rem;
+  box-sizing: border-box;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -282,4 +275,22 @@ tbody tr:hover { background: var(--pf-inset); }
 
   .summary { grid-template-columns: 1fr; }
   .hero { aspect-ratio: auto; }
+  .toolbar-actions { margin-top: 0; }
+}
+
+.toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
+.trade-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 2px;
+  background: var(--pf-green);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+
+  &:hover { background: var(--pf-green-dark); }
 }

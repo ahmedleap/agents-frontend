@@ -222,6 +222,15 @@
     .gain { color: var(--pf-gain); }
     .loss { color: var(--pf-loss); }
   }
+
+  .account-history-link {
+    padding: 0.2rem 0.7rem 0.4rem;
+    color: var(--pf-muted);
+    font-size: 0.72rem;
+    text-decoration: none;
+
+    &:hover, &.active { color: var(--pf-accent); }
+  }
 }
 
 .app-main {
