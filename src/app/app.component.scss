@@ -41,6 +41,29 @@
     &:hover { background: var(--pf-active); }
   }
 
+  .role-badge {
+    padding: .35rem .65rem;
+    border: 1px solid var(--pf-border);
+    border-radius: 999px;
+    color: var(--pf-muted);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+  }
+
+  .sign-out {
+    flex: none;
+    padding: .55rem .85rem;
+    border: 1px solid var(--pf-border);
+    border-radius: 6px;
+    background: var(--pf-inset);
+    color: var(--pf-accent);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    &:hover { background: var(--pf-active); }
+  }
+
   .logo-link {
     flex: none;
     display: flex;

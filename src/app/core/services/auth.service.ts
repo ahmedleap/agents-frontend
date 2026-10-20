@@ -1,7 +1,31 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
-import { ApiService } from './api.service';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, catchError, finalize, of, tap, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+export type UserRole = 'CLIENT' | 'ADMIN' | 'ANALYST';
+
+export interface AuthenticatedUser {
+  clientId: string;
+  email: string;
+  role: UserRole;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: AuthenticatedUser;
+}
+
+interface JwtClaims {
+  sub: string;
+  email: string;
+  role: UserRole;
+  exp: number;
+}
 
 /**
  * Authentication Service
@@ -16,39 +40,52 @@ import { tap } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiService = inject(ApiService);
+  private readonly http = inject(HttpClient);
 
   // State signals
   private readonly accessToken = signal<string | null>(null);
-  private readonly currentUser = signal<any | null>(null);
-  private readonly isAuthenticating = signal(false);
+  private readonly refreshToken = signal<string | null>(null);
+  private readonly currentUserState = signal<AuthenticatedUser | null>(null);
+  private readonly isAuthenticatingState = signal(false);
   private readonly authError = signal<string | null>(null);
 
   // Derived state
-  readonly isAuthenticated = computed(() => !!this.accessToken() && !!this.currentUser());
+  readonly currentUser = this.currentUserState.asReadonly();
+  readonly isAuthenticating = this.isAuthenticatingState.asReadonly();
+  readonly clientId = computed(() => this.currentUserState()?.clientId ?? null);
+  readonly isAuthenticated = computed(() => !!this.accessToken() && !!this.currentUserState());
   readonly hasError = computed(() => !!this.authError());
   readonly authErrorMessage = computed(() => this.authError());
 
   /**
    * Login with email and password
    */
-  login(email: string, password: string): Observable<any> {
-    this.isAuthenticating.set(true);
+  login(email: string, password: string, accountType: 'client' | 'staff'): Observable<LoginResponse> {
+    this.isAuthenticatingState.set(true);
     this.authError.set(null);
 
-    return this.apiService.post('auth/login', { email, password }).pipe(
+    const loginPath = accountType === 'staff' ? 'auth/admin/login' : 'auth/login';
+    return this.http.post<LoginResponse>(`${environment.authUrl}/${loginPath}`, { email, password }).pipe(
       tap(response => {
-        this.accessToken.set(response.token);
-        this.currentUser.set(response.user);
-        this.isAuthenticating.set(false);
-      }),
-      tap(
-        undefined,
-        () => {
-          this.authError.set('Login failed. Please check your credentials.');
-          this.isAuthenticating.set(false);
+        const claims = decodeClaims(response.accessToken);
+        if (!response.accessToken || !claims || claims.sub !== response.user?.clientId
+          || claims.email !== response.user?.email || !isRole(claims.role)
+          || claims.role !== response.user?.role
+          || !Number.isFinite(claims.exp) || claims.exp * 1000 <= Date.now()) {
+          throw new Error('The backend returned an invalid or expired login token.');
         }
-      )
+        this.accessToken.set(response.accessToken);
+        this.refreshToken.set(response.refreshToken);
+        this.currentUserState.set({ ...response.user, role: claims.role });
+      }),
+      catchError(error => {
+        this.accessToken.set(null);
+        this.refreshToken.set(null);
+        this.currentUserState.set(null);
+        this.authError.set('Login failed. Please check your credentials.');
+        return throwError(() => error);
+      }),
+      finalize(() => this.isAuthenticatingState.set(false))
     );
   }
 
@@ -57,8 +94,20 @@ export class AuthService {
    */
   logout(): void {
     this.accessToken.set(null);
-    this.currentUser.set(null);
+    this.refreshToken.set(null);
+    this.currentUserState.set(null);
     this.authError.set(null);
+  }
+
+  logoutRemote(): Observable<unknown> {
+    const user = this.currentUserState();
+    const refreshToken = this.refreshToken();
+    this.logout();
+    if (!user || !refreshToken) return of(null);
+    return this.http.post(`${environment.authUrl}/auth/logout`, {
+      clientId: user.clientId,
+      refreshToken
+    });
   }
 
   /**
@@ -71,7 +120,23 @@ export class AuthService {
   /**
    * Get current user
    */
-  getCurrentUser(): any {
-    return this.currentUser();
+  getCurrentUser(): AuthenticatedUser | null {
+    return this.currentUserState();
+  }
+}
+
+function isRole(value: unknown): value is UserRole {
+  return value === 'CLIENT' || value === 'ADMIN' || value === 'ANALYST';
+}
+
+/** Client-side claim decoding is for UI state only; Spring validates the signature. */
+function decodeClaims(token: string | undefined): JwtClaims | null {
+  try {
+    const segment = token?.split('.')[1];
+    if (!segment) return null;
+    const base64 = segment.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='))) as JwtClaims;
+  } catch {
+    return null;
   }
 }

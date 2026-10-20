@@ -1,0 +1,57 @@
+<section class="admin-page">
+  <header class="page-head">
+    <div><span class="eyebrow">ADMINISTRATION</span><h2>Platform overview</h2><p>Client and account overview. Changes require authorized administrative actions.</p></div>
+  </header>
+
+  @if (state().status === 'loading') {
+    <p class="notice">Loading administration data…</p>
+  } @else if (errorMessage(); as message) {
+    <p class="notice error" role="alert">{{ message }}</p>
+  } @else if (readyData(); as data) {
+    <div class="metrics">
+      <article class="metric"><span>Clients</span><strong>{{ data.insights.clientCount | number }}</strong></article>
+      <article class="metric"><span>Accounts</span><strong>{{ data.insights.accountCount | number }}</strong></article>
+      <article class="metric"><span>Total orders</span><strong>{{ data.insights.orderCount | number }}</strong></article>
+      <article class="metric"><span>Traded value</span><strong>{{ data.insights.tradedValue | currency }}</strong></article>
+    </div>
+
+    <section class="panel">
+      <div class="section-head"><h3>Client accounts</h3><span>Read-only overview</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Client</th><th>Client ID</th><th>Account</th><th>Cash balance</th><th>Status</th></tr></thead>
+          <tbody>
+            @for (account of data.accounts; track account.accountId) {
+              <tr>
+                <td>{{ account.clientName }}</td><td>{{ account.clientId }}</td>
+                <td>{{ account.name }}</td><td>{{ account.cashBalance | currency }}</td><td>{{ account.status }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty">No accounts found.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><h3>Clients</h3><span>{{ data.clients.length }} records</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Client</th><th>Email</th><th>Joined</th><th>Portfolio range</th><th>Risk profile</th></tr></thead>
+          <tbody>
+            @for (client of data.clients; track client.clientId) {
+              <tr>
+                <td>{{ client.clientName }}</td><td>{{ client.email }}</td>
+                <td>{{ client.joinDate | date: 'mediumDate' }}</td>
+                <td>{{ client.portfolioSizeRange ?? '—' }}</td><td>{{ client.riskTolerance ?? '—' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty">No clients found.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</section>

@@ -1,0 +1,37 @@
+<section class="analytics-page">
+  <header class="page-head">
+    <div><span class="eyebrow">ANALYST VIEW</span><h2>Trading Dashboard</h2><p>Platform-level activity and aggregated analytics</p></div>
+    <span class="asof">Today</span>
+  </header>
+
+  @if (state().status === 'loading') {
+    <p class="notice">Loading platform analytics…</p>
+  } @else if (errorMessage(); as message) {
+    <p class="notice error" role="alert">{{ message }}</p>
+  } @else if (ready(); as data) {
+    <div class="metric-grid">
+      <article class="metric"><span>Assets under management</span><strong>{{ data.platform.totalAssetsUnderManagement | currency }}</strong></article>
+      <article class="metric"><span>Total clients</span><strong>{{ data.platform.totalClients | number }}</strong><small>{{ data.platform.activeClientsLast30Days | number }} active in 30 days</small></article>
+      <article class="metric"><span>Total accounts</span><strong>{{ data.platform.totalAccounts | number }}</strong><small>{{ data.platform.activeAccountsLast30Days | number }} active in 30 days</small></article>
+      <article class="metric"><span>Orders</span><strong>{{ data.platform.totalOrders | number }}</strong><small>{{ data.platform.totalFilledOrders | number }} filled</small></article>
+    </div>
+
+    <div class="detail-grid">
+      <section class="panel">
+        <div class="panel-head"><h3>Trading activity today</h3><span>{{ today | date: 'MMM d, y' }}</span></div>
+        <div class="detail-row"><span>Executed volume</span><strong>{{ data.volume.totalValueTraded | currency }}</strong></div>
+        <div class="detail-row"><span>Shares / units traded</span><strong>{{ data.volume.totalQuantityTraded | number }}</strong></div>
+        <div class="detail-row"><span>Orders executed</span><strong>{{ data.volume.totalOrdersExecuted | number }}</strong></div>
+        <div class="detail-row"><span>Year-to-date change</span><strong>{{ data.volume.percentChangeYTD | number: '1.1-2' }}%</strong></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h3>Order health</h3><span>Platform-wide</span></div>
+        <div class="detail-row"><span>Fulfillment rate</span><strong>{{ data.trades.fulfillmentRate | number: '1.1-2' }}%</strong></div>
+        <div class="detail-row"><span>Cancellation rate</span><strong>{{ data.trades.cancellationRate | number: '1.1-2' }}%</strong></div>
+        <div class="detail-row"><span>Pending orders</span><strong>{{ data.trades.pendingTrades | number }}</strong></div>
+        <div class="detail-row"><span>Buy / sell orders</span><strong>{{ data.trades.buyOrderCount | number }} / {{ data.trades.sellOrderCount | number }}</strong></div>
+      </section>
+    </div>
+    <p class="scope-note">Analyst access is limited to aggregate analytics. Client profiles, individual accounts, holdings, and order details are not available in this view.</p>
+  }
+</section>

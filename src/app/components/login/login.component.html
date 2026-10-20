@@ -15,13 +15,29 @@
     <div class="panel">
       <header class="panel-head">
         <h2>Log in</h2>
-        <p class="muted">Enter your email and password to continue.</p>
+        <p class="muted">Choose your account type, then enter your credentials.</p>
       </header>
+
+      <div class="account-type" role="radiogroup" aria-label="Sign-in type">
+        <label [class.selected]="accountType() === 'client'">
+          <input type="radio" name="accountType" [checked]="accountType() === 'client'"
+                 (change)="accountType.set('client')">
+          Client
+        </label>
+        <label [class.selected]="accountType() === 'staff'">
+          <input type="radio" name="accountType" [checked]="accountType() === 'staff'"
+                 (change)="accountType.set('staff')">
+          Admin / Analyst
+        </label>
+      </div>
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <fieldset>
           @if (form.hasError('badCredentials')) {
             <p class="alert" role="alert">Wrong email or password. Try again.</p>
+          }
+          @if (serverError()) {
+            <p class="alert" role="alert">{{ serverError() }}</p>
           }
 
           <label class="field" [class.has-error]="invalid('email')">
@@ -45,18 +61,18 @@
             @if (invalid('password')) { <small class="err">Enter your password</small> }
           </label>
 
-          <div class="row">
-            <label class="check">
-              <input type="checkbox" formControlName="remember">
-              <span>Remember me</span>
-            </label>
+          <div class="row row-end">
             <!-- TODO: password reset page -->
             <a class="link" href="#" (click)="$event.preventDefault()">Forgot password?</a>
           </div>
 
-          <button type="submit" class="btn primary block">Log in</button>
+          <button type="submit" class="btn primary block" [disabled]="isAuthenticating()">
+            {{ isAuthenticating() ? 'Signing in…' : 'Log in' }}
+          </button>
 
-          <p class="switch muted">Don't have an account? <a class="link" routerLink="/signup">Sign up</a></p>
+          @if (accountType() === 'client') {
+            <p class="switch muted">Don't have an account? <a class="link" routerLink="/signup">Sign up</a></p>
+          }
         </fieldset>
       </form>
   </div>
