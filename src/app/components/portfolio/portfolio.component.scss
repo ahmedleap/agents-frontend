@@ -275,9 +275,10 @@ tbody tr:hover { background: var(--pf-inset); }
 
   .summary { grid-template-columns: 1fr; }
   .hero { aspect-ratio: auto; }
+  .toolbar-actions { margin-top: 0; }
 }
 
-.toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
 .trade-link {
   display: inline-flex;
   align-items: center;
