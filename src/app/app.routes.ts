@@ -32,6 +32,11 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    // Sidebar > Account > +
+    path: 'accounts/new',
+    loadComponent: () => import('./components/add-account/add-account.component').then(m => m.AddAccountComponent)
+  },
+  {
     // Sidebar > Account > an account
     path: 'portfolio/:accountId',
     loadComponent: () => import('./components/portfolio/portfolio.component').then(m => m.PortfolioComponent)

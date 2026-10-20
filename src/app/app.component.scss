@@ -136,8 +136,58 @@
     &.open .chevron { transform: rotate(-135deg); }
   }
 
+  // "Account" toggle with the add-account button beside it
+  .nav-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    .nav-toggle { flex: 1; min-width: 0; }
+  }
+
+  .add-account {
+    position: relative;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    color: var(--pf-accent);
+    transition: background 0.15s;
+
+    svg { width: 1.1rem; height: 1.1rem; }
+
+    &:hover,
+    &.active { background: var(--pf-active); }
+    &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+
+    // "Add account" tooltip on hover / keyboard focus
+    &::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: calc(100% + 0.5rem);
+      top: 50%;
+      z-index: 10;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      background: var(--pf-text);
+      color: var(--pf-card);
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-0.25rem, -50%);
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    &:hover::after,
+    &:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+  }
+
   // Top-level items (Dashboard, Account); the account links under them keep their own size
-  > .nav-link {
+  > .nav-link,
+  > .nav-row > .nav-link {
     font-size: 1.1rem;
     font-weight: 700;
   }
