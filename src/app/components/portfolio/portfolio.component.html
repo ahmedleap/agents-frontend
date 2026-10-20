@@ -4,23 +4,6 @@
       <h2>{{ account() }}</h2>
       <p>Portfolio</p>
     </div>
-    <!-- Cash in the account (level with the title block), with the last-updated date under it -->
-    <div class="toolbar-right">
-      <div class="cash" aria-live="polite">
-        <span class="cash-label">Cash Balance</span>
-        @if (cash(); as c) {
-          <strong>{{ c.cashBalance | currency }}</strong>
-          <small>{{ c.availableBalance | currency }} available to trade</small>
-        } @else if (cashLoaded()) {
-          <strong>—</strong>
-          <small>Couldn't load the cash balance</small>
-        } @else {
-          <strong>—</strong>
-        }
-      </div>
-
-      <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
-    </div>
     <div class="toolbar-actions">
       <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
       <a class="trade-link" [routerLink]="['/trades', accountId()]">Place a trade <span aria-hidden="true">&#8594;</span></a>
@@ -46,6 +29,19 @@
         {{ totals().gain >= 0 ? '▲ +' : '▼ ' }}{{ totals().gain | currency }}
         ({{ totals().gain >= 0 ? '+' : '' }}{{ totals().ret | number: '1.2-2' }}%)
       </span>
+    </div>
+
+    <div class="card cash" aria-live="polite">
+      <span class="cash-label">Cash Balance</span>
+      @if (cash(); as c) {
+        <strong>{{ c.cashBalance | currency }}</strong>
+        <small>{{ c.availableBalance | currency }} available to trade</small>
+      } @else if (cashLoaded()) {
+        <strong>—</strong>
+        <small>Couldn't load the cash balance</small>
+      } @else {
+        <strong>—</strong>
+      }
     </div>
 
     <div class="card alloc">
