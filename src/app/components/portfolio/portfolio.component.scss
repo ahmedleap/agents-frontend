@@ -28,11 +28,14 @@ h2, h3, p { margin: 0; }
 .toolbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  // Title on the left, cash on the right, both starting at the top
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 0.5rem;
 
+  // Account name and "Portfolio" pushed down together so they line up with the bottom of the cash box
   h2 {
+    margin-top: 1.33rem;
     font-family: 'Fredoka', 'Baloo 2', sans-serif;
     font-size: 1.9rem;
     font-weight: 600;
@@ -41,6 +44,40 @@ h2, h3, p { margin: 0; }
   }
   p, .asof { font-size: 0.9rem; color: var(--pf-muted); }
   p { margin-top: 0.2rem; font-size: 1.5rem; font-weight: 700; }
+}
+
+// Cash balance, then the last-updated date under it
+.toolbar-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+// Cash in the top-right corner, starting level with the title
+.cash {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 0.1rem;
+  min-width: 17rem;
+  padding: 0.55rem 1.4rem;
+  border-right: 6px solid var(--pf-gain);
+  border-radius: 2px;
+  background: linear-gradient(225deg, var(--pf-buy-bg) 0%, var(--pf-card) 100%);
+  box-shadow: var(--pf-shadow);
+  text-align: right;
+  font-weight: 700;
+
+  .cash-label { font-size: 0.9rem; color: var(--pf-muted); }
+  strong {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--pf-gain);
+    font-variant-numeric: tabular-nums;
+  }
+  small { font-size: 0.82rem; font-weight: 700; color: var(--pf-muted); font-variant-numeric: tabular-nums; }
 }
 
 .summary {
@@ -144,15 +181,6 @@ h2, h3, p { margin: 0; }
 
   .stat-label { font-size: 0.88rem; color: var(--pf-muted); }
   strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
-  .stat-sub { font-size: 0.8rem; color: var(--pf-muted); font-variant-numeric: tabular-nums; }
-
-  // Cash stands out from the holdings stats beside it
-  &.cash {
-    border-left-color: var(--pf-gain);
-    background: linear-gradient(135deg, var(--pf-buy-bg) 0%, var(--pf-card) 70%);
-
-    strong { color: var(--pf-gain); }
-  }
 }
 
 .notice {

@@ -26,7 +26,7 @@ test.describe('Account cash balance', () => {
 
     await page.goto(`/portfolio/${ACCOUNT_ID}`);
 
-    const card = page.locator('.stat.cash');
+    const card = page.locator('.toolbar .cash');
     await expect(card).toContainText('Cash Balance');
     await expect(card).toContainText('$2,500.50');
     await expect(card).toContainText('$2,000.00 available to trade');
@@ -38,6 +38,6 @@ test.describe('Account cash balance', () => {
     await page.goto(`/portfolio/${ACCOUNT_ID}`);
 
     await expect(page.getByRole('heading', { name: 'Roth IRA' })).toBeVisible();
-    await expect(page.locator('.stat.cash')).toContainText("Couldn't load the cash balance");
+    await expect(page.locator('.toolbar .cash')).toContainText("Couldn't load the cash balance");
   });
 });
