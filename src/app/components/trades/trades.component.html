@@ -83,8 +83,13 @@
       </article>
     } @empty {
       <div class="empty-state">
-        <strong>No instruments found</strong>
-        <span>Try searching by ticker or company name.</span>
+        @if (loading()) {
+          <strong>Loading instruments...</strong>
+          <span>Getting the latest market list.</span>
+        } @else {
+          <strong>No instruments found</strong>
+          <span>Try searching by ticker or company name.</span>
+        }
       </div>
     }
   </div>
@@ -103,10 +108,13 @@
     <section class="order-modal" role="dialog" aria-modal="true" aria-labelledby="order-title" (click)="$event.stopPropagation()">
       @if (confirmed()) {
         <div class="confirmation">
-          <div class="success-mark" aria-hidden="true">&#10003;</div>
-          <p class="eyebrow">ORDER RECEIVED</p>
-          <h2>Trade confirmed</h2>
-          <p class="confirmation-copy">Your {{ orderType() }} order to {{ side() }} {{ quantity() }} {{ instrument.symbol }} in {{ account()?.name ?? 'your account' }} has been placed successfully.</p>
+          <div class="success-mark" [class.pending]="orderStatus() === 'PENDING'" aria-hidden="true">{{ orderStatus() === 'FILLED' ? '&#10003;' : '...' }}</div>
+          <p class="eyebrow">ORDER {{ orderStatus() }}</p>
+          <h2>{{ orderStatus() === 'FILLED' ? 'Trade filled' : orderStatus() === 'PENDING' ? 'Order received' : 'Order ' + orderStatus().toLowerCase() }}</h2>
+          <p class="confirmation-copy">Your {{ orderType() }} order for {{ quantity() }} {{ instrument.symbol }} in {{ account()?.name ?? 'your account' }} is {{ orderStatus().toLowerCase() }}.</p>
+          @if (orderStatus() === 'PENDING') {
+            <div class="status-dots" role="status" aria-live="polite"><span></span><span></span><span></span><em>Waiting for execution</em></div>
+          }
           <div class="confirmation-summary">
             <span>Estimated total</span>
             <strong>{{ estimatedTotal() | currency }}</strong>

@@ -1,8 +1,10 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
+import { DestroyRef } from '@angular/core';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
@@ -34,6 +36,7 @@ type ChartRange = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL';
   styleUrls: ['./trades.component.scss']
 })
 export class TradesComponent {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly accounts = inject(DashboardService).accounts;
   private readonly tradingApi = inject(TradingApiService);
@@ -59,6 +62,7 @@ export class TradesComponent {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly submitting = signal(false);
+  protected readonly orderStatus = signal<'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED'>('PENDING');
   protected readonly chartRange = signal<ChartRange>('1M');
   protected readonly chartRanges: ChartRange[] = ['1D', '1W', '1M', '3M', '6M', '1Y', 'ALL'];
   protected readonly chartPointsForOrder = signal<number[]>([]);
@@ -190,8 +194,10 @@ export class TradesComponent {
     }).subscribe({
       next: (_response: CreateOrderResponse) => {
         this.submitting.set(false);
+        this.orderStatus.set((_response.status as 'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED') || 'PENDING');
         this.orderHistory.refresh(accountId);
         this.confirmed.set(true);
+        if (_response.orderId) this.watchOrder(_response.orderId, accountId);
       },
       error: () => {
         this.submitting.set(false);
@@ -316,6 +322,31 @@ export class TradesComponent {
       },
       error: () => this.chartLoading.set(false)
     });
+  }
+
+  private watchOrder(orderId: string, accountId: string): void {
+    interval(1500).pipe(
+      switchMap(() => this.tradingApi.getOrder(orderId)),
+      takeWhile(order => {
+        this.orderStatus.set(this.normalizeOrderStatus(order.status));
+        return !this.isTerminalOrderStatus(order.status);
+      }, true),
+      catchError(() => of(null)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(order => {
+      if (!order || !this.isTerminalOrderStatus(order.status)) return;
+      this.orderStatus.set(this.normalizeOrderStatus(order.status));
+      this.orderHistory.refresh(accountId);
+    });
+  }
+
+  private normalizeOrderStatus(status: string | undefined): 'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED' {
+    const normalized = status?.toUpperCase();
+    return normalized === 'FILLED' || normalized === 'CANCELLED' || normalized === 'REJECTED' ? normalized : 'PENDING';
+  }
+
+  private isTerminalOrderStatus(status: string | undefined): boolean {
+    return ['FILLED', 'CANCELLED', 'REJECTED'].includes(status?.toUpperCase() ?? '');
   }
 
   private numberValue(value: number | string | null | undefined): number {
