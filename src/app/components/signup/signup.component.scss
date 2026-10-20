@@ -283,6 +283,16 @@ fieldset {
   overflow-x: auto;
 }
 
+.switch { text-align: center; font-size: 0.95rem; }
+
+.link {
+  color: var(--pf-accent);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}
+
 .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
 
 /* ---------- Success ---------- */

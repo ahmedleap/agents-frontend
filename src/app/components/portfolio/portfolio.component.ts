@@ -2,9 +2,10 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AccountApiService, AccountSummaryDto } from '../../core/services/account-api.service';
 import {
   AllocationDto,
   HoldingDto,
@@ -18,6 +19,8 @@ interface PortfolioView {
   holdings: HoldingDto[];
   totals: { value: number; cost: number; gain: number; ret: number };
   allocation: AllocationDto;
+  /** null if the cash summary couldn't be loaded; the rest of the page still shows */
+  cash: AccountSummaryDto | null;
 }
 
 type LoadState =
@@ -42,20 +45,26 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 @Component({
   selector: 'app-portfolio',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink],
   templateUrl: './portfolio.component.html',
   styleUrls: ['./portfolio.component.scss']
 })
 export class PortfolioComponent {
   private readonly api = inject(PortfolioApiService);
+  private readonly accountApi = inject(AccountApiService);
   // No login yet, so every request is made as the dev test client
   private readonly clientId = environment.devClientId;
 
   protected readonly asOf = new Date();
+  private readonly route = inject(ActivatedRoute);
+  protected readonly accountId = toSignal(
+    this.route.paramMap.pipe(map(params => params.get('accountId'))),
+    { initialValue: this.route.snapshot.paramMap.get('accountId') }
+  );
 
   // Loads the account whose UUID is in the URL (/portfolio/:accountId)
   protected readonly state = toSignal(
-    inject(ActivatedRoute).paramMap.pipe(
+    this.route.paramMap.pipe(
       map(p => p.get('accountId')),
       switchMap(accountId => this.load(accountId)),
     ),
@@ -90,6 +99,10 @@ export class PortfolioComponent {
     const t = this.view()?.totals ?? { value: 0, cost: 0, gain: 0, ret: 0 };
     return { ...t, count: this.rows().length };
   });
+
+  protected readonly cash = computed(() => this.view()?.cash ?? null);
+  /** Hide the "available" line until the summary loads */
+  protected readonly cashLoaded = computed(() => this.view() !== null);
 
   protected readonly allocation = computed(() =>
     (this.view()?.allocation.industryBreakdown ?? [])
@@ -131,12 +144,19 @@ export class PortfolioComponent {
     const id = this.clientId;
     const request = forkJoin({
       p: this.api.getAccountPortfolio(id, accountId),
-      allocation: this.api.getAccountAllocation(id, accountId)
-    }).pipe(map(({ p, allocation }): PortfolioView => ({
+      allocation: this.api.getAccountAllocation(id, accountId),
+      cash: this.accountApi.getAccountSummary(accountId).pipe(
+        catchError(err => {
+          console.error('Account summary request failed', err);
+          return of(null);
+        })
+      )
+    }).pipe(map(({ p, allocation, cash }): PortfolioView => ({
       title: p.accountName,
       holdings: p.holdings ?? [],
       totals: { value: p.totalPortfolioValue, cost: p.totalCostBasis, gain: p.totalGainLossDollars, ret: p.totalGainLossPercent },
-      allocation
+      allocation,
+      cash
     })));
 
     return request.pipe(

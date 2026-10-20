@@ -1,0 +1,101 @@
+<section class="page">
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <header class="hero">
+      <span class="hero-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a1 1 0 0 1 1 1v2"/>
+          <path d="M3 7.5v10A2.5 2.5 0 0 0 5.5 20H20a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5.5A2.5 2.5 0 0 1 3 7.5z"/>
+          <circle cx="16.5" cy="14.5" r="1.25" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <div>
+        <h2>Add account</h2>
+        <p>Open a new account and fund it with a starting cash balance.</p>
+      </div>
+    </header>
+
+    <fieldset [disabled]="saving()">
+      @if (error(); as message) {
+        <p class="alert" role="alert">{{ message }}</p>
+      }
+
+      <!-- Step 1: type -->
+      <div class="step">
+        <h3><span class="num">1</span> Choose an account type</h3>
+
+        <div class="types">
+          @for (t of accountTypes; track t.name) {
+            <button
+              type="button"
+              class="type"
+              [class.selected]="selectedType() === t.name.toLowerCase()"
+              [attr.aria-pressed]="selectedType() === t.name.toLowerCase()"
+              (click)="pickType(t.name)">
+              <span class="badge" aria-hidden="true">{{ t.badge }}</span>
+              <strong>{{ t.label ?? t.name }}</strong>
+              <small>{{ t.blurb }}</small>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Step 2: name and funding, side by side -->
+      <div class="step">
+        <h3><span class="num">2</span> Name and fund it</h3>
+
+        <div class="details">
+          <label class="field" [class.has-error]="invalid('name')">
+            <span>Account name</span>
+            <input formControlName="name" placeholder="Pick a type above or type a name" autocomplete="off">
+            @if (invalid('name')) {
+              <small class="err">
+                {{ form.controls.name.hasError('maxlength') ? 'Keep it under 100 characters' : 'Give the account a name' }}
+              </small>
+            }
+          </label>
+
+          <div class="field-group">
+            <label class="field" [class.has-error]="invalid('initialCashBalance')">
+              <span>Initial deposit</span>
+              <span class="money">
+                <span class="prefix" aria-hidden="true">$</span>
+                <input type="number" formControlName="initialCashBalance" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
+              </span>
+              @if (invalid('initialCashBalance')) {
+                <small class="err">
+                  {{ form.controls.initialCashBalance.hasError('max') ? 'That amount is too large' : 'Enter an amount greater than $0' }}
+                </small>
+              }
+            </label>
+
+            <div class="chips" role="group" aria-label="Quick amounts">
+              @for (a of quickAmounts; track a) {
+                <button type="button" class="chip" [class.selected]="form.controls.initialCashBalance.value === a" (click)="pickAmount(a)">
+                  {{ a | currency: 'USD' : 'symbol' : '1.0-0' }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary and actions on one line -->
+      <div class="footer">
+        <div class="summary" [class.ready]="summary()" aria-live="polite">
+          @if (summary(); as s) {
+            <span>Opening <strong>{{ s.name }}</strong> with <strong>{{ s.amount | currency }}</strong></span>
+          } @else {
+            <span>Choose a type and an amount to continue</span>
+          }
+        </div>
+
+        <div class="actions">
+          <a class="btn ghost" routerLink="/dashboard">Cancel</a>
+          <button type="submit" class="btn primary">
+            @if (saving()) { <span class="spinner" aria-hidden="true"></span> Adding… } @else { Add account }
+          </button>
+        </div>
+      </div>
+    </fieldset>
+  </form>
+</section>
