@@ -1,0 +1,105 @@
+<section class="page">
+  <header class="toolbar">
+    <h2>Settings</h2>
+    <p>Update your details and how S.T.A.S.H. looks.</p>
+  </header>
+
+  <!-- Profile -->
+  <form class="card" [formGroup]="form" (ngSubmit)="save()" novalidate aria-labelledby="profile-title">
+    <div class="card-head">
+      <h3 id="profile-title">Profile</h3>
+      <p>Your personal information</p>
+    </div>
+
+    @if (state(); as s) {
+      @if (s.status === 'loading') {
+        <p class="notice" role="status">Loading your profile…</p>
+      } @else if (s.status === 'error') {
+        <div class="notice error" role="alert">
+          <span>{{ s.message }}</span>
+          <button type="button" class="btn ghost small" (click)="load()">Try again</button>
+        </div>
+      } @else {
+        <fieldset [disabled]="saving()">
+          <div class="grid">
+            <label class="field" [class.has-error]="invalid('firstName')">
+              <span>First name</span>
+              <input formControlName="firstName" autocomplete="given-name">
+              @if (invalid('firstName')) { <small class="err">First name is required</small> }
+            </label>
+
+            <label class="field" [class.has-error]="invalid('lastName')">
+              <span>Last name</span>
+              <input formControlName="lastName" autocomplete="family-name">
+              @if (invalid('lastName')) { <small class="err">Last name is required</small> }
+            </label>
+
+            <label class="field" [class.has-error]="invalid('email')">
+              <span>Email</span>
+              <input type="email" formControlName="email" autocomplete="email">
+              @if (form.controls.email.hasError('taken')) {
+                <small class="err">That email is already in use</small>
+              } @else if (invalid('email')) {
+                <small class="err">Enter a valid email address</small>
+              }
+            </label>
+
+            <label class="field" [class.has-error]="invalid('phone')">
+              <span>Phone</span>
+              <input type="tel" formControlName="phone" autocomplete="tel" placeholder="(202) 555-0123">
+              @if (invalid('phone')) { <small class="err">Enter a valid phone number</small> }
+            </label>
+
+            <label class="field">
+              <span>Country</span>
+              <input formControlName="country" autocomplete="country-name">
+            </label>
+
+            <div class="field readonly">
+              <span>Date of birth</span>
+              <output>{{ s.profile.date_of_birth ? (s.profile.date_of_birth | date: 'MMM d, y') : '—' }}</output>
+            </div>
+          </div>
+
+          <p class="meta">
+            @if (s.profile.join_date) { Member since {{ s.profile.join_date | date: 'MMMM y' }} · }
+            Email {{ s.profile.email_verified ? 'verified' : 'not verified' }}
+          </p>
+
+          @if (saveError(); as message) {
+            <p class="notice error" role="alert">{{ message }}</p>
+          } @else if (saved() && form.pristine) {
+            <p class="notice success" role="status">Your changes were saved.</p>
+          }
+
+          <div class="actions">
+            <button type="button" class="btn ghost" (click)="cancel()" [disabled]="form.pristine">Cancel</button>
+            <button type="submit" class="btn primary" [disabled]="form.pristine">
+              {{ saving() ? 'Saving…' : 'Save changes' }}
+            </button>
+          </div>
+        </fieldset>
+      }
+    }
+  </form>
+
+  <!-- Appearance -->
+  <section class="card" aria-labelledby="appearance-title">
+    <div class="card-head">
+      <h3 id="appearance-title">Appearance</h3>
+      <p>Choose light or dark mode. This is saved on this device.</p>
+    </div>
+
+    <div class="themes" role="radiogroup" aria-labelledby="appearance-title">
+      @for (t of themes; track t.value) {
+        <label class="theme-option" [class.selected]="theme.theme() === t.value">
+          <input type="radio" name="theme" [value]="t.value" [checked]="theme.theme() === t.value" (change)="theme.set(t.value)">
+          <span class="preview" [attr.data-preview]="t.value" aria-hidden="true">
+            <span class="bar"></span><span class="line"></span><span class="line short"></span>
+          </span>
+          <span class="theme-label">{{ t.label }}</span>
+        </label>
+      }
+    </div>
+  </section>
+</section>

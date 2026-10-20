@@ -43,6 +43,12 @@ export const routes: Routes = [
   },
 
   {
+    // Header > gear
+    path: 'settings',
+    loadComponent: () => import('./components/settings/settings.component').then(m => m.SettingsComponent)
+  },
+
+  {
     // Unknown URLs go back to the start of the flow
     path: '**',
     redirectTo: 'login'
