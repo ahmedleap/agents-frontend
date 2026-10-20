@@ -58,20 +58,21 @@
         </div>
 
         <div class="price-row">
-          @if (instrument.price > 0) {
+          @if (instrument.priceState === 'ready' && instrument.price > 0) {
             <strong>{{ instrument.price | currency }}</strong>
-            <span [class.gain]="instrument.change >= 0" [class.loss]="instrument.change < 0">
+            <span class="day-change" [class.gain]="instrument.change >= 0" [class.loss]="instrument.change < 0">
+              <small>1D</small>
               {{ instrument.change >= 0 ? '+' : '' }}{{ instrument.change | currency }}
               ({{ instrument.changePct >= 0 ? '+' : '' }}{{ instrument.changePct | number: '1.2-2' }}%)
             </span>
           } @else {
-            <strong>Quote unavailable</strong>
+            <strong>{{ instrument.priceState === 'loading' ? 'Loading price...' : 'Market data pending' }}</strong>
           }
         </div>
 
         <div class="chart" aria-label="Recent price trend">
           <svg viewBox="0 0 100 48" preserveAspectRatio="none" role="img">
-            <polyline [attr.points]="chartPoints(instrument.points)" fill="none" [attr.stroke]="instrument.color" stroke-width="2.2" vector-effect="non-scaling-stroke" />
+            <polyline [attr.points]="chartPoints(instrument.points)" fill="none" [attr.stroke]="instrument.color" [attr.stroke-opacity]="instrument.chartPlaceholder ? 0.28 : 1" [attr.stroke-dasharray]="instrument.chartPlaceholder ? '3 3' : null" stroke-width="2.2" vector-effect="non-scaling-stroke" />
           </svg>
         </div>
 
@@ -126,11 +127,29 @@
             <span class="symbol-badge" [style.background-color]="instrument.color">{{ instrument.symbol[0] }}</span>
             <div><strong>{{ instrument.name }}</strong><span>{{ instrument.type }}</span></div>
           </div>
-          @if (instrument.price > 0) {
+          @if (instrument.priceState === 'ready' && instrument.price > 0) {
             <strong>{{ instrument.price | currency }}</strong>
           } @else {
-            <strong>Quote unavailable</strong>
+            <strong>{{ instrument.priceState === 'loading' ? 'Loading price...' : 'Market data pending' }}</strong>
           }
+        </div>
+
+        <div class="order-chart-header">
+          <div>
+            <span class="chart-label">Price history</span>
+            @if (chartLoading()) { <small>Updating...</small> }
+          </div>
+          <span class="chart-range-value">{{ chartRange() === 'ALL' ? 'All' : chartRange() }}</span>
+        </div>
+        <div class="chart-range-tabs" role="group" aria-label="Select chart range">
+          @for (range of chartRanges; track range) {
+            <button type="button" [class.active]="chartRange() === range" (click)="setChartRange(range)">{{ range === 'ALL' ? 'All' : range }}</button>
+          }
+        </div>
+        <div class="order-chart" aria-label="Selected instrument price history">
+          <svg viewBox="0 0 100 48" preserveAspectRatio="none" role="img">
+            <polyline [attr.points]="chartPoints(chartPointsForOrder())" fill="none" [attr.stroke]="instrument.color" stroke-width="2.2" vector-effect="non-scaling-stroke" />
+          </svg>
         </div>
 
         <div class="side-toggle" role="group" aria-label="Order side">

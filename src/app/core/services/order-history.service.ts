@@ -23,6 +23,17 @@ export class OrderHistoryService {
 
   ordersForAccount(accountId: string): Order[] {
     if (accountId && !this.loadedAccounts.has(accountId)) {
+      this.load(accountId);
+    }
+    return this.ordersByAccount()[accountId] ?? [];
+  }
+
+  refresh(accountId: string): void {
+    if (!accountId) return;
+    this.load(accountId);
+  }
+
+  private load(accountId: string): void {
       this.loadedAccounts.add(accountId);
       this.api.getOrderHistory(accountId).subscribe({
         next: orders => this.ordersByAccount.update(current => ({
@@ -40,8 +51,6 @@ export class OrderHistoryService {
         })),
         error: error => console.error('Order history request failed', error)
       });
-    }
-    return this.ordersByAccount()[accountId] ?? [];
   }
 
   private tickerFor(order: {

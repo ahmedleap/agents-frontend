@@ -14,12 +14,21 @@ export interface QuoteDto {
   ticker: string;
   bid?: number;
   ask?: number;
+  midPrice?: number;
   lastPrice?: number;
+  currentPrice?: number;
   priceChange?: number;
   priceChangePercent?: number;
+  dayChange?: number;
+  dayChangePercent?: number;
   volume?: number;
   timestamp?: string;
   stale?: boolean;
+}
+
+export interface QuoteEnvelope {
+  data?: QuoteDto;
+  quote?: QuoteDto;
 }
 
 export interface HistoricalBarDto {
@@ -36,6 +45,12 @@ export interface HistoryResponseDto {
   period: string;
   barCount: number;
   bars: HistoricalBarDto[];
+  summary?: {
+    startPrice?: number;
+    endPrice?: number;
+    change?: number;
+    changePercent?: number;
+  };
 }
 
 export interface CreateOrderRequest {
