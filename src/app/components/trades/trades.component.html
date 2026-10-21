@@ -8,7 +8,7 @@
     <div class="account-context">
       <label class="account-label" for="trade-account">Trading from</label>
       <select id="trade-account" class="account-select" [value]="account()?.id ?? ''" (change)="switchAccount($event)" aria-label="Select trading account">
-        @for (availableAccount of accounts(); track availableAccount.id) {
+        @for (availableAccount of selectableAccounts(); track availableAccount.id) {
           <option [value]="availableAccount.id">{{ availableAccount.name }}</option>
         }
       </select>
@@ -199,7 +199,11 @@
           <p class="cash-hint">Available after order: {{ cashBalance() - estimatedTotal() | currency }}</p>
         }
         @if (!canSubmit()) {
-          <p class="error-text">This order is higher than your available cash balance.</p>
+          @if (side() === 'sell' && availableToSell() !== null) {
+            <p class="error-text">This order is higher than the shares you have available to sell.</p>
+          } @else if (side() === 'buy') {
+            <p class="error-text">This order is higher than your available cash balance.</p>
+          }
         }
         <button type="button" class="primary-button full" [disabled]="!canSubmit() || submitting()" (click)="submitOrder()">{{ submitting() ? 'Submitting...' : 'Review and place order' }}</button>
         @if (error(); as message) {

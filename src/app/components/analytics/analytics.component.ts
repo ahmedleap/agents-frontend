@@ -49,6 +49,11 @@ const usdCompact = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1
 });
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
+const centralHour = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Chicago',
+  hour: 'numeric',
+  hour12: true
+});
 
 /** Rates may arrive as 0-1 or 0-100; always show them as 0-100. */
 function asPercent(v: number): number {
@@ -235,7 +240,7 @@ export class AnalyticsComponent {
     const rows = [...(this.volumeTrend.value() ?? [])].sort((a, b) => a.date.localeCompare(b.date));
     this.theme();
     return {
-      labels: rows.map(r => this.preset() === 'today' ? format(parseISO(r.date), 'h a') : shortDate(r.date)),
+      labels: rows.map(r => this.preset() === 'today' ? centralHour.format(parseISO(r.date)) : shortDate(r.date)),
       series: [{ label: 'Value traded', data: rows.map(r => r.totalValueTraded), color: token('--pf-chart') }],
       format: v => usdCompact.format(v)
     };

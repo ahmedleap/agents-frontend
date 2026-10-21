@@ -84,6 +84,13 @@ export interface CreateOrderResponse {
   message?: string;
 }
 
+export interface CancelOrderResponse {
+  orderId: string;
+  status: 'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED';
+  cancelledAt?: string;
+  message?: string;
+}
+
 export interface OrderSummaryDto {
   orderId: string;
   accountId: string;
@@ -141,5 +148,12 @@ export class TradingApiService {
 
   getOrder(orderId: string): Observable<OrderDetailDto> {
     return this.api.get<OrderDetailDto>(`v1/orders/${encodeURIComponent(orderId)}`);
+  }
+
+  cancelOrder(orderId: string, cancellationReason = 'Cancelled by customer'): Observable<CancelOrderResponse> {
+    return this.api.delete<CancelOrderResponse>(`v1/orders/${encodeURIComponent(orderId)}`, undefined, {
+      orderId,
+      cancellationReason
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,7 +11,7 @@ type SortKey = 'side' | 'kind' | 'quantity' | 'limitPrice' | 'status' | 'created
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe],
+  imports: [CurrencyPipe, DecimalPipe],
   templateUrl: './history.component.html',
   styleUrls: ['./history.component.scss']
 })
@@ -40,6 +40,7 @@ export class HistoryComponent {
   protected readonly sortDescending = signal(true);
   protected readonly quantityDescending = signal(true);
   protected readonly limitPriceDescending = signal(true);
+  protected readonly pendingCancellation = signal<string | null>(null);
   protected readonly visibleOrders = computed(() => {
     const query = this.query().trim().toLowerCase();
     const sortKey = this.sortBy();
@@ -95,5 +96,30 @@ export class HistoryComponent {
   protected switchAccount(event: Event): void {
     const accountId = (event.target as HTMLSelectElement).value;
     if (accountId) this.router.navigate(['/history', accountId]);
+  }
+
+  protected centralTime(value: string): string {
+    const timestamp = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : `${value}Z`;
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(timestamp));
+  }
+
+  protected cancelOrder(orderId: string): void {
+    this.pendingCancellation.set(orderId);
+  }
+
+  protected confirmCancellation(): void {
+    const orderId = this.pendingCancellation();
+    const accountId = this.accountId();
+    if (!orderId || !accountId) return;
+    this.pendingCancellation.set(null);
+    this.orderHistory.cancel(orderId, accountId);
+  }
+
+  protected dismissCancellation(): void {
+    this.pendingCancellation.set(null);
   }
 }

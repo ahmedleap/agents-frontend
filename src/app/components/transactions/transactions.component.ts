@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -12,7 +12,7 @@ type TransactionAction = 'DEPOSIT' | 'WITHDRAWAL';
 @Component({
   selector: 'app-transactions',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe],
+  imports: [CurrencyPipe],
   templateUrl: './transactions.component.html',
   styleUrls: ['./transactions.component.scss']
 })
@@ -89,5 +89,14 @@ export class TransactionsComponent {
     this.transactionService.addTransaction(this.accountId(), this.transactionAction(), amount);
     this.depositAmount.set(0);
     this.showDepositForm.set(false);
+  }
+
+  protected centralTime(value: string): string {
+    const timestamp = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : `${value}Z`;
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(timestamp));
   }
 }

@@ -67,7 +67,7 @@ export class ApiService {
   /**
    * Make a DELETE request
    */
-  delete<T>(endpoint: string, options?: RequestOptions): Observable<T> {
-    return this.http.delete<T>(`${this.baseUrl}/${endpoint}`, this.withAuth(options));
+  delete<T>(endpoint: string, options?: RequestOptions, body?: unknown): Observable<T> {
+    return this.http.delete<T>(`${this.baseUrl}/${endpoint}`, { ...this.withAuth(options), body });
   }
 }

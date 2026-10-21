@@ -65,23 +65,31 @@
             </th>
             <th>Filled price</th>
             <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
           @for (order of visibleOrders(); track order.orderId) {
             <tr>
               <td class="instrument">{{ order.instrument }}</td>
-              <td>{{ order.createdAt | date: 'MMM d, y, h:mm a' }}</td>
+              <td>{{ centralTime(order.createdAt) }}</td>
               <td><span class="type" [class.sell]="order.orderType === 'SELL'">{{ order.orderType }}</span></td>
               <td><span class="order-kind">{{ order.limitPrice === null ? 'Market' : 'Limit' }}</span></td>
               <td>{{ order.quantity | number: '1.0-0' }}</td>
               <td>{{ order.limitPrice === null ? '—' : (order.limitPrice | currency) }}</td>
               <td>{{ order.filledPrice === null ? '—' : (order.filledPrice | currency) }}</td>
               <td><span class="status" [class]="'status ' + order.status.toLowerCase()">{{ order.status }}</span></td>
+              <td>
+                @if (order.limitPrice !== null && order.status === 'PENDING') {
+                  <button type="button" class="cancel-button" (click)="cancelOrder(order.orderId)">Cancel</button>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="8" class="empty">
+              <td colspan="9" class="empty">
                 <strong>{{ orders().length ? 'No matching orders' : 'No orders yet' }}</strong>
                 <span>{{ orders().length ? 'Try a different search.' : 'Orders placed for ' + account()?.name + ' will appear here.' }}</span>
               </td>
@@ -92,3 +100,17 @@
     </div>
   </section>
 </section>
+
+@if (pendingCancellation(); as orderId) {
+  <div class="modal-backdrop" role="presentation" (click)="dismissCancellation()">
+    <section class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="cancel-title"
+             (click)="$event.stopPropagation()">
+      <h2 id="cancel-title">Cancel this limit order?</h2>
+      <p>This order will not be sent for execution. This action cannot be undone.</p>
+      <div class="confirm-actions">
+        <button type="button" class="secondary-button" (click)="dismissCancellation()">Keep order</button>
+        <button type="button" class="danger-button" (click)="confirmCancellation()">Cancel order</button>
+      </div>
+    </section>
+  </div>
+}

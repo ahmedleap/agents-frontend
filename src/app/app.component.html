@@ -20,10 +20,6 @@
       <h1>{{ title() }}</h1>
       <p>{{ subtitle() }}</p>
 
-      @if (!isAuthPage() && !isAnalyst()) {
-        <a class="header-link" routerLink="/signup">Sign up</a>
-      }
-
       <div class="header-actions">
       <button
         type="button"
@@ -60,7 +56,7 @@
           Trade
         </a>
         <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-          History
+          Orders
         </a>
         <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           Transactions

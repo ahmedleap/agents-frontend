@@ -5,7 +5,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
 import { DestroyRef } from '@angular/core';
-import { DashboardService } from '../../core/services/dashboard.service';
+import { AccountApiService } from '../../core/services/account-api.service';
+import { AccountSummary, DashboardService } from '../../core/services/dashboard.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
@@ -41,6 +42,7 @@ export class TradesComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly accounts = inject(DashboardService).accounts;
+  private readonly accountApi = inject(AccountApiService);
   private readonly tradingApi = inject(TradingApiService);
   private readonly portfolioApi = inject(PortfolioApiService);
   private readonly orderHistory = inject(OrderHistoryService);
@@ -49,10 +51,67 @@ export class TradesComponent {
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
     { initialValue: this.route.snapshot.paramMap.get('accountId') }
   );
+  private readonly routeAccountName = toSignal(
+    this.route.queryParamMap.pipe(map(params => params.get('accountName'))),
+    { initialValue: this.route.snapshot.queryParamMap.get('accountName') }
+  );
+  private readonly routeAccount = toSignal(
+    this.route.paramMap.pipe(
+      map(params => params.get('accountId')),
+      switchMap(accountId => accountId
+        ? forkJoin({
+            summary: this.accountApi.getAccountSummary(accountId),
+            portfolio: this.portfolioApi.getAccountPortfolio(environment.devClientId, accountId)
+          }).pipe(
+            map(({ summary, portfolio }): AccountSummary => ({
+              id: accountId,
+              name: portfolio.accountName,
+              value: summary.totalValue,
+              cashBalance: summary.cashBalance,
+              availableBalance: summary.availableBalance,
+              status: 'ACTIVE',
+              dayPL: 0,
+              dayPct: 0,
+              history: [summary.totalValue]
+            })),
+            catchError(() => of(null))
+          )
+        : of(null)
+      )
+    ),
+    { initialValue: null }
+  );
+
+  protected readonly selectableAccounts = computed(() => {
+    const accounts = this.accounts();
+    const routeAccount = this.routeAccount() ?? this.routeAccountFallback();
+    if (!routeAccount || accounts.some(account => account.id === routeAccount.id)) return accounts;
+    return [routeAccount, ...accounts];
+  });
+
+  private readonly routeAccountFallback = computed<AccountSummary | null>(() => {
+    const id = this.accountIdParam();
+    const name = this.routeAccountName();
+    return id && name ? {
+      id,
+      name,
+      value: 0,
+      cashBalance: 0,
+      availableBalance: 0,
+      status: 'ACTIVE',
+      dayPL: 0,
+      dayPct: 0,
+      history: [0]
+    } : null;
+  });
 
   protected readonly account = computed(() => {
-    const accounts = this.accounts();
-    return accounts.find(account => account.id === this.accountIdParam()) ?? accounts[0];
+    const accounts = this.selectableAccounts();
+    const routeAccountId = this.accountIdParam();
+    return accounts.find(account => account.id === routeAccountId)
+      ?? this.routeAccount()
+      ?? this.routeAccountFallback()
+      ?? (routeAccountId ? undefined : accounts[0]);
   });
   protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
   protected readonly searchQuery = signal('');
@@ -175,9 +234,19 @@ export class TradesComponent {
   }
 
   protected setLimitPrice(event: Event): void {
-    const value = Number((event.target as HTMLInputElement).value);
+    const input = event.target as HTMLInputElement;
+    const selectionStart = input.selectionStart;
+    const selectionEnd = input.selectionEnd;
+    const value = Number(input.value);
     this.limitPrice.set(Number.isFinite(value) ? Math.max(0, value) : 0);
     this.confirmed.set(false);
+
+    // The bound value is refreshed when the signal changes; restore the caret after that refresh.
+    requestAnimationFrame(() => {
+      if (document.activeElement === input && selectionStart !== null && selectionEnd !== null) {
+        input.setSelectionRange(selectionStart, selectionEnd);
+      }
+    });
   }
 
   protected setQuantity(event: Event): void {
