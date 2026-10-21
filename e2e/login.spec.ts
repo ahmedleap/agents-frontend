@@ -1,0 +1,104 @@
+import { expect, test } from '@playwright/test';
+
+const CLIENT_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+function tokenFor(role: 'CLIENT' | 'ADMIN' | 'ANALYST', sub: string, email: string): string {
+  const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  return `${encode({ alg: 'RS256', typ: 'JWT' })}.${encode({ sub, email, role, exp: Math.floor(Date.now() / 1000) + 900 })}.test-signature`;
+}
+
+async function stubLogin(page: import('@playwright/test').Page, role: 'CLIENT' | 'ADMIN' | 'ANALYST', endpoint: 'login' | 'admin/login', sub = CLIENT_ID) {
+  const email = 'jane@example.com';
+  await page.route(`**/api/v1/auth/${endpoint}`, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      accessToken: tokenFor(role, sub, email),
+      refreshToken: 'test-refresh-token',
+      expiresIn: 900,
+      user: { clientId: sub, email, firstName: 'Jane', lastName: 'Trader', role }
+    })
+  }));
+}
+
+test.describe('Login', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    // The app opens on the login page
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test('routes clients to their own account view after login', async ({ page }) => {
+    await stubLogin(page, 'CLIENT', 'login');
+    await page.route(`**/api/portfolio/v1/${CLIENT_ID}`, route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        clientId: CLIENT_ID,
+        accounts: [{ accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', accountName: 'Primary', totalPortfolioValue: 1200, totalCostBasis: 1000, totalGainLossDollars: 200, totalGainLossPercent: 20 }],
+        totalPortfolioValue: 1200,
+        totalCostBasis: 1000,
+        totalGainLossDollars: 200,
+        totalGainLossPercent: 20
+      })
+    }));
+    await page.getByLabel('Email').fill('jane@example.com');
+    // The label also wraps the Show/Hide button, so its name starts with "Password" but isn't exactly that
+    await page.getByLabel(/^Password/).fill('Secret123!');
+    await page.getByRole('button', { name: 'Log in' }).click();
+
+    await expect(page).toHaveURL(/\/client$/);
+    await expect(page.getByRole('heading', { name: 'Welcome, Jane' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Primary' })).toBeVisible();
+    // The sidebar is back once the user is past the login page
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+  });
+
+  test('routes staff logins by the role returned by the issuer', async ({ page }) => {
+    await stubLogin(page, 'ANALYST', 'admin/login', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc');
+    await page.route('**/api/v1/analytics/platform/metrics', route => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ totalClients: 100, activeClientsLast30Days: 75, totalAccounts: 120, activeAccountsLast30Days: 90, totalAssetsUnderManagement: 1_000_000, averagePortfolioSize: 10_000, totalOrders: 80, totalFilledOrders: 65, orderFulfillmentRate: 81.25, totalValueTraded: 250_000 })
+    }));
+    await page.route('**/api/v1/analytics/dashboard/total-volume', route => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ totalQuantityTraded: 400, totalValueTraded: 60_000, totalOrdersExecuted: 65, percentChangeYTD: 2.5 })
+    }));
+    await page.route('**/api/v1/analytics/dashboard/total-trades', route => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ totalTrades: 80, filledTrades: 65, cancelledTrades: 5, pendingTrades: 10, fulfillmentRate: 81.25, cancellationRate: 6.25, buyOrderCount: 44, sellOrderCount: 36 })
+    }));
+    await page.getByLabel('Admin / Analyst').check();
+    await page.getByLabel('Email').fill('analyst@example.com');
+    await page.getByLabel(/^Password/).fill('Secret123!');
+    await page.getByRole('button', { name: 'Log in' }).click();
+
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole('heading', { name: 'Trading Dashboard' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Analytics dashboard' })).toBeVisible();
+  });
+
+  test('routes admins to the admin-only overview', async ({ page }) => {
+    await stubLogin(page, 'ADMIN', 'admin/login', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd');
+    await page.route('**/api/v1/admin/clients', route => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await page.route('**/api/v1/admin/accounts', route => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await page.route('**/api/v1/admin/insights', route => route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify({ clientCount: 0, accountCount: 0, orderCount: 0, filledOrderCount: 0, tradedValue: 0 })
+    }));
+    await page.getByLabel('Admin / Analyst').check();
+    await page.getByLabel('Email').fill('admin@example.com');
+    await page.getByLabel(/^Password/).fill('Secret123!');
+    await page.getByRole('button', { name: 'Log in' }).click();
+
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.getByRole('heading', { name: 'Platform overview' })).toBeVisible();
+  });
+
+  test('stays on the login page when the form is empty', async ({ page }) => {
+    await page.getByRole('button', { name: 'Log in' }).click();
+
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByText('Enter a valid email address')).toBeVisible();
+    await expect(page.getByText('Enter your password')).toBeVisible();
+  });
+});

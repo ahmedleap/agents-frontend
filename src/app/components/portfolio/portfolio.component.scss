@@ -10,8 +10,8 @@
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
-  display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 
@@ -28,30 +28,60 @@ h2, h3, p { margin: 0; }
 .toolbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  // Title on the left, cash on the right, both starting at the top
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 0.5rem;
 
+  // Account name and "Portfolio" pushed down together so they line up with the bottom of the cash box
   h2 {
+    margin-top: 1.49rem;
     font-family: 'Fredoka', 'Baloo 2', sans-serif;
     font-size: 1.9rem;
     font-weight: 600;
     line-height: 1.1;
     color: var(--pf-green-dark);
   }
-  p, .asof { font-size: 0.9rem; color: var(--pf-muted); }
-  p { margin-top: 0.2rem; font-size: 1.5rem; font-weight: 700; }
+  p, .asof { font-size: 0.95rem; font-weight: 700; color: var(--pf-muted); }
+  p { margin-top: 0.2rem; font-size: 1.85rem; font-weight: 700; line-height: 1.2; }
+}
+
+.cash {
+  display: grid;
+  box-sizing: border-box;
+  justify-items: start;
+  align-content: center;
+  gap: 0.1rem;
+  height: 18.75rem;
+  padding: 1.5rem;
+  border-top: 5px solid var(--pf-gain);
+  border-radius: 2px;
+  background: linear-gradient(225deg, var(--pf-buy-bg) 0%, var(--pf-card) 100%);
+  box-shadow: var(--pf-shadow);
+  text-align: left;
+  font-weight: 700;
+
+  .cash-label { font-size: 0.95rem; font-weight: 700; color: var(--pf-muted); }
+  strong {
+    font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--pf-gain);
+    font-variant-numeric: tabular-nums;
+  }
+  small { font-size: 0.88rem; font-weight: 700; color: var(--pf-muted); font-variant-numeric: tabular-nums; }
 }
 
 .summary {
   display: grid;
-  grid-template-columns: minmax(15rem, 18.75rem) minmax(0, 1fr);
+  grid-template-columns: minmax(15rem, 18.75rem) minmax(15rem, 18.75rem) minmax(0, 1fr);
   gap: 1rem;
 }
 
 .hero {
   align-self: start;
-  aspect-ratio: 1;
+  height: 18.75rem;
+  box-sizing: border-box;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -82,7 +112,7 @@ h2, h3, p { margin: 0; }
   padding: 1.2rem 1.5rem;
 
   h3 { font-size: 1.1rem; }
-  .sub { font-size: 0.85rem; color: var(--pf-muted); margin-bottom: 0.3rem; }
+  .sub { font-size: 0.9rem; font-weight: 700; color: var(--pf-muted); margin-bottom: 0.3rem; }
 }
 
 .alloc-row {
@@ -101,7 +131,7 @@ h2, h3, p { margin: 0; }
   margin-bottom: 0.35rem;
   font-size: 0.95rem;
 
-  small { color: var(--pf-muted); margin-left: 0.35rem; }
+  small { color: var(--pf-muted); font-weight: 700; font-size: 0.88em; margin-left: 0.35rem; }
 }
 
 .alloc-value {
@@ -109,7 +139,8 @@ h2, h3, p { margin: 0; }
   margin-top: 0.15rem;
   text-align: right;
   color: var(--pf-muted);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .track { height: 0.625rem; border-radius: 0; background: var(--pf-inset); overflow: hidden; }
@@ -142,14 +173,33 @@ h2, h3, p { margin: 0; }
   gap: 0.25rem;
   border-left: 5px solid var(--pf-green);
 
-  .stat-label { font-size: 0.88rem; color: var(--pf-muted); }
+  .stat-label { font-size: 0.94rem; font-weight: 700; color: var(--pf-muted); }
   strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem 1.25rem;
+  color: var(--pf-muted);
+  font-weight: 700;
+  font-size: 1.05em;
+  border-left: 5px solid var(--pf-green);
+
+  &.error {
+    color: var(--pf-text);
+    border-left-color: var(--pf-loss);
+
+    strong { color: var(--pf-loss); }
+  }
 }
 
 .gain { color: var(--pf-gain); }
 .loss { color: var(--pf-loss); }
 
 .holdings {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -197,8 +247,8 @@ table {
 th {
   padding: 0.7rem 1rem;
   text-align: right;
-  font-weight: 600;
-  font-size: 0.82rem;
+  font-weight: 700;
+  font-size: 0.88rem;
   color: var(--pf-muted);
   background: var(--pf-inset);
   position: sticky;
@@ -220,7 +270,7 @@ tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: var(--pf-inset); }
 
 .ticker { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; }
-.empty { text-align: center; color: var(--pf-muted); padding: 2rem; }
+.empty { text-align: center; color: var(--pf-muted); font-weight: 700; font-size: 1.05em; padding: 2rem; }
 
 @media (max-width: 800px) {
   :host, .page { flex: 1 0 auto; }
@@ -228,4 +278,22 @@ tbody tr:hover { background: var(--pf-inset); }
 
   .summary { grid-template-columns: 1fr; }
   .hero { aspect-ratio: auto; }
+  .toolbar-actions { margin-top: 0; }
+}
+
+.toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
+.trade-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 2px;
+  background: var(--pf-green);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+
+  &:hover { background: var(--pf-green-dark); }
 }

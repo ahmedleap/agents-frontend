@@ -1,0 +1,204 @@
+<section class="page">
+  <div class="toolbar">
+    <div>
+      <p class="eyebrow">MARKETS</p>
+      <h2>Place a trade</h2>
+      <p class="intro">Review the market, choose an instrument, and place an order when you are ready.</p>
+    </div>
+    <div class="account-context">
+      <label class="account-label" for="trade-account">Trading from</label>
+      <select id="trade-account" class="account-select" [value]="account()?.id ?? ''" (change)="switchAccount($event)" aria-label="Select trading account">
+        @for (availableAccount of accounts(); track availableAccount.id) {
+          <option [value]="availableAccount.id">{{ availableAccount.name }}</option>
+        }
+      </select>
+      <div class="cash-card">
+        <span>Available cash</span>
+        <strong>{{ cashBalance() | currency }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="market-bar">
+    <div>
+      <span class="market-dot"></span>
+      <strong>Markets open</strong>
+      <span class="muted">Prices delayed by 15 minutes</span>
+    </div>
+    <span class="updated">Updated just now</span>
+  </div>
+
+  <div class="search-row">
+    <label class="search-field">
+      <span class="search-icon" aria-hidden="true">&#9906;</span>
+      <input type="search" placeholder="Search stocks or ETFs" aria-label="Search stocks or ETFs" [value]="searchQuery()" (input)="onSearch($event)">
+    </label>
+    <span class="result-count">{{ visibleInstruments().length }} instruments</span>
+  </div>
+
+  @if (loading()) {
+    <p class="status-message">Searching instruments...</p>
+  }
+  @if (error(); as message) {
+    <p class="error-banner" role="alert">{{ message }}</p>
+  }
+
+  <div class="instrument-grid">
+    @for (instrument of visibleInstruments(); track instrument.symbol) {
+      <article class="instrument-card">
+        <div class="instrument-top">
+          <div class="instrument-name">
+            <span class="symbol-badge" [style.background-color]="instrument.color">{{ instrument.symbol[0] }}</span>
+            <div>
+              <strong>{{ instrument.symbol }}</strong>
+              <span>{{ instrument.name }}</span>
+            </div>
+          </div>
+          <span class="exchange">{{ instrument.type }}</span>
+        </div>
+
+        <div class="price-row">
+          @if (instrument.priceState === 'ready' && instrument.price > 0) {
+            <strong>{{ instrument.price | currency }}</strong>
+            <span class="day-change" [class.gain]="instrument.change >= 0" [class.loss]="instrument.change < 0">
+              <small>1D</small>
+              {{ instrument.change >= 0 ? '+' : '' }}{{ instrument.change | currency }}
+              ({{ instrument.changePct >= 0 ? '+' : '' }}{{ instrument.changePct | number: '1.2-2' }}%)
+            </span>
+          } @else {
+            <strong>{{ instrument.priceState === 'loading' ? 'Loading price...' : 'Market data pending' }}</strong>
+          }
+        </div>
+
+        <div class="chart" aria-label="Recent price trend">
+          <svg viewBox="0 0 100 48" preserveAspectRatio="none" role="img">
+            <polyline [attr.points]="chartPoints(instrument.points)" fill="none" [attr.stroke]="instrument.color" [attr.stroke-opacity]="instrument.chartPlaceholder ? 0.28 : 1" [attr.stroke-dasharray]="instrument.chartPlaceholder ? '3 3' : null" stroke-width="2.2" vector-effect="non-scaling-stroke" />
+          </svg>
+        </div>
+
+        <div class="instrument-footer">
+          <span class="muted">1D trend</span>
+          <button type="button" class="trade-button" (click)="openOrder(instrument)">Trade <span aria-hidden="true">&#8594;</span></button>
+        </div>
+      </article>
+    } @empty {
+      <div class="empty-state">
+        @if (loading()) {
+          <strong>Loading instruments...</strong>
+          <span>Getting the latest market list.</span>
+        } @else {
+          <strong>No instruments found</strong>
+          <span>Try searching by ticker or company name.</span>
+        }
+      </div>
+    }
+  </div>
+
+  <section class="order-note">
+    <div class="note-icon" aria-hidden="true">i</div>
+    <div>
+      <strong>Make informed decisions</strong>
+      <p>Review the order details and estimated total before you submit. Trades execute during regular market hours.</p>
+    </div>
+  </section>
+</section>
+
+@if (selected(); as instrument) {
+  <div class="modal-backdrop" (click)="closeOrder()">
+    <section class="order-modal" role="dialog" aria-modal="true" aria-labelledby="order-title" (click)="$event.stopPropagation()">
+      @if (confirmed()) {
+        <div class="confirmation">
+          <div class="success-mark" [class.pending]="orderStatus() === 'PENDING'" aria-hidden="true">{{ orderStatus() === 'FILLED' ? '&#10003;' : '...' }}</div>
+          <p class="eyebrow">ORDER {{ orderStatus() }}</p>
+          <h2>{{ orderStatus() === 'FILLED' ? 'Trade filled' : orderStatus() === 'PENDING' ? 'Order received' : 'Order ' + orderStatus().toLowerCase() }}</h2>
+          <p class="confirmation-copy">Your {{ orderType() }} order for {{ quantity() }} {{ instrument.symbol }} in {{ account()?.name ?? 'your account' }} is {{ orderStatus().toLowerCase() }}.</p>
+          @if (orderStatus() === 'PENDING') {
+            <div class="status-dots" role="status" aria-live="polite"><span></span><span></span><span></span><em>Waiting for execution</em></div>
+          }
+          <div class="confirmation-summary">
+            <span>Estimated total</span>
+            <strong>{{ estimatedTotal() | currency }}</strong>
+          </div>
+          <button type="button" class="primary-button" (click)="closeOrder()">Done</button>
+        </div>
+      } @else {
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">NEW ORDER</p>
+            <h2 id="order-title">Trade {{ instrument.symbol }}</h2>
+          </div>
+          <button type="button" class="close-button" aria-label="Close order" (click)="closeOrder()">&#10005;</button>
+        </div>
+
+        <div class="selected-instrument">
+          <div class="instrument-name">
+            <span class="symbol-badge" [style.background-color]="instrument.color">{{ instrument.symbol[0] }}</span>
+            <div><strong>{{ instrument.name }}</strong><span>{{ instrument.type }}</span></div>
+          </div>
+          @if (instrument.priceState === 'ready' && instrument.price > 0) {
+            <strong>{{ instrument.price | currency }}</strong>
+          } @else {
+            <strong>{{ instrument.priceState === 'loading' ? 'Loading price...' : 'Market data pending' }}</strong>
+          }
+        </div>
+
+        <div class="order-chart-header">
+          <div>
+            <span class="chart-label">Price history</span>
+            @if (chartLoading()) { <small>Updating...</small> }
+          </div>
+          <span class="chart-range-value">{{ chartRange() === 'ALL' ? 'All' : chartRange() }}</span>
+        </div>
+        <div class="chart-range-tabs" role="group" aria-label="Select chart range">
+          @for (range of chartRanges; track range) {
+            <button type="button" [class.active]="chartRange() === range" (click)="setChartRange(range)">{{ range === 'ALL' ? 'All' : range }}</button>
+          }
+        </div>
+        <div class="order-chart" aria-label="Selected instrument price history">
+          <svg viewBox="0 0 100 48" preserveAspectRatio="none" role="img">
+            <polyline [attr.points]="chartPoints(chartPointsForOrder())" fill="none" [attr.stroke]="instrument.color" stroke-width="2.2" vector-effect="non-scaling-stroke" />
+          </svg>
+        </div>
+
+        <div class="side-toggle" role="group" aria-label="Order side">
+          <button type="button" [class.active]="side() === 'buy'" (click)="setSide('buy')">Buy</button>
+          <button type="button" [class.active]="side() === 'sell'" (click)="setSide('sell')">Sell</button>
+        </div>
+
+        <div class="order-type-toggle" role="group" aria-label="Order type">
+          <button type="button" [class.active]="orderType() === 'market'" (click)="setOrderType('market')">
+            <strong>Market</strong><span>Executes at the current price</span>
+          </button>
+          <button type="button" [class.active]="orderType() === 'limit'" (click)="setOrderType('limit')">
+            <strong>Limit</strong><span>Executes at your target price</span>
+          </button>
+        </div>
+
+        <label class="quantity-field">Shares
+          <input type="number" min="1" step="1" [value]="quantity()" (input)="setQuantity($event)">
+        </label>
+
+        @if (orderType() === 'limit') {
+          <label class="quantity-field">Limit price
+            <input type="number" min="0.01" step="0.01" [value]="limitPrice()" (input)="setLimitPrice($event)">
+          </label>
+          <p class="cash-hint">Your order will only execute at {{ limitPrice() | currency }} or better.</p>
+        }
+
+        <div class="review-row"><span>{{ orderType() === 'limit' ? 'Limit price' : 'Estimated price' }}</span><strong>{{ executionPrice() | currency }}</strong></div>
+        <div class="review-row total"><span>Estimated total</span><strong>{{ estimatedTotal() | currency }}</strong></div>
+        @if (side() === 'buy') {
+          <p class="cash-hint">Available after order: {{ cashBalance() - estimatedTotal() | currency }}</p>
+        }
+        @if (!canSubmit()) {
+          <p class="error-text">This order is higher than your available cash balance.</p>
+        }
+        <button type="button" class="primary-button full" [disabled]="!canSubmit() || submitting()" (click)="submitOrder()">{{ submitting() ? 'Submitting...' : 'Review and place order' }}</button>
+        @if (error(); as message) {
+          <p class="error-text" role="alert">{{ message }}</p>
+        }
+        <p class="modal-disclaimer">By placing this order, you confirm the details are correct.</p>
+      }
+    </section>
+  </div>
+}

@@ -1,9 +1,13 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { ApiService } from './api.service';
 
 export interface AccountSummary {
   id: string;
   name: string;
   value: number;
+  cashBalance: number;
+  availableBalance: number;
+  status: string;
   dayPL: number;
   dayPct: number;
   /** Daily closing values, oldest first. Same length for every account. */
@@ -37,6 +41,15 @@ export interface Mover {
   volume: number;
 }
 
+interface AccountListItemDto {
+  accountId: string;
+  name: string;
+  status: string;
+  cashBalance: number;
+  availableBalance: number;
+  totalValue: number;
+}
+
 // Mock market: % change into each day (13 moves => 14 data points).
 const MARKET_MOVES = [0.4, -0.3, 0.8, 0.5, -0.6, 0.9, 0.2, -0.4, 1.1, 0.3, -0.2, 0.7, 0.6];
 
@@ -56,7 +69,7 @@ function summarise(id: string, name: string, history: number[]): AccountSummary 
   const value = history[history.length - 1];
   const prev = history[history.length - 2];
   const dayPL = value - prev;
-  return { id, name, value, dayPL, dayPct: (dayPL / prev) * 100, history };
+  return { id, name, value, cashBalance: 0, availableBalance: 0, status: 'ACTIVE', dayPL, dayPct: (dayPL / prev) * 100, history };
 }
 
 function daysAgo(hours: number): Date {
@@ -70,6 +83,7 @@ function daysAgo(hours: number): Date {
  */
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
+  private readonly api = inject(ApiService);
   /** One label per history point, ending today. */
   readonly labels: string[] = Array.from({ length: MARKET_MOVES.length + 1 }, (_, i) => {
     const d = new Date();
@@ -77,12 +91,33 @@ export class DashboardService {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   });
 
-  readonly accounts = signal<AccountSummary[]>([
-    summarise('roth-ira', 'Roth IRA', buildHistory(64912.5, 1.0)),
-    summarise('401k', '401k', buildHistory(128430.18, 0.6)),
-    summarise('hsa', 'HSA', buildHistory(21845.6, 1.6, -1.4)),
-    summarise('529', '529', buildHistory(87210.75, 0.4))
-  ]);
+  readonly accounts = signal<AccountSummary[]>([]);
+
+  constructor() {
+    this.api.get<AccountListItemDto[]>('accounts').subscribe({
+      next: accounts => this.accounts.set(accounts.map(account => ({
+        id: account.accountId,
+        name: account.name,
+        value: account.totalValue,
+        cashBalance: account.cashBalance,
+        availableBalance: account.availableBalance,
+        status: account.status,
+        dayPL: 0,
+        dayPct: 0,
+        history: [account.totalValue]
+      }))),
+      error: error => console.error('Account list request failed', error)
+    });
+  }
+
+  updateAvailableCash(accountId: string, availableBalance: number): void {
+    this.accounts.update(accounts => accounts.map(account => account.id === accountId
+      ? { ...account, availableBalance, cashBalance: availableBalance }
+      : account));
+  }
+
+  // Publicly exposed read-only value sources for the dashboard presenter.
+  readonly accountData = this.accounts.asReadonly();
 
   readonly watchlist = signal<WatchItem[]>([
     { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 492.44, change: 8.12, changePct: 1.68 },
@@ -91,6 +126,7 @@ export class DashboardService {
     { ticker: 'META', name: 'Meta Platforms', price: 331.05, change: 4.9, changePct: 1.5 },
     { ticker: 'AMD', name: 'Advanced Micro Devices', price: 121.6, change: -2.2, changePct: -1.78 }
   ]);
+  readonly watchlistData = this.watchlist.asReadonly();
 
   readonly trades = signal<Trade[]>([
     { id: 't1', time: daysAgo(1), side: 'Buy', ticker: 'AAPL', shares: 25, price: 177.9, account: 'Roth IRA' },
@@ -99,6 +135,7 @@ export class DashboardService {
     { id: 't4', time: daysAgo(27), side: 'Buy', ticker: 'KO', shares: 80, price: 59.15, account: '529' },
     { id: 't5', time: daysAgo(30), side: 'Sell', ticker: 'AMD', shares: 40, price: 123.8, account: 'HSA' }
   ]);
+  readonly tradeData = this.trades.asReadonly();
 
   readonly movers = signal<Mover[]>([
     { ticker: 'SMCI', name: 'Super Micro Computer', price: 254.1, change: 21.3, changePct: 9.15, volume: 18_420_000 },
@@ -107,4 +144,5 @@ export class DashboardService {
     { ticker: 'PFE', name: 'Pfizer Inc.', price: 28.9, change: -1.12, changePct: -3.73, volume: 37_780_000 },
     { ticker: 'AMD', name: 'Advanced Micro Devices', price: 121.6, change: -2.2, changePct: -1.78, volume: 52_110_000 }
   ]);
+  readonly moverData = this.movers.asReadonly();
 }

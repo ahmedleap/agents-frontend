@@ -1,8 +1,7 @@
 <div class="app-container">
   @if (appInitialized()) {
     <header class="app-header">
-      <a class="logo-link" [routerLink]="isAdmin() ? '/admin' : isAnalyst() ? '/analytics' : '/dashboard'"
-        [attr.aria-label]="isAdmin() ? 'Go to admin' : isAnalyst() ? 'Go to analysis' : 'Go to dashboard'">
+      <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to your home page">
       <svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
         <g fill="#fff" stroke="#245a20" stroke-width="5" stroke-linejoin="round">
           <g transform="translate(94 102) rotate(-18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
@@ -19,14 +18,16 @@
       </a>
       <h1>{{ title() }}</h1>
       <p>{{ subtitle() }}</p>
+      @if (role()) { <span class="role-badge">{{ role() }}</span> }
 
       <div class="header-actions">
+      <!-- Hover label names the mode it switches to -->
       <button
         type="button"
-        class="theme-toggle"
+        class="icon-btn tip"
         (click)="theme.toggle()"
         [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-        [attr.title]="theme.theme() === 'dark' ? 'Light mode' : 'Dark mode'">
+        [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
         @if (theme.theme() === 'dark') {
           <!-- Sun -->
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -40,46 +41,91 @@
           </svg>
         }
       </button>
+      @if (role()) {
+        <button type="button" class="sign-out" (click)="signOut()">Sign out</button>
+      }
+
+      @if (!isAuthPage()) {
+        <a
+          class="icon-btn tip"
+          routerLink="/settings"
+          routerLinkActive="active"
+          aria-label="Settings"
+          data-tip="Settings">
+          <!-- Gear -->
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </a>
+      }
       </div>
     </header>
 
     <div class="app-body">
+      @if (!isAuthPage()) {
       <nav class="app-sidebar" aria-label="Main navigation">
-      @if (isAdmin()) {
-        <a class="nav-link" routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin</a>
-      } @else if (isAnalyst()) {
-        <!-- Analysts only get the analysis view, not the client dashboard or accounts -->
-        <a class="nav-link" routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">Analysis</a>
-      } @else {
-        <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
+        @if (role() === 'CLIENT') {
+          <a class="nav-link" routerLink="/client" routerLinkActive="active" ariaCurrentWhenActive="page">My accounts</a>
+          <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <span class="trade-icon" aria-hidden="true">↗</span>Trade
+          </a>
+          <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">History</a>
+          <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">Transactions</a>
+        } @else if (role() === 'ADMIN') {
+          <a class="nav-link" routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin overview</a>
+        } @else if (role() === 'ANALYST') {
+          <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Analytics dashboard</a>
+        }
 
-        <button
-          type="button"
-          class="nav-link nav-toggle"
-          [class.open]="accountsOpen()"
-          [attr.aria-expanded]="accountsOpen()"
-          aria-controls="account-list"
-          (click)="toggleAccounts()">
-          Account
-          <span class="chevron" aria-hidden="true"></span>
-        </button>
+        @if (role() === 'CLIENT') {
+        <div class="nav-row">
+          <button
+            type="button"
+            class="nav-link nav-toggle"
+            [class.open]="accountsOpen()"
+            [attr.aria-expanded]="accountsOpen()"
+            aria-controls="account-list"
+            (click)="toggleAccounts()">
+            Account
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+          <a class="add-account" routerLink="/accounts/new" routerLinkActive="active" aria-label="Add account" data-tip="Add account">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </a>
+        </div>
 
         @if (accountsOpen()) {
           <div id="account-list" class="sub-nav">
-            @for (a of accounts(); track a.id) {
-              <a class="nav-link sub-link" [routerLink]="['/portfolio', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-                <span class="acct-name">{{ a.name }}</span>
-                <span class="acct-value">{{ a.value | currency }}</span>
-                <span class="acct-pl" [class.gain]="a.dayPL >= 0" [class.loss]="a.dayPL < 0">
-                  {{ a.dayPL >= 0 ? '+' : '' }}{{ a.dayPL | currency }}
-                  ({{ a.dayPct >= 0 ? '+' : '' }}{{ a.dayPct | number: '1.2-2' }}%)
-                </span>
-              </a>
+            @switch (accounts().status) {
+              @case ('loading') {
+                <span class="sub-note">Loading accounts...</span>
+              }
+              @case ('error') {
+                <span class="sub-note error">Couldn't load accounts</span>
+              }
+              @default {
+                @for (a of accounts().list; track a.id) {
+                  <a class="nav-link sub-link" [routerLink]="['/portfolio', a.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+                    <span class="acct-name">{{ a.name }}</span>
+                    <span class="acct-value">{{ a.value | currency }}</span>
+                    <span class="acct-pl" [class.gain]="a.gain >= 0" [class.loss]="a.gain < 0">
+                      {{ a.gain >= 0 ? '+' : '' }}{{ a.gain | currency }}
+                      ({{ a.pct >= 0 ? '+' : '' }}{{ a.pct | number: '1.2-2' }}%)
+                    </span>
+                  </a>
+                } @empty {
+                  <span class="sub-note">No accounts</span>
+                }
+              }
             }
           </div>
         }
-      }
+        }
       </nav>
+      }
 
       <main class="app-main">
         <router-outlet></router-outlet>
