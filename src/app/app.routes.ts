@@ -66,19 +66,13 @@ export const routes: Routes = [
     loadComponent: () => import('./components/transactions/transactions.component').then(m => m.TransactionsComponent)
   },
   {
-  path: 'dashboard',
-  loadComponent: () =>
-    import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
+    // Header > gear
+    path: 'settings',
+    loadComponent: () => import('./components/settings/settings.component').then(m => m.SettingsComponent)
   },
+
   {
-    path: 'login',
-    loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent)
-  },
-  {
-    path: 'signup',
-    loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent)
-  },
-  {
+    // Unknown URLs go back to the start of the flow
     path: '**',
     redirectTo: 'login'
   }

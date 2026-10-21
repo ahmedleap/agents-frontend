@@ -42,7 +42,7 @@ h2, h3, p { margin: 0; }
     line-height: 1.1;
     color: var(--pf-green-dark);
   }
-  p, .asof { font-size: 0.9rem; color: var(--pf-muted); }
+  p, .asof { font-size: 0.95rem; font-weight: 700; color: var(--pf-muted); }
   p { margin-top: 0.2rem; font-size: 1.5rem; font-weight: 700; }
 }
 
@@ -151,7 +151,7 @@ h2, h3, p { margin: 0; }
   padding: 0.9rem 1.25rem;
 
   h3 { font-size: 1.15rem; }
-  .sub { font-size: 0.85rem; color: var(--pf-muted); margin-top: 0.1rem; }
+  .sub { font-size: 0.9rem; font-weight: 700; color: var(--pf-muted); margin-top: 0.1rem; }
   strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
 }
 
@@ -188,8 +188,8 @@ table {
 th {
   padding: 0.7rem 1rem;
   text-align: right;
-  font-weight: 600;
-  font-size: 0.82rem;
+  font-weight: 700;
+  font-size: 0.88rem;
   color: var(--pf-muted);
   background: var(--pf-inset);
   position: sticky;
@@ -245,7 +245,7 @@ tbody tr:hover { background: var(--pf-inset); }
   flex-direction: column;
   line-height: 1.2;
 
-  small { font-weight: 400; color: var(--pf-muted); font-size: 0.8rem; }
+  small { font-weight: 700; color: var(--pf-muted); font-size: 0.86rem; }
 }
 
 .side {
@@ -259,7 +259,7 @@ tbody tr:hover { background: var(--pf-inset); }
   &.sell { color: var(--pf-loss); background: var(--pf-sell-bg); }
 }
 
-.empty { text-align: center; color: var(--pf-muted); padding: 2rem; }
+.empty { text-align: center; color: var(--pf-muted); font-weight: 700; font-size: 1.05em; padding: 2rem; }
 
 /* ---------- Responsive ---------- */
 

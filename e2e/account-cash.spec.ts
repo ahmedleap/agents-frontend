@@ -1,6 +1,8 @@
 import { expect, Page, test } from '@playwright/test';
+import { environment } from '../src/environments/environment';
 
-const CLIENT_ID = 'aa0e8400-e29b-41d4-a716-446655440001';
+// Same client the app uses until real login exists
+const CLIENT_ID = environment.devClientId;
 const ACCOUNT_ID = '11111111-2222-4333-8444-555555555555';
 
 // Fake backend responses so this runs without agents-backend
@@ -26,7 +28,7 @@ test.describe('Account cash balance', () => {
 
     await page.goto(`/portfolio/${ACCOUNT_ID}`);
 
-    const card = page.locator('.toolbar .cash');
+    const card = page.locator('.cash');
     await expect(card).toContainText('Cash Balance');
     await expect(card).toContainText('$2,500.50');
     await expect(card).toContainText('$2,000.00 available to trade');
@@ -38,6 +40,6 @@ test.describe('Account cash balance', () => {
     await page.goto(`/portfolio/${ACCOUNT_ID}`);
 
     await expect(page.getByRole('heading', { name: 'Roth IRA' })).toBeVisible();
-    await expect(page.locator('.toolbar .cash')).toContainText("Couldn't load the cash balance");
+    await expect(page.locator('.cash')).toContainText("Couldn't load the cash balance");
   });
 });

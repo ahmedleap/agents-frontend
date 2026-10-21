@@ -58,6 +58,9 @@ export class ApiService {
     return this.http.put<T>(`${this.baseUrl}/${endpoint}`, body, this.withAuth(options));
   }
 
+  /**
+   * Make a PATCH request
+   */
   patch<T>(endpoint: string, body: unknown, options?: RequestOptions): Observable<T> {
     return this.http.patch<T>(`${this.baseUrl}/${endpoint}`, body, this.withAuth(options));
   }
