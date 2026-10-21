@@ -124,19 +124,38 @@ fieldset {
 
 .fields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  // Six tracks: details take two each (three per row), the two password boxes take three each
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   grid-template-areas:
-    "first last  pw"
-    "email phone confirm"
-    "dob   ssn   rules";
-  gap: 1.1rem;
+    "h-about    h-about    h-about    h-about    h-about    h-about"
+    "first      first      middle     middle     last       last"
+    "email      email      dob        dob        ssn        ssn"
+    "h-password h-password h-password h-password h-password h-password"
+    "pw         pw         pw         confirm    confirm    confirm"
+    "rules      rules      rules      rules      rules      rules";
+  gap: 0.9rem 1.1rem;
   align-items: start;
 }
 
+// Small heading at the start of each section; later ones get a divider above
+.section-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pf-accent);
+
+  &.divided { padding-top: 1rem; border-top: 1px solid var(--pf-border); }
+}
+
+.a-h-about { grid-area: h-about; }
+.a-h-password { grid-area: h-password; }
+
 .a-first { grid-area: first; }
+.a-middle { grid-area: middle; }
 .a-last { grid-area: last; }
 .a-email { grid-area: email; }
-.a-phone { grid-area: phone; }
 .a-dob { grid-area: dob; }
 .a-ssn { grid-area: ssn; }
 .a-pw { grid-area: pw; }
@@ -176,6 +195,7 @@ fieldset {
 }
 
 .req { color: var(--pf-loss); }
+.optional { color: var(--pf-muted); font-size: 0.8rem; font-weight: 700; }
 .err { color: var(--pf-loss); font-weight: 500; font-size: 0.85rem; }
 .hint { color: var(--pf-muted); font-weight: 700; font-size: 0.9rem; }
 
@@ -204,15 +224,14 @@ fieldset {
   &:hover { background: var(--pf-active); }
 }
 
+// Password checklist on one line under the two password boxes
 .rules {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.25rem 0.75rem;
-  align-content: center;
-  align-self: stretch;
-  white-space: nowrap;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.4rem;
   margin: 0;
   padding: 0.6rem 0.8rem;
+  border-radius: 8px;
   list-style: none;
   background: var(--pf-inset);
   border: 1px solid var(--pf-border);
@@ -334,18 +353,73 @@ fieldset {
   }
 }
 
+/* ---------- Investor profile ---------- */
+
+.profile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.1rem;
+}
+
+.choice {
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+}
+
+.choice-label { font-size: 0.95rem; font-weight: 600; }
+
+// Thin divider between Risk level and Portfolio size
+.choice + .choice { padding-left: 1.1rem; border-left: 1px solid var(--pf-border); }
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  &.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.option {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid var(--pf-border);
+  border-radius: 8px;
+  background: var(--pf-inset);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  input { position: absolute; opacity: 0; pointer-events: none; }
+  strong { font-size: 0.95rem; }
+  small { color: var(--pf-muted); font-size: 0.78rem; font-weight: 700; }
+  &.chip { padding: 0.5rem 0.9rem; border-radius: 999px; }
+  &:hover { border-color: var(--pf-green); }
+  &:focus-within { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+  &.selected { border-color: var(--pf-green); background: var(--pf-buy-bg); box-shadow: 0 0 0 3px var(--pf-buy-bg); }
+}
+
+.choice.has-error .option:not(.selected) { border-color: var(--pf-loss); }
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1180px) {
   .fields {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "first last"
-      "email phone"
-      "dob   ssn"
-      "pw    confirm"
-      "rules rules";
+      "h-about    h-about"
+      "first      middle"
+      "last       dob"
+      "email      ssn"
+      "h-password h-password"
+      "pw         confirm"
+      "rules      rules";
   }
+
+  // Too narrow for the risk cards and size pills side by side
+  .profile { grid-template-columns: 1fr; }
+  // Stacked: the divider goes between them horizontally instead
+  .choice + .choice { padding: 1rem 0 0; border-left: 0; border-top: 1px solid var(--pf-border); }
 }
 
 @media (max-width: 860px) {
@@ -357,6 +431,6 @@ fieldset {
 @media (max-width: 520px) {
   .fields {
     grid-template-columns: 1fr;
-    grid-template-areas: "first" "last" "email" "phone" "dob" "ssn" "pw" "confirm" "rules";
+    grid-template-areas: "h-about" "first" "middle" "last" "email" "dob" "ssn" "h-password" "pw" "confirm" "rules";
   }
 }

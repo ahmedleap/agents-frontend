@@ -2,6 +2,7 @@ import { Injectable, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PortfolioSizeRange, RiskTolerance } from './client-api.service';
 
 export type UserRole = 'CLIENT' | 'ADMIN' | 'ANALYST';
 
@@ -30,10 +31,13 @@ export interface SignupRequest {
   email: string;
   password: string;
   firstName: string;
+  /** Optional; leave out when blank */
+  middleName?: string;
   lastName: string;
   dateOfBirth: string;
   ssn: string;
-  phoneNumber?: string;
+  riskTolerance: RiskTolerance;
+  portfolioSizeRange: PortfolioSizeRange;
   country?: string;
 }
 

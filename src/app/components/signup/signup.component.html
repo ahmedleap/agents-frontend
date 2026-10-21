@@ -31,7 +31,7 @@
       } @else {
         <header class="panel-head">
           <h2>Create your account</h2>
-          <p class="muted">It only takes a minute. All fields are required.</p>
+          <p class="muted">It only takes a minute. All fields are required unless marked optional.</p>
         </header>
 
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -39,12 +39,20 @@
             @if (serverError()) {
               <p class="alert" role="alert">{{ serverError() }}</p>
             }
-            <!-- Left two columns: personal details. Right column: password, confirm, rules -->
+            <!-- Three sections: about you, password, investor profile -->
             <div class="fields">
+              <h3 class="section-title a-h-about">About you</h3>
+
               <label class="field a-first" [class.has-error]="invalid('firstName')">
                 <span>First name <span class="req">*</span></span>
                 <input formControlName="firstName" autocomplete="given-name" placeholder="Jane">
                 @if (invalid('firstName')) { <small class="err">First name is required</small> }
+              </label>
+
+              <label class="field a-middle" [class.has-error]="invalid('middleName')">
+                <span>Middle name <small class="optional">optional</small></span>
+                <input formControlName="middleName" autocomplete="additional-name" placeholder="Marie">
+                @if (invalid('middleName')) { <small class="err">Keep it under 50 characters</small> }
               </label>
 
               <label class="field a-last" [class.has-error]="invalid('lastName')">
@@ -60,25 +68,6 @@
                   <small class="err">That email is already registered</small>
                 } @else if (invalid('email')) {
                   <small class="err">Enter a valid email address</small>
-                }
-              </label>
-
-              <label class="field a-phone" [class.has-error]="invalid('phoneNumber')">
-                <span>Phone <span class="req">*</span></span>
-                <input
-                  type="tel"
-                  formControlName="phoneNumber"
-                  (input)="onPhoneInput($event)"
-                  inputmode="numeric"
-                  maxlength="14"
-                  autocomplete="tel-national"
-                  placeholder="(202) 555-0123">
-                @if (form.controls.phoneNumber.hasError('phoneInvalid')) {
-                  <small class="err">That isn't a valid US phone number</small>
-                } @else if (form.controls.phoneNumber.hasError('taken')) {
-                  <small class="err">That phone number is already registered</small>
-                } @else if (invalid('phoneNumber')) {
-                  <small class="err">Enter a 10-digit phone number</small>
                 }
               </label>
 
@@ -117,6 +106,8 @@
                 }
               </label>
 
+              <h3 class="section-title divided a-h-password">Password</h3>
+
               <label class="field a-pw" [class.has-error]="invalid('password')">
                 <span>Password <span class="req">*</span></span>
                 <span class="input-wrap">
@@ -143,6 +134,37 @@
                   <li [class.met]="r.met">{{ r.label }}</li>
                 }
               </ul>
+            </div>
+
+            <!-- Investor profile: stored on the client; editable later in Settings -->
+            <h3 class="section-title divided">Investor profile</h3>
+            <div class="profile">
+              <div class="choice" role="radiogroup" aria-labelledby="risk-label" [class.has-error]="invalid('riskTolerance')">
+                <span class="choice-label" id="risk-label">Risk level <span class="req">*</span></span>
+                <div class="options three">
+                  @for (o of riskOptions; track o.value) {
+                    <label class="option" [class.selected]="form.controls.riskTolerance.value === o.value">
+                      <input type="radio" formControlName="riskTolerance" [value]="o.value">
+                      <strong>{{ o.label }}</strong>
+                      <small>{{ o.blurb }}</small>
+                    </label>
+                  }
+                </div>
+                @if (invalid('riskTolerance')) { <small class="err">Choose a risk level</small> }
+              </div>
+
+              <div class="choice" role="radiogroup" aria-labelledby="size-label" [class.has-error]="invalid('portfolioSizeRange')">
+                <span class="choice-label" id="size-label">Portfolio size <span class="req">*</span></span>
+                <div class="options">
+                  @for (o of sizeOptions; track o.value) {
+                    <label class="option chip" [class.selected]="form.controls.portfolioSizeRange.value === o.value">
+                      <input type="radio" formControlName="portfolioSizeRange" [value]="o.value">
+                      <strong>{{ o.label }}</strong>
+                    </label>
+                  }
+                </div>
+                @if (invalid('portfolioSizeRange')) { <small class="err">Choose a portfolio size</small> }
+              </div>
             </div>
 
             <button type="submit" class="btn primary block" [disabled]="isSubmitting()">

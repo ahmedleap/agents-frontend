@@ -10,22 +10,9 @@ import {
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { AuthService, SignupRequest as AuthSignupRequest, SignupResponse } from '../../core/services/auth.service';
-
-// Matches agents-middleware SignupDto (POST /api/v1/auth/signup). Not wired up yet:
-// the middleware is still being tested, so submit only validates and previews the payload.
-export interface SignupRequest {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  /** YYYY-MM-DD */
-  dateOfBirth: string;
-  /** US number, 10 digits, no +1 or punctuation, e.g. 2025550123 */
-  phoneNumber: string;
-  /** 9 digits, no dashes. Not in the middleware's SignupDto yet - it needs adding there. */
-  ssn: string;
-}
+import { AuthService, SignupRequest, SignupResponse } from '../../core/services/auth.service';
+import { PortfolioSizeRange, RiskTolerance } from '../../core/services/client-api.service';
+import { RISK_OPTIONS, SIZE_OPTIONS } from '../../core/client-profile-options';
 
 // Same rules as agents-middleware validatePassword()
 const PASSWORD_RULES = [
@@ -39,23 +26,6 @@ const PASSWORD_RULES = [
 const MIN_AGE = 18;
 
 const ssnDigits = (v: string) => (v ?? '').replace(/\D/g, '');
-const phoneDigits = (v: string) => (v ?? '').replace(/\D/g, '');
-
-/** (202) 555-0123 as the user types */
-const formatPhone = (v: string) => {
-  const d = phoneDigits(v).slice(0, 10);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
-  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-};
-
-// US numbers: 10 digits; area code and exchange can't start with 0 or 1
-const validPhone: ValidatorFn = (c: AbstractControl): ValidationErrors | null => {
-  const d = phoneDigits(c.value);
-  if (!d) return null;
-  if (d.length !== 10) return { phoneLength: true };
-  return /^[2-9]\d{2}[2-9]\d{6}$/.test(d) ? null : { phoneInvalid: true };
-};
 
 /** XXX-XX-XXXX as the user types */
 const formatSsn = (v: string) => {
@@ -105,17 +75,22 @@ export class SignupComponent {
 
   protected readonly minAge = MIN_AGE;
   protected readonly today = new Date().toISOString().slice(0, 10);
+  protected readonly riskOptions = RISK_OPTIONS;
+  protected readonly sizeOptions = SIZE_OPTIONS;
 
   protected readonly form = this.fb.group(
     {
       firstName: ['', [Validators.required, Validators.maxLength(50)]],
+      middleName: ['', [Validators.maxLength(50)]],
       lastName: ['', [Validators.required, Validators.maxLength(50)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, passwordStrength]],
       confirmPassword: ['', Validators.required],
       dateOfBirth: ['', [Validators.required, adultBirthDate]],
-      phoneNumber: ['', [Validators.required, validPhone]],
-      ssn: ['', [Validators.required, validSsn]]
+      ssn: ['', [Validators.required, validSsn]],
+      // Investor profile; the middleware stores these on the new client
+      riskTolerance: [null as RiskTolerance | null, Validators.required],
+      portfolioSizeRange: [null as PortfolioSizeRange | null, Validators.required]
     },
     { validators: passwordsMatch }
   );
@@ -149,28 +124,29 @@ export class SignupComponent {
     }
 
     const v = this.form.getRawValue();
+    const middleName = v.middleName.trim();
+    // Matches agents-middleware SignupDto (POST /api/v1/auth/signup)
     const body: SignupRequest = {
       email: v.email.trim(),
       password: v.password,
       firstName: v.firstName.trim(),
+      // Optional: only sent when filled in
+      ...(middleName ? { middleName } : {}),
       lastName: v.lastName.trim(),
       dateOfBirth: v.dateOfBirth,
-      phoneNumber: phoneDigits(v.phoneNumber),
-      ssn: ssnDigits(v.ssn)
+      ssn: ssnDigits(v.ssn),
+      riskTolerance: v.riskTolerance!,
+      portfolioSizeRange: v.portfolioSizeRange!
     };
 
     this.serverError.set(null);
     this.isSubmitting.set(true);
-    this.auth.signup(body as AuthSignupRequest).subscribe({
+    this.auth.signup(body).subscribe({
       next: response => this.created.set(response),
       error: (error: unknown) => {
         if (error instanceof HttpErrorResponse && error.status === 409) {
-          const message = String(error.error?.message ?? '').toLowerCase();
-          if (message.includes('phone')) {
-            this.form.controls.phoneNumber.setErrors({ ...this.form.controls.phoneNumber.errors, taken: true });
-          } else {
-            this.form.controls.email.setErrors({ ...this.form.controls.email.errors, taken: true });
-          }
+          // The only unique field left on sign-up is the email
+          this.form.controls.email.setErrors({ ...this.form.controls.email.errors, taken: true });
         } else if (error instanceof HttpErrorResponse && error.status === 0) {
           this.serverError.set('Unable to connect to the registration service. Check that the middleware is running at the configured address.');
         } else if (error instanceof HttpErrorResponse && error.status === 400) {
@@ -187,12 +163,6 @@ export class SignupComponent {
   protected startOver(): void {
     this.created.set(null);
     this.form.reset();
-  }
-
-  protected onPhoneInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const formatted = formatPhone(input.value);
-    if (formatted !== input.value) this.form.controls.phoneNumber.setValue(formatted);
   }
 
   protected onSsnInput(event: Event): void {
