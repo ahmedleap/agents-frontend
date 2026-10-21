@@ -24,7 +24,9 @@ export class ApiService {
   private readonly baseUrl = environment.apiUrl;
 
   private withAuth(options?: RequestOptions): RequestOptions | undefined {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('access_token')
+      ?? localStorage.getItem('accessToken')
+      ?? localStorage.getItem('token');
     if (!token) return options;
 
     const headers = options?.headers instanceof HttpHeaders

@@ -2,7 +2,7 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8081/api',
+  apiUrl: '/api',
   wsUrl: 'ws://localhost:3000',
   logLevel: 'debug',
   // No login yet: John Trader from the shared dev database (port 15432)

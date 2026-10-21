@@ -166,6 +166,8 @@
         <div class="overlay">Loading…</div>
       } @else if (volumeTrend.error()) {
         <div class="overlay">Couldn't load volume trend.</div>
+      } @else if (volumeTrend.hasValue() && !volumeTrend.value()?.length) {
+        <div class="overlay">No intraday volume recorded for this day.</div>
       }
     </div>
   </div>

@@ -19,7 +19,7 @@ export class AuthService {
   private readonly apiService = inject(ApiService);
 
   // State signals
-  private readonly accessToken = signal<string | null>(null);
+  private readonly accessToken = signal<string | null>(this.readStoredToken());
   private readonly currentUser = signal<any | null>(null);
   private readonly isAuthenticating = signal(false);
   private readonly authError = signal<string | null>(null);
@@ -54,7 +54,9 @@ export class AuthService {
 
     return this.apiService.post<any>('auth/login', { email, password }).pipe(
       tap(response => {
-        this.accessToken.set(response.token);
+        const token = response.token ?? response.accessToken;
+        this.accessToken.set(token);
+        if (token) localStorage.setItem('access_token', token);
         this.currentUser.set(response.user);
         this.isAuthenticating.set(false);
       }),
@@ -75,13 +77,22 @@ export class AuthService {
     this.accessToken.set(null);
     this.currentUser.set(null);
     this.authError.set(null);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('token');
   }
 
   /**
    * Get current access token
    */
   getToken(): string | null {
-    return this.accessToken();
+    return this.accessToken() ?? this.readStoredToken();
+  }
+
+  private readStoredToken(): string | null {
+    return localStorage.getItem('access_token')
+      ?? localStorage.getItem('accessToken')
+      ?? localStorage.getItem('token');
   }
 
   /**
