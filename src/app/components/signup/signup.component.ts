@@ -165,7 +165,12 @@ export class SignupComponent {
       next: response => this.created.set(response),
       error: (error: unknown) => {
         if (error instanceof HttpErrorResponse && error.status === 409) {
-          this.form.controls.email.setErrors({ ...this.form.controls.email.errors, taken: true });
+          const message = String(error.error?.message ?? '').toLowerCase();
+          if (message.includes('phone')) {
+            this.form.controls.phoneNumber.setErrors({ ...this.form.controls.phoneNumber.errors, taken: true });
+          } else {
+            this.form.controls.email.setErrors({ ...this.form.controls.email.errors, taken: true });
+          }
         } else if (error instanceof HttpErrorResponse && error.status === 0) {
           this.serverError.set('Unable to connect to the registration service. Check that the middleware is running at the configured address.');
         } else if (error instanceof HttpErrorResponse && error.status === 400) {

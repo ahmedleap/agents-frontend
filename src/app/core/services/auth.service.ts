@@ -1,6 +1,6 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, finalize, of, tap, throwError } from 'rxjs';
+import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export type UserRole = 'CLIENT' | 'ADMIN' | 'ANALYST';
@@ -18,6 +18,12 @@ export interface LoginResponse {
   refreshToken: string;
   expiresIn: number;
   user: AuthenticatedUser;
+}
+
+interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
 }
 
 export interface SignupRequest {
@@ -66,6 +72,7 @@ export class AuthService {
   private readonly currentUserState = signal<AuthenticatedUser | null>(null);
   private readonly isAuthenticatingState = signal(false);
   private readonly authError = signal<string | null>(null);
+  private refreshRequest: Observable<string> | null = null;
 
   // Derived state
   readonly currentUser = this.currentUserState.asReadonly();
@@ -109,6 +116,43 @@ export class AuthService {
 
   signup(request: SignupRequest): Observable<SignupResponse> {
     return this.http.post<SignupResponse>(`${environment.authUrl}/auth/signup`, request);
+  }
+
+  /** Rotates the access and refresh tokens once; concurrent 401s share this request. */
+  refreshAccessToken(): Observable<string> {
+    if (this.refreshRequest) return this.refreshRequest;
+
+    const user = this.currentUserState();
+    const refreshToken = this.refreshToken();
+    if (!user || !refreshToken) {
+      return throwError(() => new Error('No active refresh session.'));
+    }
+
+    this.refreshRequest = this.http.post<RefreshResponse>(`${environment.authUrl}/auth/refresh`, {
+      clientId: user.clientId,
+      refreshToken
+    }).pipe(
+      tap(response => {
+        const claims = decodeClaims(response.accessToken);
+        if (!response.accessToken || !response.refreshToken || !claims
+          || claims.sub !== user.clientId || claims.email !== user.email
+          || claims.role !== user.role || !Number.isFinite(claims.exp)
+          || claims.exp * 1000 <= Date.now()) {
+          throw new Error('The refresh response contained an invalid access token.');
+        }
+        this.accessToken.set(response.accessToken);
+        this.refreshToken.set(response.refreshToken);
+      }),
+      map(response => response.accessToken),
+      catchError(error => {
+        this.logout();
+        return throwError(() => error);
+      }),
+      finalize(() => this.refreshRequest = null),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+
+    return this.refreshRequest;
   }
 
   /**

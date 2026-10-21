@@ -75,6 +75,8 @@
                   placeholder="(202) 555-0123">
                 @if (form.controls.phoneNumber.hasError('phoneInvalid')) {
                   <small class="err">That isn't a valid US phone number</small>
+                } @else if (form.controls.phoneNumber.hasError('taken')) {
+                  <small class="err">That phone number is already registered</small>
                 } @else if (invalid('phoneNumber')) {
                   <small class="err">Enter a 10-digit phone number</small>
                 }

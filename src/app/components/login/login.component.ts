@@ -59,7 +59,12 @@ export class LoginComponent {
       error: (error: unknown) => {
         if (error instanceof HttpErrorResponse && error.status === 401) {
           this.form.setErrors({ badCredentials: true });
+        } else if (error instanceof HttpErrorResponse && error.status === 429) {
+          this.serverError.set('Too many sign-in attempts. Wait before trying again.');
         } else {
+          if (error instanceof HttpErrorResponse) {
+            console.error('Sign-in request failed', { status: error.status, url: error.url });
+          }
           this.serverError.set(error instanceof HttpErrorResponse && error.status === 0
             ? 'Unable to reach the backend. Check that it is running and CORS allows this app.'
             : 'Sign-in could not be completed. Please try again.');
