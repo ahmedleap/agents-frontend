@@ -3,10 +3,9 @@
 export const environment = {
   production: true,
   apiUrl: 'https://api.agentsofleap.com/api',
+  authUrl: 'https://api.agentsofleap.com/api/v1',
   wsUrl: 'wss://api.agentsofleap.com',
   logLevel: 'error',
-  // Placeholder until login is wired up
-  devClientId: '',
   features: {
     enableDevTools: false,
     enableMocking: false,

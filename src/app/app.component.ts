@@ -1,11 +1,11 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
-import { catchError, filter, map, of, startWith, switchMap } from 'rxjs';
-import { environment } from '../environments/environment';
+import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
 import { AccountApiService } from './core/services/account-api.service';
 import { PortfolioApiService } from './core/services/portfolio-api.service';
+import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
 
 const isAuthUrl = (url: string) => /^\/(login|signup)(\/|\?|#|$)/.test(url);
@@ -21,20 +21,46 @@ const isAuthUrl = (url: string) => /^\/(login|signup)(\/|\?|#|$)/.test(url);
   }
 })
 export class AppComponent {
+  private readonly auth = inject(AuthService);
+  private readonly portfolioApi = inject(PortfolioApiService);
+  private readonly accountApi = inject(AccountApiService);
   protected readonly title = signal('S.T.A.S.H.');
   protected readonly subtitle = signal('Stash Your Cash');
   protected readonly appInitialized = signal(false);
-  private readonly portfolioApi = inject(PortfolioApiService);
   // Sidebar account list, loaded from the client's portfolio on the backend; reloads when an account is added
   protected readonly accounts = toSignal(
-    inject(AccountApiService).changed$.pipe(
-      startWith(undefined),
-      switchMap(() => this.loadAccounts())
+    combineLatest([
+      toObservable(this.auth.clientId),
+      this.accountApi.changed$.pipe(startWith(undefined))
+    ]).pipe(
+      switchMap(([clientId]) => {
+        if (!clientId || this.auth.currentUser()?.role !== 'CLIENT') return of({ status: 'ready' as const, list: [] });
+        return this.portfolioApi.getEntirePortfolio(clientId).pipe(
+          map(p => ({
+            status: 'ready' as const,
+            list: (p.accounts ?? []).map(a => ({
+              id: a.accountId,
+              name: a.accountName,
+              value: a.totalPortfolioValue,
+              gain: a.totalGainLossDollars,
+              pct: a.totalGainLossPercent
+            }))
+          })),
+          catchError(err => {
+            console.error('Sidebar accounts request failed', err);
+            return of({ status: 'error' as const, list: [] });
+          }),
+          startWith({ status: 'loading' as const, list: [] })
+        );
+      })
     ),
-    { requireSync: true }
+    { initialValue: { status: 'ready', list: [] } as const }
   );
 
   protected readonly accountsOpen = signal(false);
+  protected readonly role = computed(() => this.auth.currentUser()?.role ?? null);
+  protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/client'
+    : this.role() === 'ADMIN' ? '/admin' : '/dashboard');
   protected readonly theme = inject(ThemeService);
   // Full-width pages with no sidebar (log in, sign up). Seeded from the URL so the
   // sidebar doesn't flash on a direct load before the first navigation finishes.
@@ -57,28 +83,13 @@ export class AppComponent {
     inject(DestroyRef).onDestroy(() => sub.unsubscribe());
   }
 
-  private loadAccounts() {
-    return this.portfolioApi.getEntirePortfolio(environment.devClientId).pipe(
-      map(p => ({
-        status: 'ready' as const,
-        list: (p.accounts ?? []).map(a => ({
-          id: a.accountId,
-          name: a.accountName,
-          value: a.totalPortfolioValue,
-          gain: a.totalGainLossDollars,
-          pct: a.totalGainLossPercent
-        }))
-      })),
-      catchError(err => {
-        console.error('Sidebar accounts request failed', err);
-        return of({ status: 'error' as const, list: [] });
-      }),
-      startWith({ status: 'loading' as const, list: [] })
-    );
-  }
-
   protected toggleAccounts(): void {
     this.accountsOpen.update(open => !open);
+  }
+
+  protected signOut(): void {
+    this.auth.logoutRemote().subscribe({ error: () => this.auth.logout() });
+    void this.router.navigate(['/login']);
   }
 
   protected openHistory(event: Event, accountId: string): void {

@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/services/auth.service';
 import {
   ClientApiService,
   ClientDto,
@@ -46,10 +46,10 @@ const NOT_BLANK = /\S/;
 export class SettingsComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly clientApi = inject(ClientApiService);
+  private readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
 
-  // No login yet, so this is the dev client; the backend only allows the logged-in client's own ID
-  private readonly clientId = environment.devClientId;
+  private readonly clientId = this.auth.clientId();
 
   protected readonly riskOptions = RISK_OPTIONS;
   protected readonly sizeOptions = SIZE_OPTIONS;
@@ -79,8 +79,13 @@ export class SettingsComponent {
   }
 
   protected load(): void {
+    const clientId = this.clientId;
+    if (!clientId || this.auth.currentUser()?.role !== 'CLIENT') {
+      this.state.set({ status: 'error', message: 'Sign in with a client account to view profile settings.' });
+      return;
+    }
     this.state.set({ status: 'loading' });
-    this.clientApi.getClient(this.clientId).subscribe({
+    this.clientApi.getClient(clientId).subscribe({
       next: client => {
         this.state.set({ status: 'ready', client });
         this.resetForm(client);
@@ -131,7 +136,8 @@ export class SettingsComponent {
 
   protected save(): void {
     const s = this.state();
-    if (this.saving() || s.status !== 'ready') return;
+    const clientId = this.clientId;
+    if (this.saving() || s.status !== 'ready' || !clientId) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -148,7 +154,7 @@ export class SettingsComponent {
     this.saved.set(false);
     this.saveError.set(null);
 
-    this.clientApi.updateClient(this.clientId, changes).subscribe({
+    this.clientApi.updateClient(clientId, changes).subscribe({
       next: client => {
         this.saving.set(false);
         this.saved.set(true);

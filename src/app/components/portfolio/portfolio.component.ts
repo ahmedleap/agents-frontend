@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/services/auth.service';
 import { AccountApiService, AccountSummaryDto } from '../../core/services/account-api.service';
 import {
   AllocationDto,
@@ -51,9 +52,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 })
 export class PortfolioComponent {
   private readonly api = inject(PortfolioApiService);
+  private readonly auth = inject(AuthService);
   private readonly accountApi = inject(AccountApiService);
-  // No login yet, so every request is made as the dev test client
-  private readonly clientId = environment.devClientId;
 
   protected readonly asOf = new Date();
   private readonly route = inject(ActivatedRoute);
@@ -141,7 +141,10 @@ export class PortfolioComponent {
       return of<LoadState>({ status: 'error', message: `"${accountId ?? ''}" isn't a valid account. Pick an account from the sidebar.` });
     }
 
-    const id = this.clientId;
+    const id = this.auth.clientId();
+    if (!id) {
+      return of<LoadState>({ status: 'error', message: 'Your session is no longer available. Please sign in again.' });
+    }
     const request = forkJoin({
       p: this.api.getAccountPortfolio(id, accountId),
       allocation: this.api.getAccountAllocation(id, accountId),

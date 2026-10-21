@@ -116,6 +116,9 @@ export class DashboardService {
       : account));
   }
 
+  // Publicly exposed read-only value sources for the dashboard presenter.
+  readonly accountData = this.accounts.asReadonly();
+
   readonly watchlist = signal<WatchItem[]>([
     { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 492.44, change: 8.12, changePct: 1.68 },
     { ticker: 'AMZN', name: 'Amazon.com Inc.', price: 146.8, change: -1.35, changePct: -0.91 },
@@ -123,6 +126,7 @@ export class DashboardService {
     { ticker: 'META', name: 'Meta Platforms', price: 331.05, change: 4.9, changePct: 1.5 },
     { ticker: 'AMD', name: 'Advanced Micro Devices', price: 121.6, change: -2.2, changePct: -1.78 }
   ]);
+  readonly watchlistData = this.watchlist.asReadonly();
 
   readonly trades = signal<Trade[]>([
     { id: 't1', time: daysAgo(1), side: 'Buy', ticker: 'AAPL', shares: 25, price: 177.9, account: 'Roth IRA' },
@@ -131,6 +135,7 @@ export class DashboardService {
     { id: 't4', time: daysAgo(27), side: 'Buy', ticker: 'KO', shares: 80, price: 59.15, account: '529' },
     { id: 't5', time: daysAgo(30), side: 'Sell', ticker: 'AMD', shares: 40, price: 123.8, account: 'HSA' }
   ]);
+  readonly tradeData = this.trades.asReadonly();
 
   readonly movers = signal<Mover[]>([
     { ticker: 'SMCI', name: 'Super Micro Computer', price: 254.1, change: 21.3, changePct: 9.15, volume: 18_420_000 },
@@ -139,4 +144,5 @@ export class DashboardService {
     { ticker: 'PFE', name: 'Pfizer Inc.', price: 28.9, change: -1.12, changePct: -3.73, volume: 37_780_000 },
     { ticker: 'AMD', name: 'Advanced Micro Devices', price: 121.6, change: -2.2, changePct: -1.78, volume: 52_110_000 }
   ]);
+  readonly moverData = this.movers.asReadonly();
 }

@@ -4,7 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/services/auth.service';
 import { AccountApiService } from '../../core/services/account-api.service';
 
 // Common account types, offered as tiles; picking one fills in the name, which stays editable
@@ -29,6 +29,7 @@ const QUICK_AMOUNTS = [500, 1_000, 5_000, 10_000];
 export class AddAccountComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly accountApi = inject(AccountApiService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   protected readonly accountTypes = ACCOUNT_TYPES;
@@ -82,9 +83,15 @@ export class AddAccountComponent {
     this.saving.set(true);
     this.error.set(null);
 
-    // No login yet, so the account goes to the dev client; the backend checks it matches the JWT's subject
+    const clientId = this.auth.clientId();
+    if (!clientId || this.auth.currentUser()?.role !== 'CLIENT') {
+      this.saving.set(false);
+      this.error.set('Sign in with a client account before adding an account.');
+      return;
+    }
+
     this.accountApi.createAccount({
-      clientId: environment.devClientId,
+      clientId,
       name: v.name.trim(),
       initialCashBalance: Math.round(v.initialCashBalance! * 100) / 100
     }).subscribe({

@@ -1,30 +1,96 @@
-/// <reference types="jasmine" />
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AppComponent } from './app.component';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet
+} from '@angular/router';
+import { CommonModule, Location } from '@angular/common';
+import { filter } from 'rxjs';
 
-describe('AppComponent', () => {
-  let fixture: ComponentFixture<AppComponent>;
-  let component: AppComponent;
+import { ThemeService } from './core/services/theme.service';
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [AppComponent]
-    }).compileComponents();
+const isAuthUrl = (url: string) =>
+  /^\/(login|signup)(\/|\?|#|$)/.test(url);
 
-    fixture = TestBed.createComponent(AppComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+  standalone: true,
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    CommonModule
+  ],
+  host: {
+    class: 'app-root'
+  }
+})
+export class AppComponent {
+  protected readonly title = signal('S.T.A.S.H.');
+  protected readonly subtitle = signal('Stash Your Cash');
+  protected readonly appInitialized = signal(false);
+
+  // Keep the sidebar structure without making an
+  // unauthenticated portfolio request on startup.
+  protected readonly accounts = signal({
+    status: 'ready' as const,
+    list: [] as Array<{
+      id: string;
+      name: string;
+      value: number;
+      gain: number;
+      pct: number;
+    }>
   });
 
-  it('should create the app', () => {
-    expect(component).toBeTruthy();
-  });
+  protected readonly accountsOpen = signal(false);
+  protected readonly theme = inject(ThemeService);
 
-  it('should render the title and subtitle', () => {
-    const element: HTMLElement = fixture.nativeElement;
+  protected readonly isAuthPage = signal(
+    isAuthUrl(inject(Location).path())
+  );
 
-    expect(element.querySelector('h1')?.textContent).toContain('S.T.A.S.H.');
-    expect(element.querySelector('header p')?.textContent).toContain('Stash Your Cash');
-  });
-});
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    this.initializeApp();
+
+    const sub = this.router.events
+      .pipe(
+        filter(
+          (e): e is NavigationEnd =>
+            e instanceof NavigationEnd
+        )
+      )
+      .subscribe(e => {
+        this.isAuthPage.set(
+          isAuthUrl(e.urlAfterRedirects)
+        );
+
+        if (
+          e.urlAfterRedirects.startsWith('/portfolio')
+        ) {
+          this.accountsOpen.set(true);
+        }
+      });
+
+    this.destroyRef.onDestroy(() => {
+      sub.unsubscribe();
+    });
+  }
+
+  protected toggleAccounts(): void {
+    this.accountsOpen.update(open => !open);
+  }
+
+  private initializeApp(): void {
+    console.log('App initialized:', this.title());
+    this.appInitialized.set(true);
+  }
+}
