@@ -22,23 +22,32 @@
   border-top: 4px solid var(--pf-green);
   border-bottom: 1px solid var(--pf-border);
 
-  // The theme toggle sits alone at the right edge
-  .theme-toggle {
+  // Settings gear and theme toggle at the right edge
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-left: auto;
+  }
+
+  .icon-btn {
+    position: relative;
     flex: none;
     display: grid;
     place-items: center;
-    width: 2.6rem;
-    height: 2.6rem;
-    margin-left: auto;
+    width: 3rem;
+    height: 3rem;
     border: 1px solid var(--pf-border);
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--pf-inset);
     color: var(--pf-accent);
     cursor: pointer;
     transition: background 0.15s;
 
-    svg { width: 1.3rem; height: 1.3rem; }
-    &:hover { background: var(--pf-active); }
+    svg { width: 1.5rem; height: 1.5rem; }
+    &:hover,
+    &.active { background: var(--pf-active); }
+    &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
   }
 
   .role-badge {
@@ -63,6 +72,28 @@
     cursor: pointer;
     &:hover { background: var(--pf-active); }
   }
+
+  // Hover / keyboard-focus label under a header button, right-aligned so it stays on screen
+  .tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 0.45rem);
+    right: 0;
+    z-index: 20;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    background: var(--pf-text);
+    color: var(--pf-card);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-0.25rem);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .tip:hover::after,
+  .tip:focus-visible::after { opacity: 1; transform: none; }
 
   .logo-link {
     flex: none;
@@ -94,7 +125,8 @@
     margin: 0;
     padding-left: 1rem;
     border-left: 1px solid var(--pf-border);
-    font-size: 1.15rem;
+    font-size: 1.2rem;
+    font-weight: 700;
     color: var(--pf-muted);
   }
 }
@@ -118,8 +150,8 @@
   .nav-link {
     padding: 0.6rem 0.9rem;
     border-radius: 6px;
-    font-size: 1rem;
-    font-weight: 500;
+    font-size: 1.05rem;
+    font-weight: 700;
     color: var(--pf-muted);
     text-decoration: none;
     transition: background 0.15s, color 0.15s;
@@ -132,7 +164,7 @@
     &.active {
       background: var(--pf-active);
       color: var(--pf-accent);
-      font-weight: 600;
+      font-weight: 800;
     }
   }
 
@@ -159,8 +191,58 @@
     &.open .chevron { transform: rotate(-135deg); }
   }
 
+  // "Account" toggle with the add-account button beside it
+  .nav-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    .nav-toggle { flex: 1; min-width: 0; }
+  }
+
+  .add-account {
+    position: relative;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    color: var(--pf-accent);
+    transition: background 0.15s;
+
+    svg { width: 1.1rem; height: 1.1rem; }
+
+    &:hover,
+    &.active { background: var(--pf-active); }
+    &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+
+    // "Add account" tooltip on hover / keyboard focus
+    &::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: calc(100% + 0.5rem);
+      top: 50%;
+      z-index: 10;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      background: var(--pf-text);
+      color: var(--pf-card);
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-0.25rem, -50%);
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    &:hover::after,
+    &:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+  }
+
   // Top-level items (Dashboard, Account); the account links under them keep their own size
-  > .nav-link {
+  > .nav-link,
+  > .nav-row > .nav-link {
     font-size: 1.1rem;
     font-weight: 700;
   }
@@ -176,7 +258,8 @@
 
   .sub-note {
     padding: 0.45rem 0.7rem;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    font-weight: 700;
     color: var(--pf-muted);
 
     &.error { color: var(--pf-loss); }
@@ -194,6 +277,15 @@
     .acct-pl { font-size: 0.8rem; font-weight: 600; }
     .gain { color: var(--pf-gain); }
     .loss { color: var(--pf-loss); }
+  }
+
+  .account-history-link {
+    padding: 0.2rem 0.7rem 0.4rem;
+    color: var(--pf-muted);
+    font-size: 0.72rem;
+    text-decoration: none;
+
+    &:hover, &.active { color: var(--pf-accent); }
   }
 }
 

@@ -1,0 +1,346 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  color: var(--pf-text);
+  overflow-y: auto;
+}
+
+.page {
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 78rem;
+  margin: 0 auto;
+  padding-bottom: 1rem;
+}
+
+h2, h3, p { margin: 0; }
+
+.toolbar {
+  h2 {
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 600;
+    line-height: 1.1;
+    // Accent adapts to the theme; green-dark is unreadable in dark mode
+    color: var(--pf-accent);
+  }
+}
+
+.card {
+  display: grid;
+  gap: 1.4rem;
+  padding: 1.75rem 2rem;
+  background: var(--pf-card);
+  border: 1px solid var(--pf-border);
+  border-top: 4px solid var(--pf-green);
+  border-radius: 12px;
+  box-shadow: var(--pf-shadow);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+
+  .head-text { flex: 1; min-width: 12rem; }
+  h3 { font-size: 1.25rem; font-weight: 700; color: var(--pf-accent); }
+  p { margin-top: 0.1rem; color: var(--pf-muted); font-size: 1rem; font-weight: 700; }
+
+  &.centered {
+    flex-direction: column;
+    text-align: center;
+    .head-text { flex: none; }
+  }
+}
+
+.head-icon {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--pf-buy-bg);
+  color: var(--pf-gain);
+
+  svg { width: 1.3rem; height: 1.3rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+}
+
+// Avatar, name and email of the signed-in client
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  background: linear-gradient(120deg, var(--pf-buy-bg) 0%, var(--pf-inset) 100%);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.identity-text {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+
+  strong { font-size: 1.2rem; }
+}
+
+.email { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; color: var(--pf-muted); font-weight: 700; overflow-wrap: anywhere; }
+
+fieldset {
+  display: grid;
+  gap: 1.4rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem 1.25rem;
+}
+
+.label { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; min-height: 1.6rem; }
+
+// Saved value, shown until its Edit button is pressed
+.value {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--pf-inset);
+  font-size: 1.05rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+
+  &.empty { color: var(--pf-muted); font-style: italic; }
+}
+
+.edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+  padding: 0.2rem 0.7rem;
+  border: 1.5px solid var(--pf-green);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pf-gain);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  svg { width: 0.85rem; height: 0.85rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  &:hover { background: var(--pf-buy-bg); }
+  &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+}
+.optional { color: var(--pf-muted); font-weight: 700; }
+
+// Little "Editable" / "Read-only" tags
+.legend { display: flex; gap: 0.5rem; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  svg { width: 0.8rem; height: 0.8rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  &.edit { color: var(--pf-gain); background: var(--pf-buy-bg); }
+  &.lock { color: var(--pf-muted); background: var(--pf-card); border: 1px solid var(--pf-border); }
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+
+  input {
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--pf-border);
+    border-radius: 8px;
+    background: var(--pf-inset);
+    color: var(--pf-text);
+    font: inherit;
+    font-weight: 400;
+    font-size: 1.05rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:hover { border-color: var(--pf-green); }
+  input:focus { outline: none; border-color: var(--pf-green); box-shadow: 0 0 0 3px var(--pf-buy-bg); }
+  &.has-error input { border-color: var(--pf-loss); }
+}
+
+// Risk tolerance / portfolio size choices
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.6rem;
+
+  &.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.option {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.75rem 0.9rem;
+  border: 1.5px solid var(--pf-border);
+  border-radius: 10px;
+  background: var(--pf-inset);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+
+  input { position: absolute; opacity: 0; pointer-events: none; }
+  small { color: var(--pf-muted); font-size: 0.82rem; font-weight: 700; }
+  &.chip { text-align: center; padding: 0.6rem; border-radius: 999px; }
+  &:hover { border-color: var(--pf-green); transform: translateY(-1px); }
+  &:focus-within { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+  &.selected { border-color: var(--pf-green); background: var(--pf-buy-bg); box-shadow: 0 0 0 3px var(--pf-buy-bg); }
+}
+
+.err { color: var(--pf-loss); font-weight: 500; font-size: 0.85rem; }
+
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  background: var(--pf-inset);
+  color: var(--pf-muted);
+  font-weight: 700;
+
+  &.error { background: var(--pf-sell-bg); color: var(--pf-loss); border: 1px solid var(--pf-loss); }
+  &.success { background: var(--pf-buy-bg); color: var(--pf-gain); border: 1px solid var(--pf-green); }
+}
+
+.actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &.primary { color: #fff; background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%); box-shadow: 0 4px 14px -6px var(--pf-green); }
+  &.ghost { color: var(--pf-accent); background: var(--pf-inset); border: 1px solid var(--pf-border); }
+  &.small { padding: 0.4rem 0.9rem; font-size: 0.9rem; }
+  &:hover:not(:disabled) { filter: brightness(1.08); }
+  &:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+}
+
+/* ---------- Appearance (centred) ---------- */
+
+.appearance { justify-items: center; }
+
+.themes {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.theme-option {
+  position: relative;
+  display: grid;
+  gap: 0.7rem;
+  width: 15rem;
+  padding: 0.85rem;
+  border: 2px solid var(--pf-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+
+  input { position: absolute; opacity: 0; pointer-events: none; }
+  &:hover { border-color: var(--pf-green); transform: translateY(-2px); }
+  &:focus-within { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+  &.selected { border-color: var(--pf-green); box-shadow: 0 0 0 4px var(--pf-buy-bg); }
+}
+
+// Check mark on the chosen theme
+.check {
+  position: absolute;
+  top: -0.6rem;
+  right: -0.6rem;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--pf-green);
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.15s, transform 0.15s;
+
+  svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .selected & { opacity: 1; transform: none; }
+}
+
+.theme-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-weight: 700;
+
+  svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+}
+
+// Fixed colours so each preview shows its mode regardless of the current theme
+.preview {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  height: 6.5rem;
+  padding: 0.7rem;
+  border-radius: 8px;
+  background: #f4f7f3;
+  border: 1px solid #d9e2d6;
+
+  .bar { height: 0.7rem; border-radius: 3px; background: #2f6f2a; }
+  .line { height: 0.5rem; border-radius: 3px; background: #c9d6c5; }
+  .short { width: 60%; }
+
+  &[data-preview='dark'] {
+    background: #121815;
+    border-color: #2a352e;
+    .bar { background: #4caf50; }
+    .line { background: #2f3b33; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option, .theme-option, .check { transition: none; }
+  .option:hover, .theme-option:hover { transform: none; }
+}
+
+@media (max-width: 760px) {
+  .grid, .options.three { grid-template-columns: 1fr; }
+  .card { padding: 1.25rem; }
+  .theme-option { width: 100%; max-width: 15rem; }
+}
