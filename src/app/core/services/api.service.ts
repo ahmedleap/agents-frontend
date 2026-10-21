@@ -18,11 +18,28 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
+  private withAuth(options?: RequestOptions): RequestOptions | undefined {
+    const token = sessionStorage.getItem('access_token');
+    if (!token) return options;
+
+    const headers = options?.headers instanceof HttpHeaders
+      ? options.headers.set('Authorization', `Bearer ${token}`)
+      : new HttpHeaders({
+          ...(options?.headers as Record<string, string> | undefined),
+          Authorization: `Bearer ${token}`
+        });
+
+    return { ...options, headers };
+  }
+
   /**
    * Make a GET request
    */
-  get<T>(endpoint: string, options?: any): Observable<T> {
-    return this.http.get<T>(`${this.baseUrl}/${endpoint}`, options);
+  get<T>(endpoint: string, options?: RequestOptions): Observable<T> {
+    const url = endpoint.startsWith('http') || endpoint.startsWith('/')
+      ? endpoint
+      : `${this.baseUrl}/${endpoint}`;
+    return this.http.get<T>(url, this.withAuth(options));
   }
 
   /**

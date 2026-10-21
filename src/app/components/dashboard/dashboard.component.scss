@@ -186,7 +186,26 @@ h2, h3, p { margin: 0; }
 
 /* ---------- Tables ---------- */
 
+<<<<<<< Updated upstream
 .table-wrap { overflow-x: auto; }
+=======
+.table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+
+  // Still scrolls with the wheel / touch, just without a visible bar
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+>>>>>>> Stashed changes
+
+.watchlist .table-wrap,
+.recent-trades .table-wrap,
+.movers .table-wrap {
+  flex: 0 0 auto;
+  overflow: hidden;
+}
 
 table {
   width: 100%;

@@ -7,6 +7,7 @@
     <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
   </div>
 
+<<<<<<< Updated upstream
   <div class="layout">
     <!-- Left: accounts -->
     <aside class="accounts" aria-label="Accounts">
@@ -23,6 +24,26 @@
         </article>
       }
     </aside>
+=======
+  @if (loading()) {
+    <p class="empty" role="status">Loading dashboard...</p>
+  } @else if (error()) {
+    <p class="alert" role="alert">{{ error() }}</p>
+  }
+
+  <div class="main">
+    <div class="top">
+      <div class="card hero" [class.down]="totals().dayPL < 0">
+        <span class="label">Today's P/L, all accounts</span>
+        <span class="value">
+          {{ totals().dayPL >= 0 ? '+' : '' }}{{ totals().dayPL | currency }}
+        </span>
+        <span class="change">
+          {{ totals().dayPL >= 0 ? '▲ +' : '▼ ' }}{{ totals().dayPct | number: '1.2-2' }}%
+        </span>
+        <span class="hero-total">Combined value {{ totals().value | currency }}</span>
+      </div>
+>>>>>>> Stashed changes
 
     <!-- Right: main content -->
     <div class="main">
@@ -74,6 +95,7 @@
                           <small>{{ w.name }}</small>
                         </span>
                       </span>
+<<<<<<< Updated upstream
                     </td>
                     <td>{{ w.price | currency }}</td>
                     <td [class.gain]="w.change >= 0" [class.loss]="w.change < 0">
@@ -113,6 +135,20 @@
               </tbody>
             </table>
           </div>
+=======
+                    </span>
+                  </td>
+                  <td>{{ w.price !== undefined ? (w.price | currency) : '—' }}</td>
+                  <td [class.gain]="w.change !== undefined && w.change >= 0" [class.loss]="w.change !== undefined && w.change < 0">
+                    {{ w.changePct !== undefined ? ((w.changePct >= 0 ? '+' : '') + (w.changePct | number: '1.2-2') + '%') : '—' }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="empty">Your watchlist is empty.</td></tr>
+              }
+            </tbody>
+          </table>
+>>>>>>> Stashed changes
         </div>
       </div>
 
@@ -124,7 +160,7 @@
               <tr><th>Stock</th><th>Price</th><th>P/L</th><th>Volume</th></tr>
             </thead>
             <tbody>
-              @for (m of movers(); track m.ticker) {
+              @for (m of visibleMovers(); track m.ticker) {
                 <tr>
                   <td>
                     <span class="ticker">
@@ -140,7 +176,7 @@
                     {{ m.change >= 0 ? '+' : '' }}{{ m.change | currency }}
                     ({{ m.changePct >= 0 ? '+' : '' }}{{ m.changePct | number: '1.2-2' }}%)
                   </td>
-                  <td>{{ volume(m.volume) }}</td>
+                  <td>{{ m.volume !== undefined ? volume(m.volume) : '—' }}</td>
                 </tr>
               } @empty {
                 <tr><td colspan="4" class="empty">No market data available.</td></tr>

@@ -51,24 +51,27 @@ export class DashboardComponent {
   protected readonly asOf = new Date();
 
   protected readonly accounts = this.data.accounts;
-  protected readonly watchlist = this.data.watchlist;
-  protected readonly trades = this.data.trades;
+  protected readonly watchlist = computed(() => this.data.watchlist().slice(0, 3));
+  protected readonly trades = computed(() => this.data.trades().slice(0, 5));
   protected readonly movers = this.data.movers;
+  protected readonly visibleMovers = computed(() => this.movers().slice(0, 3));
+  protected readonly loading = this.data.loading;
+  protected readonly error = this.data.error;
 
   /** Combined value and today's P/L across every account. */
   protected readonly totals = computed(() => {
     const accts = this.accounts();
     const value = accts.reduce((s, a) => s + a.value, 0);
-    const dayPL = accts.reduce((s, a) => s + a.dayPL, 0);
-    const prev = value - dayPL;
-    return { value, dayPL, dayPct: prev ? (dayPL / prev) * 100 : 0 };
+    return {
+      value,
+      dayPL: this.data.todayProfitLoss(),
+      dayPct: this.data.todayProfitLossPercent()
+    };
   });
 
   /** Total value of all accounts for each day, oldest first. */
   protected readonly series = computed(() => {
-    const accts = this.accounts();
-    const length = accts[0]?.history.length ?? 0;
-    return Array.from({ length }, (_, i) => accts.reduce((s, a) => s + a.history[i], 0));
+    return this.data.portfolioHistory();
   });
 
   protected readonly period = computed(() => {
@@ -93,6 +96,7 @@ export class DashboardComponent {
     effect(() => {
       const data = this.series();
       if (!this.chart) return;
+      this.chart.data.labels = this.data.labels();
       this.chart.data.datasets[0].data = data;
       this.chart.update();
     });
@@ -108,7 +112,7 @@ export class DashboardComponent {
     return new Chart(el, {
       type: 'line',
       data: {
-        labels: this.data.labels,
+        labels: this.data.labels(),
         datasets: [
           {
             label: 'Total value',
@@ -116,11 +120,16 @@ export class DashboardComponent {
             borderColor: GREEN,
             backgroundColor: 'rgba(47, 111, 42, 0.12)',
             borderWidth: 2,
-            fill: true,
+            fill: false,
             tension: 0.25,
-            pointRadius: 3,
+            pointRadius: 0,
             pointHoverRadius: 5,
+<<<<<<< Updated upstream
             pointBackgroundColor: GREEN
+=======
+            pointHitRadius: 12,
+            pointBackgroundColor: c.line
+>>>>>>> Stashed changes
           }
         ]
       },
@@ -138,8 +147,13 @@ export class DashboardComponent {
         scales: {
           x: { grid: { display: false }, ticks: { color: MUTED, maxTicksLimit: 7 } },
           y: {
+<<<<<<< Updated upstream
             grid: { color: BORDER },
             ticks: { color: MUTED, callback: v => usdCompact.format(Number(v)) }
+=======
+            grid: { color: c.border },
+            ticks: { color: c.muted, maxTicksLimit: 3, callback: v => usdCompact.format(Number(v)) }
+>>>>>>> Stashed changes
           }
         }
       }

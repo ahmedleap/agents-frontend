@@ -1,7 +1,13 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
-import { ApiService } from './api.service';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+
+interface LoginResponse {
+  accessToken: string;
+  user: { clientId: string; [key: string]: unknown };
+}
 
 /**
  * Authentication Service
@@ -16,7 +22,7 @@ import { tap } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly apiService = inject(ApiService);
+  private readonly http = inject(HttpClient);
 
   // State signals
   private readonly accessToken = signal<string | null>(null);
@@ -32,14 +38,16 @@ export class AuthService {
   /**
    * Login with email and password
    */
-  login(email: string, password: string): Observable<any> {
+  login(email: string, password: string): Observable<LoginResponse> {
     this.isAuthenticating.set(true);
     this.authError.set(null);
 
-    return this.apiService.post('auth/login', { email, password }).pipe(
+    return this.http.post<LoginResponse>(`${environment.middlewareUrl}/auth/login`, { email, password }).pipe(
       tap(response => {
-        this.accessToken.set(response.token);
+        this.accessToken.set(response.accessToken);
         this.currentUser.set(response.user);
+        sessionStorage.setItem('access_token', response.accessToken);
+        sessionStorage.setItem('client_id', response.user.clientId);
         this.isAuthenticating.set(false);
       }),
       tap(
@@ -59,13 +67,15 @@ export class AuthService {
     this.accessToken.set(null);
     this.currentUser.set(null);
     this.authError.set(null);
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('client_id');
   }
 
   /**
    * Get current access token
    */
   getToken(): string | null {
-    return this.accessToken();
+    return this.accessToken() ?? sessionStorage.getItem('access_token');
   }
 
   /**
@@ -73,5 +83,9 @@ export class AuthService {
    */
   getCurrentUser(): any {
     return this.currentUser();
+  }
+
+  getClientId(): string | null {
+    return this.currentUser()?.clientId ?? sessionStorage.getItem('client_id');
   }
 }
