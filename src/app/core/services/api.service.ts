@@ -45,6 +45,13 @@ export class ApiService {
   }
 
   /**
+   * Make a PATCH request
+   */
+  patch<T>(endpoint: string, body: any, options?: RequestOptions): Observable<T> {
+    return this.http.patch<T>(`${this.baseUrl}/${endpoint}`, body, options);
+  }
+
+  /**
    * Make a DELETE request
    */
   delete<T>(endpoint: string, options?: RequestOptions): Observable<T> {

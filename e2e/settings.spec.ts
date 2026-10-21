@@ -1,26 +1,23 @@
 import { expect, Locator, Page, test } from '@playwright/test';
 
 // Fake backend so this runs without agents-backend
-const PROFILE = {
-  client_id: 'aa0e8400-e29b-41d4-a716-446655440001',
+const CLIENT_ID = 'aa0e8400-e29b-41d4-a716-446655440001';
+const CLIENT = {
+  clientId: CLIENT_ID,
   firstName: 'John',
+  middleName: null,
   lastName: 'Trader',
   email: 'john.trader@example.com',
-  phone: '(202) 555-0123',
-  country: 'United States',
-  email_verified: true,
-  date_of_birth: '1990-04-12',
-  join_date: '2025-01-15T10:00:00',
-  accounts: []
+  riskTolerance: 'MODERATE',
+  portfolioSizeRange: 'BETWEEN_50K_100K'
 };
 
-async function mockProfile(page: Page, onPut?: (body: unknown) => { status: number; json?: unknown }) {
-  await page.route('**/users/me', async route => {
-    if (route.request().method() === 'PUT') {
-      const reply = onPut?.(route.request().postDataJSON()) ?? { status: 404 };
-      return route.fulfill(reply);
+async function mockClient(page: Page, onPatch?: (body: Record<string, unknown>) => { status: number; json?: unknown }) {
+  await page.route(`**/api/client/v1/${CLIENT_ID}`, async route => {
+    if (route.request().method() === 'PATCH') {
+      return route.fulfill(onPatch?.(route.request().postDataJSON()) ?? { status: 500 });
     }
-    return route.fulfill({ json: PROFILE });
+    return route.fulfill({ json: CLIENT });
   });
 }
 
@@ -54,41 +51,94 @@ test.describe('Header buttons', () => {
 });
 
 test.describe('Settings page', () => {
-  test('loads the client and saves edits', async ({ page }) => {
-    let sent: unknown;
-    await mockProfile(page, body => {
+  test('shows the get-client data (no client ID) and marks what can be edited', async ({ page }) => {
+    await mockClient(page);
+    await page.goto('/settings');
+
+    // Client ID is not shown; name and email are, and email is marked read-only
+    await expect(page.getByText(CLIENT_ID)).toHaveCount(0);
+    await expect(page.locator('.identity')).toContainText('John Trader');
+    await expect(page.locator('.identity .avatar')).toHaveText('JT');
+    const email = page.locator('.identity .email');
+    await expect(email).toContainText('john.trader@example.com');
+    await expect(email.locator('.tag.lock')).toHaveText('Read-only');
+
+    // Values show as plain text (no text boxes) until Edit is pressed
+    const values = page.locator('.value');
+    await expect(values).toHaveText(['John', 'Not set', 'Trader', 'Moderate', '$50K – $100K']);
+    await expect(page.locator('form input')).toHaveCount(0);
+    for (const name of ['first name', 'middle name', 'last name', 'risk tolerance', 'portfolio size']) {
+      await expect(page.getByRole('button', { name: `Edit ${name}` })).toBeVisible();
+    }
+    // No Save/Cancel until something is being edited
+    await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+  });
+
+  test('Edit opens just that field, and Cancel closes it without saving', async ({ page }) => {
+    let patched = false;
+    await mockClient(page, () => { patched = true; return { status: 200, json: CLIENT }; });
+    await page.goto('/settings');
+
+    await page.getByRole('button', { name: 'Edit first name' }).click();
+    const first = page.getByLabel('First name', { exact: true });
+    await expect(first).toBeFocused();
+    await expect(first).toHaveValue('John');
+    await expect(page.getByLabel('Last name', { exact: true })).toHaveCount(0);
+
+    await first.fill('Changed');
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.locator('.value').first()).toHaveText('John');
+    await expect(page.getByRole('button', { name: 'Edit first name' })).toBeVisible();
+    expect(patched).toBe(false);
+  });
+
+  test('saves only the fields that changed', async ({ page }) => {
+    let sent: Record<string, unknown> | undefined;
+    await mockClient(page, body => {
       sent = body;
-      return { status: 200, json: { ...PROFILE, ...(body as object) } };
+      return { status: 200, json: { ...CLIENT, ...body } };
     });
 
     await page.goto('/settings');
-    await expect(page.getByLabel('First name')).toHaveValue('John');
-    await expect(page.getByLabel('Email')).toHaveValue('john.trader@example.com');
-
-    await page.getByLabel('Last name').fill('Trader-Smith');
-    await page.getByLabel('Phone').fill('(202) 555-0199');
+    await page.getByRole('button', { name: 'Edit middle name' }).click();
+    await page.getByLabel('Middle name', { exact: true }).fill('Q');
+    await page.getByRole('button', { name: 'Edit risk tolerance' }).click();
+    await page.getByText('Aggressive', { exact: true }).click();
     await page.getByRole('button', { name: 'Save changes' }).click();
 
     await expect(page.getByText('Your changes were saved.')).toBeVisible();
-    expect(sent).toEqual({
-      firstName: 'John', lastName: 'Trader-Smith', email: 'john.trader@example.com',
-      phone: '(202) 555-0199', country: 'United States'
-    });
+    expect(sent).toEqual({ middleName: 'Q', riskTolerance: 'AGGRESSIVE' });
+    // Back to plain text, showing the saved values
+    await expect(page.locator('.value')).toHaveText(['John', 'Q', 'Trader', 'Aggressive', '$50K – $100K']);
   });
 
-  test('explains when the backend cannot save yet', async ({ page }) => {
-    await mockProfile(page, () => ({ status: 405 }));
+  test('shows the reason when the backend rejects a change', async ({ page }) => {
+    await mockClient(page, () => ({ status: 400, json: { message: 'Last name cannot be blank' } }));
 
     await page.goto('/settings');
-    await page.getByLabel('First name').fill('Johnny');
+    await page.getByRole('button', { name: 'Edit first name' }).click();
+    await page.getByLabel('First name', { exact: true }).fill('Johnny');
     await page.getByRole('button', { name: 'Save changes' }).click();
 
-    await expect(page.getByRole('alert')).toHaveText("The server can't save profile changes yet.");
+    await expect(page.getByRole('alert')).toHaveText("Couldn't save: Last name cannot be blank");
+  });
+
+  test('a blank first name is not sent', async ({ page }) => {
+    let patched = false;
+    await mockClient(page, () => { patched = true; return { status: 200, json: CLIENT }; });
+
+    await page.goto('/settings');
+    await page.getByRole('button', { name: 'Edit first name' }).click();
+    await page.getByLabel('First name', { exact: true }).fill('   ');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    await expect(page.getByText('First name is required')).toBeVisible();
+    expect(patched).toBe(false);
   });
 
   test('appearance switches between light and dark', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
-    await mockProfile(page);
+    await mockClient(page);
     await page.goto('/settings');
 
     await page.getByText('Dark', { exact: true }).click();
