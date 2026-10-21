@@ -7,7 +7,9 @@ import { catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'r
 import { DestroyRef } from '@angular/core';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
+import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
+import { environment } from '../../../environments/environment';
 
 interface Instrument {
   instrumentId: string;
@@ -40,6 +42,7 @@ export class TradesComponent {
   private readonly router = inject(Router);
   private readonly accounts = inject(DashboardService).accounts;
   private readonly tradingApi = inject(TradingApiService);
+  private readonly portfolioApi = inject(PortfolioApiService);
   private readonly orderHistory = inject(OrderHistoryService);
   private readonly route = inject(ActivatedRoute);
   private readonly accountIdParam = toSignal(
@@ -58,6 +61,7 @@ export class TradesComponent {
   protected readonly orderType = signal<OrderType>('market');
   protected readonly limitPrice = signal(0);
   protected readonly quantity = signal(10);
+  protected readonly availableToSell = signal<number | null>(null);
   protected readonly confirmed = signal(false);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -90,11 +94,17 @@ export class TradesComponent {
 
   protected readonly canSubmit = computed(() => {
     const total = this.estimatedTotal();
-    return !!this.account() && !!this.selected() && this.quantity() > 0 && this.executionPrice() > 0 && (this.side() === 'sell' || total <= this.cashBalance());
+    const sellable = this.availableToSell();
+    return !!this.account()
+      && !!this.selected()
+      && this.quantity() > 0
+      && this.executionPrice() > 0
+      && (this.side() === 'buy' ? total <= this.cashBalance() : sellable !== null && this.quantity() <= sellable);
   });
 
   protected openOrder(instrument: Instrument): void {
     this.selected.set(instrument);
+    this.availableToSell.set(null);
     this.side.set('buy');
     this.orderType.set('market');
     this.limitPrice.set(instrument.price);
@@ -104,6 +114,7 @@ export class TradesComponent {
     this.chartRange.set('1M');
     this.chartPointsForOrder.set(instrument.points);
     this.loadOrderChart(instrument, '1M');
+    this.loadAvailableToSell(instrument);
     if (instrument.price > 0) return;
     this.tradingApi.getQuote(instrument.symbol).subscribe({
       next: quote => {
@@ -226,8 +237,8 @@ export class TradesComponent {
   private loadInstruments(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.tradingApi.listInstruments().subscribe({
-      next: response => this.hydrateInstruments(response.results ?? []),
+    this.tradingApi.listInstrumentsWithQuotes().subscribe({
+      next: response => this.hydrateInstruments(response),
       error: () => {
         this.instruments.set([]);
         this.loading.set(false);
@@ -236,8 +247,30 @@ export class TradesComponent {
     });
   }
 
+  private loadAvailableToSell(instrument: Instrument): void {
+    const accountId = this.account()?.id;
+    if (!accountId) return;
+
+    this.portfolioApi.getAccountPortfolio(environment.devClientId, accountId).subscribe({
+      next: portfolio => {
+        if (this.selected()?.instrumentId !== instrument.instrumentId) return;
+        const holding = (portfolio.holdings ?? []).find(item => item.instrumentId === instrument.instrumentId);
+        this.availableToSell.set(holding?.quantity ?? 0);
+      },
+      error: () => {
+        if (this.selected()?.instrumentId === instrument.instrumentId) this.availableToSell.set(null);
+      }
+    });
+  }
+
   private hydrateInstruments(results: InstrumentSearchResult[]): void {
-    const instruments = results.map((result, index) => this.toInstrument(result, index));
+    const instruments = results.map((result, index) => {
+      const instrument = this.toInstrument(result, index);
+      const withQuote = 'lastPrice' in result
+        ? this.withQuote(instrument, result as QuoteDto)
+        : instrument;
+      return withQuote;
+    });
     if (!instruments.length) {
       this.instruments.set([]);
       this.loading.set(false);
@@ -248,9 +281,16 @@ export class TradesComponent {
     this.loading.set(false);
 
     for (const instrument of instruments) {
+      if (!this.isTicker(instrument.symbol)) {
+        this.instruments.update(current => current.map(item => item.symbol === instrument.symbol
+          ? { ...item, priceState: 'unavailable' as const }
+          : item));
+        continue;
+      }
+
       this.tradingApi.getQuote(instrument.symbol).pipe(
         map(quote => this.withQuote(instrument, quote)),
-        catchError(() => of({ ...instrument, priceState: 'unavailable' as const })),
+        catchError(() => of(instrument)),
         switchMap(quotedInstrument => forkJoin({
           month: this.tradingApi.getHistory(instrument.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
           day: this.tradingApi.getHistory(instrument.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
@@ -299,8 +339,14 @@ export class TradesComponent {
   }
 
   private withDailyChange(instrument: Instrument, history: HistoryResponseDto): Instrument {
-    const change = history.summary?.change;
-    const changePct = history.summary?.changePercent;
+    const prices = history.bars
+      .map(bar => this.numberValue(bar.close))
+      .filter(price => price > 0);
+    const startPrice = this.numberValue(history.summary?.startPrice ?? prices[0]);
+    const endPrice = this.numberValue(history.summary?.endPrice ?? prices[prices.length - 1]);
+    const change = history.summary?.change ?? (startPrice > 0 && endPrice > 0 ? endPrice - startPrice : undefined);
+    const changePct = history.summary?.changePercent
+      ?? (change !== undefined && startPrice > 0 ? (change / startPrice) * 100 : undefined);
     if (change === undefined || changePct === undefined) return instrument;
     return {
       ...instrument,
@@ -352,6 +398,10 @@ export class TradesComponent {
   private numberValue(value: number | string | null | undefined): number {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private isTicker(value: string): boolean {
+    return /^[A-Z][A-Z0-9.\-]{0,9}$/.test(value);
   }
 
   private placeholderPoints(index: number): number[] {

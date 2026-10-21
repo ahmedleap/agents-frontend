@@ -10,6 +10,16 @@ export interface InstrumentSearchResult {
   industry?: string;
 }
 
+export interface InstrumentWithQuoteDto extends InstrumentSearchResult {
+  bid?: number;
+  ask?: number;
+  lastPrice?: number;
+  priceChange?: number;
+  priceChangePercent?: number;
+  timestamp?: string;
+  stale?: boolean;
+}
+
 export interface QuoteDto {
   ticker: string;
   bid?: number;
@@ -105,6 +115,10 @@ export class TradingApiService {
 
   listInstruments(): Observable<{ results: InstrumentSearchResult[] }> {
     return this.api.get<{ results: InstrumentSearchResult[] }>('instruments');
+  }
+
+  listInstrumentsWithQuotes(): Observable<InstrumentWithQuoteDto[]> {
+    return this.api.get<InstrumentWithQuoteDto[]>('instruments/with-quotes');
   }
 
   getQuote(ticker: string): Observable<QuoteDto> {

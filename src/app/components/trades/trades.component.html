@@ -77,7 +77,7 @@
         </div>
 
         <div class="instrument-footer">
-          <span class="muted">1D trend</span>
+          <span class="muted">1M trend</span>
           <button type="button" class="trade-button" (click)="openOrder(instrument)">Trade <span aria-hidden="true">&#8594;</span></button>
         </div>
       </article>
@@ -175,8 +175,16 @@
         </div>
 
         <label class="quantity-field">Shares
-          <input type="number" min="1" step="1" [value]="quantity()" (input)="setQuantity($event)">
+          <input type="number" min="1" step="1" [max]="side() === 'sell' ? availableToSell() : null" [value]="quantity()" (input)="setQuantity($event)">
         </label>
+
+        @if (side() === 'sell') {
+          @if (availableToSell() === null) {
+            <p class="cash-hint">Checking your available shares...</p>
+          } @else {
+            <p class="cash-hint">Available to sell: {{ availableToSell() | number: '1.0-0' }} shares</p>
+          }
+        }
 
         @if (orderType() === 'limit') {
           <label class="quantity-field">Limit price

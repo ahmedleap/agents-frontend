@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 // Matches agents-middleware LoginDto (POST /api/v1/auth/login). Not wired up yet:
 // the middleware is still being tested, so submit validates the form and goes straight to the dashboard.
@@ -19,6 +20,7 @@ export interface LoginRequest {
 export class LoginComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   protected readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -43,10 +45,9 @@ export class LoginComponent {
     const v = this.form.getRawValue();
     const body: LoginRequest = { email: v.email.trim(), password: v.password };
 
-    // TODO: send `body` with AuthService.login() to agents-middleware /api/v1/auth/login once it's
-    // tested, and only navigate on success. On 401 show the "wrong email or password" error:
-    // this.form.setErrors({ badCredentials: true }).
-    void body;
-    this.router.navigate(['/dashboard']);
+    this.auth.login(body.email, body.password).subscribe({
+      next: () => this.router.navigate([this.auth.isAnalyst() ? '/analytics' : '/dashboard']),
+      error: () => this.form.setErrors({ badCredentials: true })
+    });
   }
 }

@@ -34,15 +34,14 @@ export class AuthService {
    * `user.roles` array from the login response, e.g. 'ANALYST' or 'ROLE_ANALYST'.
    */
   readonly isAnalyst = computed(() => {
-    // TODO(analytics access): role check is disabled so the analytics page can be viewed
-    // before sign-in exists. Everyone is treated as an analyst until this is restored:
-    // delete the `return true;` below and uncomment the check.
-    return true;
-
-    // const user = this.currentUser();
-    // if (!this.isAuthenticated() || !user) return false;
-    // const roles: unknown[] = Array.isArray(user.roles) ? user.roles : [user.role];
-    // return roles.some(r => typeof r === 'string' && r.toUpperCase().replace(/^ROLE_/, '') === 'ANALYST');
+    const user = this.currentUser();
+    const tokenClaims = this.readTokenClaims();
+    const roles: unknown[] = Array.isArray(user?.roles)
+      ? user.roles
+      : [user?.role, tokenClaims?.roles, tokenClaims?.role];
+    return roles
+      .flatMap(role => Array.isArray(role) ? role : [role])
+      .some(role => typeof role === 'string' && role.toUpperCase().replace(/^ROLE_/, '') === 'ANALYST');
   });
 
   /**
@@ -93,6 +92,17 @@ export class AuthService {
     return localStorage.getItem('access_token')
       ?? localStorage.getItem('accessToken')
       ?? localStorage.getItem('token');
+  }
+
+  private readTokenClaims(): { role?: unknown; roles?: unknown } | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    } catch {
+      return null;
+    }
   }
 
   /**

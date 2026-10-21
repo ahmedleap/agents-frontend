@@ -72,19 +72,6 @@ export const routes: Routes = [
     loadComponent: () => import('./components/transactions/transactions.component').then(m => m.TransactionsComponent)
   },
   {
-  path: 'dashboard',
-  loadComponent: () =>
-    import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
-  },
-  {
-    path: 'login',
-    loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent)
-  },
-  {
-    path: 'signup',
-    loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent)
-  },
-  {
     // Only analysts get here; their sidebar shows just this page
     path: 'analytics',
     canActivate: [analystGuard],
