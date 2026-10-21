@@ -23,38 +23,52 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
+  private withAuth(options?: RequestOptions): RequestOptions | undefined {
+    const token = localStorage.getItem('access_token');
+    if (!token) return options;
+
+    const headers = options?.headers instanceof HttpHeaders
+      ? options.headers.set('Authorization', `Bearer ${token}`)
+      : new HttpHeaders({
+          ...(options?.headers as Record<string, string> | undefined),
+          Authorization: `Bearer ${token}`
+        });
+
+    return { ...options, headers };
+  }
+
   /**
    * Make a GET request
    */
   get<T>(endpoint: string, options?: RequestOptions): Observable<T> {
-    return this.http.get<T>(`${this.baseUrl}/${endpoint}`, options);
+    return this.http.get<T>(`${this.baseUrl}/${endpoint}`, this.withAuth(options));
   }
 
   /**
    * Make a POST request
    */
   post<T>(endpoint: string, body: any, options?: RequestOptions): Observable<T> {
-    return this.http.post<T>(`${this.baseUrl}/${endpoint}`, body, options);
+    return this.http.post<T>(`${this.baseUrl}/${endpoint}`, body, this.withAuth(options));
   }
 
   /**
    * Make a PUT request
    */
   put<T>(endpoint: string, body: any, options?: RequestOptions): Observable<T> {
-    return this.http.put<T>(`${this.baseUrl}/${endpoint}`, body, options);
+    return this.http.put<T>(`${this.baseUrl}/${endpoint}`, body, this.withAuth(options));
   }
 
   /**
    * Make a PATCH request
    */
-  patch<T>(endpoint: string, body: any, options?: RequestOptions): Observable<T> {
-    return this.http.patch<T>(`${this.baseUrl}/${endpoint}`, body, options);
+  patch<T>(endpoint: string, body: unknown, options?: RequestOptions): Observable<T> {
+    return this.http.patch<T>(`${this.baseUrl}/${endpoint}`, body, this.withAuth(options));
   }
 
   /**
    * Make a DELETE request
    */
   delete<T>(endpoint: string, options?: RequestOptions): Observable<T> {
-    return this.http.delete<T>(`${this.baseUrl}/${endpoint}`, options);
+    return this.http.delete<T>(`${this.baseUrl}/${endpoint}`, this.withAuth(options));
   }
 }

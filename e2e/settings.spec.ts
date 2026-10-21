@@ -1,7 +1,9 @@
 import { expect, Locator, Page, test } from '@playwright/test';
+import { environment } from '../src/environments/environment';
 
 // Fake backend so this runs without agents-backend
-const CLIENT_ID = 'aa0e8400-e29b-41d4-a716-446655440001';
+// Same client the app uses until real login exists
+const CLIENT_ID = environment.devClientId;
 const CLIENT = {
   clientId: CLIENT_ID,
   firstName: 'John',

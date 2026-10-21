@@ -1,0 +1,94 @@
+<section class="page">
+  <div class="toolbar">
+    <div>
+      <p class="eyebrow">ACTIVITY</p>
+      <h2>Order history</h2>
+      <p class="intro">Review orders placed for this account.</p>
+    </div>
+    <div class="account-context">
+      <label class="account-label" for="history-account">Account</label>
+      <select id="history-account" class="account-select" [value]="accountId()" (change)="switchAccount($event)" aria-label="Select account history">
+        @for (availableAccount of accounts(); track availableAccount.id) {
+          <option [value]="availableAccount.id">{{ availableAccount.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="summary-bar">
+    <div>
+      <span class="summary-label">Showing orders for</span>
+      <strong>{{ account()?.name }}</strong>
+    </div>
+    <span class="order-count">{{ visibleOrders().length }} of {{ orders().length }} {{ orders().length === 1 ? 'order' : 'orders' }}</span>
+  </div>
+
+  <section class="orders-panel">
+    <div class="panel-heading">
+      <div>
+        <h3>Orders</h3>
+        <p>Most recent activity for this account</p>
+      </div>
+      <div class="controls">
+        <label class="search-field">
+          <span class="visually-hidden">Search orders</span>
+          <input type="search" placeholder="Search orders" [value]="query()" (input)="onSearch($event)" aria-label="Search orders">
+        </label>
+        <select [value]="sortBy()" (change)="onSort($event)" aria-label="Sort orders">
+          <option value="createdAt">Sort by Newest</option>
+          <option value="status">Sort by Status</option>
+          <option value="side">Sort by Buy/Sell</option>
+          <option value="kind">Sort by Market/Limit</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Instrument</th>
+            <th>Created</th>
+            <th>Type</th>
+            <th>Order type</th>
+            <th>
+              <button type="button" class="sort-header" [class.active]="sortBy() === 'quantity'" (click)="sortByColumn('quantity')">
+                Quantity
+                <span aria-hidden="true">{{ quantityDescending() ? '↓' : '↑' }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="sort-header" [class.active]="sortBy() === 'limitPrice'" (click)="sortByColumn('limitPrice')">
+                Limit price
+                <span aria-hidden="true">{{ limitPriceDescending() ? '↓' : '↑' }}</span>
+              </button>
+            </th>
+            <th>Filled price</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of visibleOrders(); track order.orderId) {
+            <tr>
+              <td class="instrument">{{ order.instrument }}</td>
+              <td>{{ order.createdAt | date: 'MMM d, y, h:mm a' }}</td>
+              <td><span class="type" [class.sell]="order.orderType === 'SELL'">{{ order.orderType }}</span></td>
+              <td><span class="order-kind">{{ order.limitPrice === null ? 'Market' : 'Limit' }}</span></td>
+              <td>{{ order.quantity | number: '1.0-0' }}</td>
+              <td>{{ order.limitPrice === null ? '—' : (order.limitPrice | currency) }}</td>
+              <td>{{ order.filledPrice === null ? '—' : (order.filledPrice | currency) }}</td>
+              <td><span class="status" [class]="'status ' + order.status.toLowerCase()">{{ order.status }}</span></td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="empty">
+                <strong>{{ orders().length ? 'No matching orders' : 'No orders yet' }}</strong>
+                <span>{{ orders().length ? 'Try a different search.' : 'Orders placed for ' + account()?.name + ' will appear here.' }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
