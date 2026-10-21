@@ -20,6 +20,13 @@ export interface InstrumentWithQuoteDto extends InstrumentSearchResult {
   stale?: boolean;
 }
 
+export interface InstrumentDetailDto {
+  ticker: string;
+  name: string;
+  assetClass: string;
+  industry?: string;
+}
+
 export interface QuoteDto {
   ticker: string;
   bid?: number;
@@ -126,6 +133,10 @@ export class TradingApiService {
 
   listInstrumentsWithQuotes(): Observable<InstrumentWithQuoteDto[]> {
     return this.api.get<InstrumentWithQuoteDto[]>('instruments/with-quotes');
+  }
+
+  getInstrumentDetails(ticker: string): Observable<InstrumentDetailDto> {
+    return this.api.get<InstrumentDetailDto>(`instruments/${encodeURIComponent(ticker)}`);
   }
 
   getQuote(ticker: string): Observable<QuoteDto> {

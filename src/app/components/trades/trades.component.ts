@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
+import { Observable, catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
 import { DestroyRef } from '@angular/core';
 import { AccountApiService } from '../../core/services/account-api.service';
 import { AccountSummary, DashboardService } from '../../core/services/dashboard.service';
@@ -306,8 +306,8 @@ export class TradesComponent {
   private loadInstruments(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.tradingApi.listInstrumentsWithQuotes().subscribe({
-      next: response => this.hydrateInstruments(response),
+    this.tradingApi.listInstruments().subscribe({
+      next: response => this.hydrateInstruments(response.results ?? []),
       error: () => {
         this.instruments.set([]);
         this.loading.set(false);
@@ -357,23 +357,33 @@ export class TradesComponent {
         continue;
       }
 
-      this.tradingApi.getQuote(instrument.symbol).pipe(
-        map(quote => this.withQuote(instrument, quote)),
+      this.tradingApi.getInstrumentDetails(instrument.symbol).pipe(
+        map(details => details.name && details.name !== details.ticker
+          ? { ...instrument, name: details.name, type: details.assetClass }
+          : instrument),
         catchError(() => of(instrument)),
-        switchMap(quotedInstrument => forkJoin({
-          month: this.tradingApi.getHistory(instrument.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
-          day: this.tradingApi.getHistory(instrument.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
-        }).pipe(
-          map(({ month, day }) => {
-            const withChart = month ? this.withHistory(quotedInstrument, month) : quotedInstrument;
-            return day ? this.withDailyChange(withChart, day) : withChart;
-          }),
-          catchError(() => of(quotedInstrument))
-        ))
+        switchMap(namedInstrument => this.loadInstrumentData(namedInstrument))
       ).subscribe(updated => {
         this.instruments.update(current => current.map(item => item.symbol === updated.symbol ? updated : item));
       });
     }
+  }
+
+  private loadInstrumentData(instrument: Instrument): Observable<Instrument> {
+    return this.tradingApi.getQuote(instrument.symbol).pipe(
+      map(quote => this.withQuote(instrument, quote)),
+      catchError(() => of(instrument)),
+      switchMap(quotedInstrument => forkJoin({
+        month: this.tradingApi.getHistory(quotedInstrument.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
+        day: this.tradingApi.getHistory(quotedInstrument.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
+      }).pipe(
+        map(({ month, day }) => {
+          const withChart = month ? this.withHistory(quotedInstrument, month) : quotedInstrument;
+          return day ? this.withDailyChange(withChart, day) : withChart;
+        }),
+        catchError(() => of(quotedInstrument))
+      ))
+    );
   }
 
   private withQuote(instrument: Instrument, quote: QuoteDto): Instrument {
