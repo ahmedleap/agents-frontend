@@ -5,7 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
 import { DestroyRef } from '@angular/core';
-import { DashboardService } from '../../core/services/dashboard.service';
+import { AccountSummary, DashboardService } from '../../core/services/dashboard.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
 
@@ -47,9 +47,9 @@ export class TradesComponent {
     { initialValue: this.route.snapshot.paramMap.get('accountId') }
   );
 
-  protected readonly account = computed(() => {
+  protected readonly account = computed<AccountSummary | null>(() => {
     const accounts = this.accounts();
-    return accounts.find(account => account.id === this.accountIdParam()) ?? accounts[0];
+    return accounts.find(account => account.id === this.accountIdParam()) ?? accounts[0] ?? null;
   });
   protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
   protected readonly searchQuery = signal('');

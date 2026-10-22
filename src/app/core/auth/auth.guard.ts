@@ -10,22 +10,28 @@ export const authGuard: CanActivateFn = (_route, state) => {
     : router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 
+export const guestGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.isAuthenticated() ? homeUrl(auth, router) : true;
+};
+
 export const clientRoleGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.currentUser()?.role === 'CLIENT' ? true : router.createUrlTree(['/dashboard']);
+  return auth.currentUser()?.role === 'CLIENT' ? true : router.createUrlTree(['/login']);
 };
 
 export const analystRoleGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.currentUser()?.role === 'ANALYST' ? true : homeUrl(auth, router);
+  return auth.currentUser()?.role === 'ANALYST' ? true : router.createUrlTree(['/login']);
 };
 
 export const adminRoleGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.currentUser()?.role === 'ADMIN' ? true : homeUrl(auth, router);
+  return auth.currentUser()?.role === 'ADMIN' ? true : router.createUrlTree(['/login']);
 };
 
 function homeUrl(auth: AuthService, router: Router) {

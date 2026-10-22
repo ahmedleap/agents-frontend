@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
 
 export interface AccountSummary {
@@ -8,18 +9,17 @@ export interface AccountSummary {
   cashBalance: number;
   availableBalance: number;
   status: string;
-  dayPL: number;
-  dayPct: number;
-  /** Daily closing values, oldest first. Same length for every account. */
+  dayPL: number | null;
+  dayPct: number | null;
   history: number[];
 }
 
 export interface WatchItem {
   ticker: string;
   name: string;
-  price: number;
-  change: number;
-  changePct: number;
+  price?: number;
+  change?: number;
+  changePct?: number;
 }
 
 export interface Trade {
@@ -28,7 +28,7 @@ export interface Trade {
   side: 'Buy' | 'Sell';
   ticker: string;
   shares: number;
-  price: number;
+  price?: number;
   account: string;
 }
 
@@ -38,7 +38,17 @@ export interface Mover {
   price: number;
   change: number;
   changePct: number;
-  volume: number;
+  volume?: number;
+}
+
+interface DashboardResponse {
+  accounts: AccountListItemDto[];
+  marketMovers: MarketMoverDto[];
+  watchlist: WatchlistDto[];
+  recentTrades: RecentTradeDto[];
+  portfolioHistory: PortfolioHistoryPointDto[];
+  todayProfitLoss: number;
+  todayProfitLossPercent: number;
 }
 
 interface AccountListItemDto {
@@ -50,65 +60,75 @@ interface AccountListItemDto {
   totalValue: number;
 }
 
-// Mock market: % change into each day (13 moves => 14 data points).
-const MARKET_MOVES = [0.4, -0.3, 0.8, 0.5, -0.6, 0.9, 0.2, -0.4, 1.1, 0.3, -0.2, 0.7, 0.6];
-
-/** Rebuilds a plausible value history backwards from today's value. */
-function buildHistory(current: number, beta: number, lastDayBias = 0): number[] {
-  const last = MARKET_MOVES.length - 1;
-  const moves = MARKET_MOVES.map((m, i) => (m * beta + (i === last ? lastDayBias : 0)) / 100);
-  const history = new Array<number>(moves.length + 1);
-  history[moves.length] = current;
-  for (let i = moves.length; i > 0; i--) {
-    history[i - 1] = history[i] / (1 + moves[i - 1]);
-  }
-  return history;
+interface MarketMoverDto {
+  ticker: string;
+  instrumentName: string;
+  currentPrice: number;
+  priceChange: number;
+  priceChangePercent: number;
 }
 
-function summarise(id: string, name: string, history: number[]): AccountSummary {
-  const value = history[history.length - 1];
-  const prev = history[history.length - 2];
-  const dayPL = value - prev;
-  return { id, name, value, cashBalance: 0, availableBalance: 0, status: 'ACTIVE', dayPL, dayPct: (dayPL / prev) * 100, history };
+interface WatchlistDto {
+  ticker: string;
+  instrumentName: string;
 }
 
-function daysAgo(hours: number): Date {
-  return new Date(Date.now() - hours * 3_600_000);
+interface RecentTradeDto {
+  orderId: string;
+  accountName: string;
+  ticker: string;
+  orderType: 'BUY' | 'SELL';
+  quantity: number;
+  limitPrice?: number;
+  filledPrice?: number;
+  createdAt: string;
 }
 
-/**
- * Mock data for now. When the trading API is ready, inject HttpClient here,
- * read the base URL from environment.ts, and keep these signals as the public surface
- * so the dashboard component doesn't have to change.
- */
+interface PortfolioHistoryPointDto {
+  date: string;
+  totalValue: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private readonly api = inject(ApiService);
-  /** One label per history point, ending today. */
-  readonly labels: string[] = Array.from({ length: MARKET_MOVES.length + 1 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (MARKET_MOVES.length - i));
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  });
+  private readonly auth = inject(AuthService);
 
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
+  readonly labels = signal<string[]>([]);
   readonly accounts = signal<AccountSummary[]>([]);
+  readonly watchlist = signal<WatchItem[]>([]);
+  readonly trades = signal<Trade[]>([]);
+  readonly movers = signal<Mover[]>([]);
+  readonly todayProfitLoss = signal(0);
+  readonly todayProfitLossPercent = signal(0);
+  readonly portfolioHistory = signal<number[]>([]);
 
   constructor() {
-    this.api.get<AccountListItemDto[]>('accounts').subscribe({
-      next: accounts => this.accounts.set(accounts.map(account => ({
-        id: account.accountId,
-        name: account.name,
-        value: account.totalValue,
-        cashBalance: account.cashBalance,
-        availableBalance: account.availableBalance,
-        status: account.status,
-        dayPL: 0,
-        dayPct: 0,
-        history: [account.totalValue]
-      }))),
-      error: error => console.error('Account list request failed', error)
+    const clientId = this.auth.clientId();
+    if (!clientId) {
+      this.loading.set(false);
+      this.error.set('Your session is no longer available. Please sign in again.');
+      return;
+    }
+
+    this.api.getRoot<DashboardResponse>('dashboard', {
+      params: { clientId, period: '30D' }
+    }).subscribe({
+      next: response => this.applyDashboard(response),
+      error: error => {
+        console.error('Dashboard request failed', error);
+        this.loading.set(false);
+        this.error.set('Dashboard data is temporarily unavailable. Please try again later.');
+      }
     });
   }
+
+  readonly accountData = this.accounts.asReadonly();
+  readonly watchlistData = this.watchlist.asReadonly();
+  readonly tradeData = this.trades.asReadonly();
+  readonly moverData = this.movers.asReadonly();
 
   updateAvailableCash(accountId: string, availableBalance: number): void {
     this.accounts.update(accounts => accounts.map(account => account.id === accountId
@@ -116,33 +136,45 @@ export class DashboardService {
       : account));
   }
 
-  // Publicly exposed read-only value sources for the dashboard presenter.
-  readonly accountData = this.accounts.asReadonly();
+  private applyDashboard(response: DashboardResponse): void {
+    this.accounts.set((response.accounts ?? []).map(account => ({
+      id: account.accountId,
+      name: account.name,
+      value: account.totalValue,
+      cashBalance: account.cashBalance,
+      availableBalance: account.availableBalance,
+      status: account.status,
+      dayPL: null,
+      dayPct: null,
+      history: []
+    })));
+    this.watchlist.set((response.watchlist ?? []).map(item => ({
+      ticker: item.ticker,
+      name: item.instrumentName
+    })));
+    this.trades.set((response.recentTrades ?? []).map(trade => ({
+      id: trade.orderId,
+      time: new Date(trade.createdAt),
+      side: trade.orderType === 'BUY' ? 'Buy' : 'Sell',
+      ticker: trade.ticker,
+      shares: trade.quantity,
+      price: trade.filledPrice ?? trade.limitPrice,
+      account: trade.accountName
+    })));
+    this.movers.set((response.marketMovers ?? []).map(mover => ({
+      ticker: mover.ticker,
+      name: mover.instrumentName,
+      price: mover.currentPrice,
+      change: mover.priceChange,
+      changePct: mover.priceChangePercent
+    })));
 
-  readonly watchlist = signal<WatchItem[]>([
-    { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 492.44, change: 8.12, changePct: 1.68 },
-    { ticker: 'AMZN', name: 'Amazon.com Inc.', price: 146.8, change: -1.35, changePct: -0.91 },
-    { ticker: 'GOOGL', name: 'Alphabet Inc.', price: 139.27, change: 0.84, changePct: 0.61 },
-    { ticker: 'META', name: 'Meta Platforms', price: 331.05, change: 4.9, changePct: 1.5 },
-    { ticker: 'AMD', name: 'Advanced Micro Devices', price: 121.6, change: -2.2, changePct: -1.78 }
-  ]);
-  readonly watchlistData = this.watchlist.asReadonly();
-
-  readonly trades = signal<Trade[]>([
-    { id: 't1', time: daysAgo(1), side: 'Buy', ticker: 'AAPL', shares: 25, price: 177.9, account: 'Roth IRA' },
-    { id: 't2', time: daysAgo(3), side: 'Sell', ticker: 'TSLA', shares: 10, price: 196.4, account: 'HSA' },
-    { id: 't3', time: daysAgo(6), side: 'Buy', ticker: 'MSFT', shares: 12, price: 376.2, account: '401k' },
-    { id: 't4', time: daysAgo(27), side: 'Buy', ticker: 'KO', shares: 80, price: 59.15, account: '529' },
-    { id: 't5', time: daysAgo(30), side: 'Sell', ticker: 'AMD', shares: 40, price: 123.8, account: 'HSA' }
-  ]);
-  readonly tradeData = this.trades.asReadonly();
-
-  readonly movers = signal<Mover[]>([
-    { ticker: 'SMCI', name: 'Super Micro Computer', price: 254.1, change: 21.3, changePct: 9.15, volume: 18_420_000 },
-    { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 492.44, change: 8.12, changePct: 1.68, volume: 41_950_000 },
-    { ticker: 'TSLA', name: 'Tesla Inc.', price: 195.75, change: -9.4, changePct: -4.58, volume: 96_300_000 },
-    { ticker: 'PFE', name: 'Pfizer Inc.', price: 28.9, change: -1.12, changePct: -3.73, volume: 37_780_000 },
-    { ticker: 'AMD', name: 'Advanced Micro Devices', price: 121.6, change: -2.2, changePct: -1.78, volume: 52_110_000 }
-  ]);
-  readonly moverData = this.movers.asReadonly();
+    const history = (response.portfolioHistory ?? []).slice().sort((a, b) => a.date.localeCompare(b.date));
+    this.labels.set(history.map(point => point.date));
+    this.portfolioHistory.set(history.map(point => point.totalValue));
+    this.todayProfitLoss.set(response.todayProfitLoss ?? 0);
+    this.todayProfitLossPercent.set(response.todayProfitLossPercent ?? 0);
+    this.error.set(null);
+    this.loading.set(false);
+  }
 }

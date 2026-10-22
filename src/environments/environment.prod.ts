@@ -2,9 +2,8 @@
 
 export const environment = {
   production: true,
-  apiUrl: 'https://api.agentsofleap.com/api',
-  authUrl: 'https://api.agentsofleap.com/api/v1',
-  wsUrl: 'wss://api.agentsofleap.com',
+  backendUrl: 'https://api.agentsofleap.com/api',
+  middlewareUrl: 'https://api.agentsofleap.com/api/v1',
   logLevel: 'error',
   features: {
     enableDevTools: false,
