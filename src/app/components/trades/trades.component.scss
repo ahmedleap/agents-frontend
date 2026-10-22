@@ -20,10 +20,10 @@ h2, p { margin: 0; }
 .toolbar h2 { margin-top: 0.25rem; color: var(--pf-green-dark); font-family: 'Fredoka', 'Baloo 2', sans-serif; font-size: 2rem; font-weight: 600; }
 .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 0.95rem; }
 .account-context { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
-.account-label { display: block; color: var(--pf-muted); font-size: 0.75rem; user-select: none; caret-color: transparent; }
+.account-label { display: block; color: var(--pf-muted); font-size: 0.75rem; }
 .account-select { min-width: 12rem; padding: 0.4rem 0.65rem; border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-card); color: var(--pf-green-dark); font: inherit; font-size: 1rem; font-weight: 700; }
 .account-select:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 1px; }
-.cash-card { min-width: 12rem; padding: .85rem 1.1rem; border: 1px solid var(--pf-border); border-top: 4px solid var(--pf-green); border-radius: 2px; background: var(--pf-card); box-shadow: var(--pf-shadow); }
+.cash-card { min-width: 12rem; padding: .85rem 1.1rem; border: 1px solid var(--pf-border); border-top: 4px solid var(--pf-green); border-radius: 2px; background: var(--pf-card); }
 .cash-card span { display: block; color: var(--pf-muted); font-size: 0.8rem; }
 .cash-card strong { display: block; margin-top: 0.15rem; font-size: 1.45rem; font-variant-numeric: tabular-nums; }
 .market-bar { display: flex; justify-content: space-between; align-items: center; padding: .7rem 1rem; border: 1px solid var(--pf-border); background: var(--pf-card); font-size: .82rem; }

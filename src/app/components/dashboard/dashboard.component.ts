@@ -55,6 +55,8 @@ export class DashboardComponent {
   protected readonly trades = computed(() => this.data.trades().slice(0, 5));
   protected readonly movers = this.data.movers;
   protected readonly visibleMovers = computed(() => this.movers().slice(0, 3));
+  protected readonly moversLoading = this.data.moversLoading;
+  protected readonly moversError = this.data.moversError;
   protected readonly loading = this.data.loading;
   protected readonly error = this.data.error;
 
