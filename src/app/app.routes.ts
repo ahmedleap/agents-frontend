@@ -1,13 +1,4 @@
-import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { AuthService } from './core/services/auth.service';
-/** Keep legacy dashboard links aligned with the signed-in user's home page. */
-const home = () => {
-  const auth = inject(AuthService);
-  if (!auth.isAuthenticated()) return '/login';
-  const role = auth.currentUser()?.role;
-  return role === 'ANALYST' ? '/analytics' : role === 'CLIENT' ? '/client' : '/admin';
-};
 import { adminRoleGuard, analystRoleGuard, authGuard, clientRoleGuard, guestGuard } from './core/auth/auth.guard';
 
 // Listed in the order a user moves through the app:
@@ -40,8 +31,8 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    redirectTo: home,
-    pathMatch: 'full'
+    canActivate: [authGuard, analystRoleGuard],
+    loadComponent: () => import('./components/analyst-dashboard/analyst-dashboard.component').then(m => m.AnalystDashboardComponent)
   },
   {
     path: 'admin',
@@ -95,18 +86,6 @@ export const routes: Routes = [
     path: 'transactions/:accountId',
     canActivate: [authGuard, clientRoleGuard],
     loadComponent: () => import('./components/transactions/transactions.component').then(m => m.TransactionsComponent)
-  },
-  {
-    path: 'news',
-    canActivate: [authGuard, clientRoleGuard],
-    loadComponent: () => import('./components/news/news.component').then(m => m.NewsComponent)
-  },
-  {
-    // Only analysts get here; their sidebar shows just this page
-    path: 'analytics',
-    canActivate: [authGuard, analystRoleGuard],
-    loadComponent: () =>
-      import('./components/analytics/analytics.component').then(m => m.AnalyticsComponent)
   },
   {
     // Header > gear

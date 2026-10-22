@@ -36,5 +36,5 @@ export const adminRoleGuard: CanActivateFn = () => {
 
 function homeUrl(auth: AuthService, router: Router) {
   const role = auth.currentUser()?.role;
-  return router.createUrlTree([role === 'CLIENT' ? '/client' : role === 'ADMIN' ? '/admin' : '/analytics']);
+  return router.createUrlTree([role === 'CLIENT' ? '/client' : role === 'ADMIN' ? '/admin' : '/dashboard']);
 }

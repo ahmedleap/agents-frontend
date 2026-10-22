@@ -3,13 +3,10 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
+import { catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
 import { DestroyRef } from '@angular/core';
-import { AccountApiService } from '../../core/services/account-api.service';
-import { AuthService } from '../../core/services/auth.service';
 import { AccountSummary, DashboardService } from '../../core/services/dashboard.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
-import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
 
 interface Instrument {
@@ -42,77 +39,17 @@ export class TradesComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly accounts = inject(DashboardService).accounts;
-  private readonly accountApi = inject(AccountApiService);
-  private readonly auth = inject(AuthService);
   private readonly tradingApi = inject(TradingApiService);
-  private readonly portfolioApi = inject(PortfolioApiService);
   private readonly orderHistory = inject(OrderHistoryService);
   private readonly route = inject(ActivatedRoute);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
     { initialValue: this.route.snapshot.paramMap.get('accountId') }
   );
-  private readonly routeAccountName = toSignal(
-    this.route.queryParamMap.pipe(map(params => params.get('accountName'))),
-    { initialValue: this.route.snapshot.queryParamMap.get('accountName') }
-  );
-  private readonly routeAccount = toSignal(
-    this.route.paramMap.pipe(
-      map(params => params.get('accountId')),
-      switchMap(accountId => accountId
-        ? forkJoin({
-            summary: this.accountApi.getAccountSummary(accountId),
-            portfolio: this.portfolioApi.getAccountPortfolio(this.auth.clientId() ?? '', accountId)
-          }).pipe(
-            map(({ summary, portfolio }): AccountSummary => ({
-              id: accountId,
-              name: portfolio.accountName,
-              value: summary.totalValue,
-              cashBalance: summary.cashBalance,
-              availableBalance: summary.availableBalance,
-              status: 'ACTIVE',
-              dayPL: 0,
-              dayPct: 0,
-              history: [summary.totalValue]
-            })),
-            catchError(() => of(null))
-          )
-        : of(null)
-      )
-    ),
-    { initialValue: null }
-  );
 
-  protected readonly selectableAccounts = computed(() => {
+  protected readonly account = computed<AccountSummary | null>(() => {
     const accounts = this.accounts();
-    const routeAccount = this.routeAccount() ?? this.routeAccountFallback();
-    if (!routeAccount || accounts.some(account => account.id === routeAccount.id)) return accounts;
-    return [routeAccount, ...accounts];
-  });
-
-  private readonly routeAccountFallback = computed<AccountSummary | null>(() => {
-    const id = this.accountIdParam();
-    const name = this.routeAccountName();
-    return id && name ? {
-      id,
-      name,
-      value: 0,
-      cashBalance: 0,
-      availableBalance: 0,
-      status: 'ACTIVE',
-      dayPL: 0,
-      dayPct: 0,
-      history: [0]
-    } : null;
-  });
-
-  protected readonly account = computed(() => {
-    const accounts = this.selectableAccounts();
-    const routeAccountId = this.accountIdParam();
-    return accounts.find(account => account.id === routeAccountId)
-      ?? this.routeAccount()
-      ?? this.routeAccountFallback()
-      ?? (routeAccountId ? undefined : accounts[0]);
+    return accounts.find(account => account.id === this.accountIdParam()) ?? accounts[0] ?? null;
   });
   protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
   protected readonly searchQuery = signal('');
@@ -121,7 +58,6 @@ export class TradesComponent {
   protected readonly orderType = signal<OrderType>('market');
   protected readonly limitPrice = signal(0);
   protected readonly quantity = signal(10);
-  protected readonly availableToSell = signal<number | null>(null);
   protected readonly confirmed = signal(false);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -154,17 +90,11 @@ export class TradesComponent {
 
   protected readonly canSubmit = computed(() => {
     const total = this.estimatedTotal();
-    const sellable = this.availableToSell();
-    return !!this.account()
-      && !!this.selected()
-      && this.quantity() > 0
-      && this.executionPrice() > 0
-      && (this.side() === 'buy' ? total <= this.cashBalance() : sellable !== null && this.quantity() <= sellable);
+    return !!this.account() && !!this.selected() && this.quantity() > 0 && this.executionPrice() > 0 && (this.side() === 'sell' || total <= this.cashBalance());
   });
 
   protected openOrder(instrument: Instrument): void {
     this.selected.set(instrument);
-    this.availableToSell.set(null);
     this.side.set('buy');
     this.orderType.set('market');
     this.limitPrice.set(instrument.price);
@@ -174,7 +104,6 @@ export class TradesComponent {
     this.chartRange.set('1M');
     this.chartPointsForOrder.set(instrument.points);
     this.loadOrderChart(instrument, '1M');
-    this.loadAvailableToSell(instrument);
     if (instrument.price > 0) return;
     this.tradingApi.getQuote(instrument.symbol).subscribe({
       next: quote => {
@@ -235,19 +164,9 @@ export class TradesComponent {
   }
 
   protected setLimitPrice(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const selectionStart = input.selectionStart;
-    const selectionEnd = input.selectionEnd;
-    const value = Number(input.value);
+    const value = Number((event.target as HTMLInputElement).value);
     this.limitPrice.set(Number.isFinite(value) ? Math.max(0, value) : 0);
     this.confirmed.set(false);
-
-    // The bound value is refreshed when the signal changes; restore the caret after that refresh.
-    requestAnimationFrame(() => {
-      if (document.activeElement === input && selectionStart !== null && selectionEnd !== null) {
-        input.setSelectionRange(selectionStart, selectionEnd);
-      }
-    });
   }
 
   protected setQuantity(event: Event): void {
@@ -317,30 +236,8 @@ export class TradesComponent {
     });
   }
 
-  private loadAvailableToSell(instrument: Instrument): void {
-    const accountId = this.account()?.id;
-    if (!accountId) return;
-
-    this.portfolioApi.getAccountPortfolio(this.auth.clientId() ?? '', accountId).subscribe({
-      next: portfolio => {
-        if (this.selected()?.instrumentId !== instrument.instrumentId) return;
-        const holding = (portfolio.holdings ?? []).find(item => item.instrumentId === instrument.instrumentId);
-        this.availableToSell.set(holding?.quantity ?? 0);
-      },
-      error: () => {
-        if (this.selected()?.instrumentId === instrument.instrumentId) this.availableToSell.set(null);
-      }
-    });
-  }
-
   private hydrateInstruments(results: InstrumentSearchResult[]): void {
-    const instruments = results.map((result, index) => {
-      const instrument = this.toInstrument(result, index);
-      const withQuote = 'lastPrice' in result
-        ? this.withQuote(instrument, result as QuoteDto)
-        : instrument;
-      return withQuote;
-    });
+    const instruments = results.map((result, index) => this.toInstrument(result, index));
     if (!instruments.length) {
       this.instruments.set([]);
       this.loading.set(false);
@@ -351,40 +248,23 @@ export class TradesComponent {
     this.loading.set(false);
 
     for (const instrument of instruments) {
-      if (!this.isTicker(instrument.symbol)) {
-        this.instruments.update(current => current.map(item => item.symbol === instrument.symbol
-          ? { ...item, priceState: 'unavailable' as const }
-          : item));
-        continue;
-      }
-
-      this.tradingApi.getInstrumentDetails(instrument.symbol).pipe(
-        map(details => details.name && details.name !== details.ticker
-          ? { ...instrument, name: details.name, type: details.assetClass }
-          : instrument),
-        catchError(() => of(instrument)),
-        switchMap(namedInstrument => this.loadInstrumentData(namedInstrument))
+      this.tradingApi.getQuote(instrument.symbol).pipe(
+        map(quote => this.withQuote(instrument, quote)),
+        catchError(() => of({ ...instrument, priceState: 'unavailable' as const })),
+        switchMap(quotedInstrument => forkJoin({
+          month: this.tradingApi.getHistory(instrument.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
+          day: this.tradingApi.getHistory(instrument.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
+        }).pipe(
+          map(({ month, day }) => {
+            const withChart = month ? this.withHistory(quotedInstrument, month) : quotedInstrument;
+            return day ? this.withDailyChange(withChart, day) : withChart;
+          }),
+          catchError(() => of(quotedInstrument))
+        ))
       ).subscribe(updated => {
         this.instruments.update(current => current.map(item => item.symbol === updated.symbol ? updated : item));
       });
     }
-  }
-
-  private loadInstrumentData(instrument: Instrument): Observable<Instrument> {
-    return this.tradingApi.getQuote(instrument.symbol).pipe(
-      map(quote => this.withQuote(instrument, quote)),
-      catchError(() => of(instrument)),
-      switchMap(quotedInstrument => forkJoin({
-        month: this.tradingApi.getHistory(quotedInstrument.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
-        day: this.tradingApi.getHistory(quotedInstrument.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
-      }).pipe(
-        map(({ month, day }) => {
-          const withChart = month ? this.withHistory(quotedInstrument, month) : quotedInstrument;
-          return day ? this.withDailyChange(withChart, day) : withChart;
-        }),
-        catchError(() => of(quotedInstrument))
-      ))
-    );
   }
 
   private withQuote(instrument: Instrument, quote: QuoteDto): Instrument {
@@ -404,15 +284,14 @@ export class TradesComponent {
 
   private withHistory(instrument: Instrument, history: HistoryResponseDto): Instrument {
     const points = history.bars
-      .map(bar => ({ price: this.numberValue(bar.close), timestamp: bar.timestamp }))
-      .filter(point => Number.isFinite(point.price) && point.price > 0);
-    const prices = points.map(point => point.price);
-    const latest = prices[prices.length - 1] ?? this.numberValue(history.summary?.endPrice);
+      .map(bar => this.numberValue(bar.close))
+      .filter(price => Number.isFinite(price) && price > 0);
+    const latest = points[points.length - 1] ?? this.numberValue(history.summary?.endPrice);
     if (points.length < 2 && latest <= 0) return instrument;
 
     return {
       ...instrument,
-      points: prices.length > 1 ? prices : instrument.points,
+      points: points.length > 1 ? points : instrument.points,
       price: instrument.price > 0 ? instrument.price : latest,
       chartPlaceholder: points.length < 2,
       priceState: instrument.price > 0 || latest > 0 ? 'ready' : instrument.priceState,
@@ -420,14 +299,8 @@ export class TradesComponent {
   }
 
   private withDailyChange(instrument: Instrument, history: HistoryResponseDto): Instrument {
-    const prices = history.bars
-      .map(bar => this.numberValue(bar.close))
-      .filter(price => price > 0);
-    const startPrice = this.numberValue(history.summary?.startPrice ?? prices[0]);
-    const endPrice = this.numberValue(history.summary?.endPrice ?? prices[prices.length - 1]);
-    const change = history.summary?.change ?? (startPrice > 0 && endPrice > 0 ? endPrice - startPrice : undefined);
-    const changePct = history.summary?.changePercent
-      ?? (change !== undefined && startPrice > 0 ? (change / startPrice) * 100 : undefined);
+    const change = history.summary?.change;
+    const changePct = history.summary?.changePercent;
     if (change === undefined || changePct === undefined) return instrument;
     return {
       ...instrument,
@@ -481,10 +354,6 @@ export class TradesComponent {
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  private isTicker(value: string): boolean {
-    return /^[A-Z][A-Z0-9.\-]{0,9}$/.test(value);
-  }
-
   private placeholderPoints(index: number): number[] {
     const patterns = [
       [42, 45, 43, 47, 46, 50, 48, 52],
@@ -501,5 +370,4 @@ export class TradesComponent {
     const range = max - min || 1;
     return points.map((point, index) => `${(index / (points.length - 1)) * 100},${42 - ((point - min) / range) * 34}`).join(' ');
   }
-
 }

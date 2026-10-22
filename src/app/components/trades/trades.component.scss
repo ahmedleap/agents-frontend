@@ -4,24 +4,15 @@
   min-height: 0;
   color: var(--pf-text);
 }
-
-.page {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  overflow: auto;
-  margin-right: -0.75rem;
-  padding-right: 0.75rem;
-}
+.page { width: 100%; display: flex; flex-direction: column; gap: 1.2rem; overflow: auto; }
 h2, p { margin: 0; }
 .toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
 .eyebrow { color: var(--pf-green); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; }
 .toolbar h2 { margin-top: 0.25rem; color: var(--pf-green-dark); font-family: 'Fredoka', 'Baloo 2', sans-serif; font-size: 2rem; font-weight: 600; }
 .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 0.95rem; }
-.account-context { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
-.account-label { display: block; color: var(--pf-muted); font-size: 0.75rem; user-select: none; caret-color: transparent; }
-.account-select { min-width: 12rem; padding: 0.4rem 0.65rem; border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-card); color: var(--pf-green-dark); font: inherit; font-size: 1rem; font-weight: 700; }
+.account-context { display: flex; flex-direction: column; align-items: flex-end; gap: .3rem; }
+.account-label { color: var(--pf-muted); font-size: 0.75rem; }
+.account-select { min-width: 12rem; padding: .4rem .65rem; border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-card); color: var(--pf-green-dark); font: inherit; font-size: 1rem; font-weight: 700; }
 .account-select:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 1px; }
 .cash-card { min-width: 12rem; padding: .85rem 1.1rem; border: 1px solid var(--pf-border); border-top: 4px solid var(--pf-green); border-radius: 2px; background: var(--pf-card); box-shadow: var(--pf-shadow); }
 .cash-card span { display: block; color: var(--pf-muted); font-size: 0.8rem; }

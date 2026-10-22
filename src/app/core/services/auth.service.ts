@@ -87,7 +87,6 @@ export class AuthService {
   readonly isAuthenticating = this.isAuthenticatingState.asReadonly();
   readonly clientId = computed(() => this.currentUserState()?.clientId ?? null);
   readonly isAuthenticated = computed(() => !!this.accessToken() && !!this.currentUserState());
-  readonly isAnalyst = computed(() => this.currentUserState()?.role === 'ANALYST' || this.readTokenClaims()?.role === 'ANALYST');
   readonly hasError = computed(() => !!this.authError());
   readonly authErrorMessage = computed(() => this.authError());
 
@@ -105,9 +104,16 @@ export class AuthService {
     const loginPath = accountType === 'staff' ? 'auth/admin/login' : 'auth/login';
     return this.http.post<LoginResponse>(`${environment.middlewareUrl}/${loginPath}`, { email, password }).pipe(
       tap(response => {
+        const claims = decodeClaims(response.accessToken);
+        if (!response.accessToken || !claims || claims.sub !== response.user?.clientId
+          || claims.email !== response.user?.email || !isRole(claims.role)
+          || claims.role !== response.user?.role
+          || !Number.isFinite(claims.exp) || claims.exp * 1000 <= Date.now()) {
+          throw new Error('The backend returned an invalid or expired login token.');
+        }
         this.accessToken.set(response.accessToken);
         this.refreshToken.set(response.refreshToken);
-        this.currentUserState.set(response.user);
+        this.currentUserState.set({ ...response.user, role: claims.role });
         this.persistSession();
       }),
       catchError(error => {
@@ -189,24 +195,7 @@ export class AuthService {
    * Get current access token
    */
   getToken(): string | null {
-    return this.accessToken() ?? this.readStoredToken();
-  }
-
-  private readStoredToken(): string | null {
-    return localStorage.getItem('access_token')
-      ?? localStorage.getItem('accessToken')
-      ?? localStorage.getItem('token');
-  }
-
-  private readTokenClaims(): { role?: unknown; roles?: unknown } | null {
-    const token = this.getToken();
-    if (!token) return null;
-    try {
-      const payload = token.split('.')[1];
-      return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    } catch {
-      return null;
-    }
+    return this.accessToken();
   }
 
   /**

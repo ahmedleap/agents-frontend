@@ -1,7 +1,7 @@
 <div class="app-container">
   @if (appInitialized()) {
     <header class="app-header">
-      <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to dashboard">
+      <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to your home page">
       <svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
         <g fill="#fff" stroke="#245a20" stroke-width="5" stroke-linejoin="round">
           <g transform="translate(94 102) rotate(-18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
@@ -21,19 +21,13 @@
       @if (role()) { <span class="role-badge">{{ role() }}</span> }
 
       <div class="header-actions">
-        <a class="icon-btn tip" routerLink="/settings" routerLinkActive="active"
-           aria-label="Settings" data-tip="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2.75 13.1 4.9a7.8 7.8 0 0 1 1.8.75l2.25-.55 1.85 1.85-.55 2.25c.3.56.55 1.16.75 1.8L21.25 12l-2.05 1.1a7.8 7.8 0 0 1-.75 1.8l.55 2.25-1.85 1.85-2.25-.55a7.8 7.8 0 0 1-1.8.75L12 21.25l-1.1-2.05a7.8 7.8 0 0 1-1.8-.75l-2.25.55L5 17.15l.55-2.25a7.8 7.8 0 0 1-.75-1.8L2.75 12 4.8 10.9c.2-.64.45-1.24.75-1.8L5 6.95 6.85 5.1l2.25.55c.56-.3 1.16-.55 1.8-.75L12 2.75Z"/>
-            <circle cx="12" cy="12" r="2.75"/>
-          </svg>
-        </a>
-        <button
-          type="button"
-          class="icon-btn tip"
-          (click)="theme.toggle()"
-          [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-          [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+      <!-- Hover label names the mode it switches to -->
+      <button
+        type="button"
+        class="icon-btn tip"
+        (click)="theme.toggle()"
+        [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+        [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
         @if (theme.theme() === 'dark') {
           <!-- Sun -->
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -46,33 +40,45 @@
             <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>
           </svg>
         }
-        </button>
-        @if (!isAuthPage()) {
-          <button type="button" class="sign-out" (click)="signOut()">Sign out</button>
-        }
+      </button>
+      @if (role()) {
+        <button type="button" class="sign-out" (click)="signOut()">Sign out</button>
+      }
+
+      @if (!isAuthPage()) {
+        <a
+          class="icon-btn tip"
+          routerLink="/settings"
+          routerLinkActive="active"
+          aria-label="Settings"
+          data-tip="Settings">
+          <!-- Gear -->
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </a>
+      }
       </div>
     </header>
 
     <div class="app-body">
       @if (!isAuthPage()) {
       <nav class="app-sidebar" aria-label="Main navigation">
-      @if (isAnalyst()) {
-        <a class="nav-link" routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">Analysis</a>
-      } @else {
-        <a class="nav-link" [routerLink]="homeRoute()" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
-        <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-          <span class="trade-icon" aria-hidden="true">↗</span>
-          Trade
-        </a>
-        <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-          History
-        </a>
-        <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-          Transactions
-        </a>
-        <a class="nav-link" routerLink="/news" routerLinkActive="active" ariaCurrentWhenActive="page">
-          News
-        </a>
+        @if (role() === 'CLIENT') {
+          <a class="nav-link" routerLink="/client" routerLinkActive="active" ariaCurrentWhenActive="page">My accounts</a>
+          <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <span class="trade-icon" aria-hidden="true">↗</span>Trade
+          </a>
+          <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">History</a>
+          <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">Transactions</a>
+        } @else if (role() === 'ADMIN') {
+          <a class="nav-link" routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin overview</a>
+        } @else if (role() === 'ANALYST') {
+          <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Analytics dashboard</a>
+        }
+
+        @if (role() === 'CLIENT') {
         <div class="nav-row">
           <button
             type="button"
@@ -117,7 +123,7 @@
             }
           </div>
         }
-      }
+        }
       </nav>
       }
 

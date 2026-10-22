@@ -1,11 +1,10 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { TransactionService } from '../../core/services/transaction.service';
-import { downloadCsv } from '../../core/utils/csv-export';
 
 type SortKey = 'createdAt' | 'amount' | 'type';
 type TransactionAction = 'DEPOSIT' | 'WITHDRAWAL';
@@ -13,7 +12,7 @@ type TransactionAction = 'DEPOSIT' | 'WITHDRAWAL';
 @Component({
   selector: 'app-transactions',
   standalone: true,
-  imports: [CurrencyPipe],
+  imports: [CurrencyPipe, DatePipe],
   templateUrl: './transactions.component.html',
   styleUrls: ['./transactions.component.scss']
 })
@@ -38,7 +37,6 @@ export class TransactionsComponent {
   protected readonly sortBy = signal<SortKey>('createdAt');
   protected readonly sortDescending = signal(true);
   protected readonly showDepositForm = signal(false);
-  protected readonly showConfirmation = signal(false);
   protected readonly transactionAction = signal<TransactionAction>('DEPOSIT');
   protected readonly depositAmount = signal(0);
   protected readonly canSubmitTransaction = computed(() =>
@@ -83,47 +81,13 @@ export class TransactionsComponent {
   protected setTransactionAction(action: TransactionAction): void {
     this.transactionAction.set(action);
     this.depositAmount.set(0);
-    this.showConfirmation.set(false);
   }
 
   protected addCash(): void {
+    const amount = this.depositAmount();
     if (!this.canSubmitTransaction()) return;
-    this.showConfirmation.set(true);
-  }
-
-  protected confirmCashTransaction(): void {
-    if (!this.canSubmitTransaction()) return;
-    this.transactionService.addTransaction(this.accountId(), this.transactionAction(), this.depositAmount());
+    this.transactionService.addTransaction(this.accountId(), this.transactionAction(), amount);
     this.depositAmount.set(0);
-    this.showConfirmation.set(false);
     this.showDepositForm.set(false);
-  }
-
-  protected cancelCashConfirmation(): void {
-    this.showConfirmation.set(false);
-  }
-
-  protected exportTransactions(): void {
-    const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-    downloadCsv(
-      `transactions-${this.account()?.name ?? 'account'}.csv`.replace(/[^a-z0-9._-]+/gi, '-'),
-      ['Transaction ID', 'Account', 'Type', 'Amount', 'Created'],
-      this.visibleTransactions().map(transaction => [
-        transaction.transactionId,
-        this.account()?.name ?? '',
-        transaction.txnType,
-        currency.format(transaction.amount),
-        this.centralTime(transaction.createdAt)
-      ])
-    );
-  }
-
-  protected centralTime(value: string): string {
-    const timestamp = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : `${value}Z`;
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(new Date(timestamp));
   }
 }

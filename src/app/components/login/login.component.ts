@@ -53,7 +53,7 @@ export class LoginComponent {
         const role = this.auth.currentUser()?.role;
         const destination = role === 'CLIENT' ? '/client'
           : role === 'ADMIN' ? '/admin'
-          : '/analytics';
+          : '/dashboard';
         void this.router.navigateByUrl(destination);
       },
       error: (error: unknown) => {

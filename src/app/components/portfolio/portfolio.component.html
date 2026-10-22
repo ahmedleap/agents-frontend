@@ -6,7 +6,7 @@
     </div>
     <div class="toolbar-actions">
       <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
-      <a class="trade-link" [routerLink]="['/trades', accountId()]" [queryParams]="{ accountName: account() }">Place a trade <span aria-hidden="true">&#8594;</span></a>
+      <a class="trade-link" [routerLink]="['/trades', accountId()]">Place a trade <span aria-hidden="true">&#8594;</span></a>
     </div>
   </div>
 
