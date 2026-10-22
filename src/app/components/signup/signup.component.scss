@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+.signup-page {
+  display: grid;
+  place-items: center;
+  min-height: 70vh;
+  padding: 2rem 1rem;
+}
+
+.signup-card {
+  width: min(100%, 34rem);
+  padding: 2rem;
+  background: var(--pf-card, #fff);
+  border: 1px solid var(--pf-border, #dbe5de);
+  box-shadow: var(--pf-shadow, 0 6px 20px rgba(16, 40, 28, 0.08));
+}
+
+h2, p { margin: 0; }
+header p, .switch { color: var(--pf-muted, #5f7267); }
+header { margin-bottom: 1.5rem; }
+
+form { display: grid; gap: 1rem; }
+.two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+label { display: grid; gap: 0.35rem; color: var(--pf-text, #1c2b23); font-weight: 600; }
+input { box-sizing: border-box; width: 100%; padding: 0.7rem; border: 1px solid var(--pf-border, #dbe5de); }
+button { padding: 0.75rem 1rem; color: #fff; background: var(--pf-green, #2f6f2a); border: 0; font-weight: 700; cursor: pointer; }
+.alert { margin-bottom: 1rem; color: var(--pf-loss, #c0392b); }
+.switch { margin-top: 1.25rem; }
+a { color: var(--pf-green-dark, #245a20); font-weight: 700; }
+
+@media (max-width: 520px) {
+  .two-up { grid-template-columns: 1fr; }
+  .signup-card { padding: 1.25rem; }
+}

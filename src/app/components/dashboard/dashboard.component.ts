@@ -124,12 +124,8 @@ export class DashboardComponent {
             tension: 0.25,
             pointRadius: 0,
             pointHoverRadius: 5,
-<<<<<<< Updated upstream
-            pointBackgroundColor: GREEN
-=======
             pointHitRadius: 12,
-            pointBackgroundColor: c.line
->>>>>>> Stashed changes
+            pointBackgroundColor: GREEN
           }
         ]
       },
@@ -147,13 +143,8 @@ export class DashboardComponent {
         scales: {
           x: { grid: { display: false }, ticks: { color: MUTED, maxTicksLimit: 7 } },
           y: {
-<<<<<<< Updated upstream
             grid: { color: BORDER },
-            ticks: { color: MUTED, callback: v => usdCompact.format(Number(v)) }
-=======
-            grid: { color: c.border },
-            ticks: { color: c.muted, maxTicksLimit: 3, callback: v => usdCompact.format(Number(v)) }
->>>>>>> Stashed changes
+            ticks: { color: MUTED, maxTicksLimit: 3, callback: v => usdCompact.format(Number(v)) }
           }
         }
       }

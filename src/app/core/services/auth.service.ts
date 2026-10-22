@@ -9,6 +9,15 @@ interface LoginResponse {
   user: { clientId: string; [key: string]: unknown };
 }
 
+export interface SignupRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  ssn: string;
+}
+
 /**
  * Authentication Service
  * 
@@ -42,7 +51,7 @@ export class AuthService {
     this.isAuthenticating.set(true);
     this.authError.set(null);
 
-    return this.http.post<LoginResponse>(`${environment.middlewareUrl}/auth/login`, { email, password }).pipe(
+    return this.http.post<LoginResponse>(`${environment.middlewareBaseUrl}/auth/login`, { email, password }).pipe(
       tap(response => {
         this.accessToken.set(response.accessToken);
         this.currentUser.set(response.user);
@@ -60,6 +69,10 @@ export class AuthService {
     );
   }
 
+  signup(request: SignupRequest): Observable<unknown> {
+    return this.http.post(`${environment.middlewareBaseUrl}/auth/signup`, request);
+  }
+
   /**
    * Logout
    */
@@ -67,8 +80,7 @@ export class AuthService {
     this.accessToken.set(null);
     this.currentUser.set(null);
     this.authError.set(null);
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('client_id');
+    sessionStorage.clear();
   }
 
   /**

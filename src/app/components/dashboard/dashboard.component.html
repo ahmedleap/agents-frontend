@@ -7,9 +7,7 @@
     <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
   </div>
 
-<<<<<<< Updated upstream
   <div class="layout">
-    <!-- Left: accounts -->
     <aside class="accounts" aria-label="Accounts">
       <h3>Accounts</h3>
       @for (a of accounts(); track a.id) {
@@ -22,40 +20,23 @@
             <small>today</small>
           </span>
         </article>
+      } @empty {
+        <p class="empty">No accounts available.</p>
       }
     </aside>
-=======
-  @if (loading()) {
-    <p class="empty" role="status">Loading dashboard...</p>
-  } @else if (error()) {
-    <p class="alert" role="alert">{{ error() }}</p>
-  }
 
-  <div class="main">
-    <div class="top">
-      <div class="card hero" [class.down]="totals().dayPL < 0">
-        <span class="label">Today's P/L, all accounts</span>
-        <span class="value">
-          {{ totals().dayPL >= 0 ? '+' : '' }}{{ totals().dayPL | currency }}
-        </span>
-        <span class="change">
-          {{ totals().dayPL >= 0 ? '▲ +' : '▼ ' }}{{ totals().dayPct | number: '1.2-2' }}%
-        </span>
-        <span class="hero-total">Combined value {{ totals().value | currency }}</span>
-      </div>
->>>>>>> Stashed changes
-
-    <!-- Right: main content -->
     <div class="main">
+      @if (loading()) {
+        <p class="empty" role="status">Loading dashboard...</p>
+      } @else if (error()) {
+        <p class="alert" role="alert">{{ error() }}</p>
+      }
+
       <div class="top">
         <div class="card hero" [class.down]="totals().dayPL < 0">
           <span class="label">Today's P/L, all accounts</span>
-          <span class="value">
-            {{ totals().dayPL >= 0 ? '+' : '' }}{{ totals().dayPL | currency }}
-          </span>
-          <span class="change">
-            {{ totals().dayPL >= 0 ? '▲ +' : '▼ ' }}{{ totals().dayPct | number: '1.2-2' }}%
-          </span>
+          <span class="value">{{ totals().dayPL >= 0 ? '+' : '' }}{{ totals().dayPL | currency }}</span>
+          <span class="change">{{ totals().dayPL >= 0 ? '▲ +' : '▼ ' }}{{ totals().dayPct | number: '1.2-2' }}%</span>
           <span class="hero-total">Combined value {{ totals().value | currency }}</span>
         </div>
 
@@ -77,112 +58,61 @@
       </div>
 
       <div class="lists">
-        <div class="card">
+        <div class="card watchlist">
           <div class="card-head"><h3>Watchlist</h3></div>
           <div class="table-wrap">
             <table>
-              <thead>
-                <tr><th>Ticker</th><th>Price</th><th>Change</th></tr>
-              </thead>
+              <thead><tr><th>Ticker</th><th>Price</th><th>Change</th></tr></thead>
               <tbody>
                 @for (w of watchlist(); track w.ticker) {
                   <tr>
-                    <td>
-                      <span class="ticker">
-                        <span class="badge small">{{ w.ticker[0] }}</span>
-                        <span class="ticker-text">
-                          {{ w.ticker }}
-                          <small>{{ w.name }}</small>
-                        </span>
-                      </span>
-<<<<<<< Updated upstream
-                    </td>
-                    <td>{{ w.price | currency }}</td>
-                    <td [class.gain]="w.change >= 0" [class.loss]="w.change < 0">
-                      {{ w.changePct >= 0 ? '+' : '' }}{{ w.changePct | number: '1.2-2' }}%
+                    <td><span class="ticker"><span class="badge small">{{ w.ticker[0] }}</span><span class="ticker-text">{{ w.ticker }}<small>{{ w.name }}</small></span></span></td>
+                    <td>{{ w.price !== undefined ? (w.price | currency) : '—' }}</td>
+                    <td [class.gain]="w.change !== undefined && w.change >= 0" [class.loss]="w.change !== undefined && w.change < 0">
+                      {{ w.changePct !== undefined ? ((w.changePct >= 0 ? '+' : '') + (w.changePct | number: '1.2-2') + '%') : '—' }}
                     </td>
                   </tr>
-                } @empty {
-                  <tr><td colspan="3" class="empty">Your watchlist is empty.</td></tr>
-                }
+                } @empty { <tr><td colspan="3" class="empty">Your watchlist is empty.</td></tr> }
               </tbody>
             </table>
           </div>
         </div>
 
-        <div class="card">
+        <div class="card recent-trades">
           <div class="card-head"><h3>Recent Trades</h3></div>
           <div class="table-wrap">
             <table class="trades">
-              <thead>
-                <tr><th>Time</th><th>Trade</th><th>Shares</th><th>Price</th><th>Account</th></tr>
-              </thead>
+              <thead><tr><th>Time</th><th>Trade</th><th>Shares</th><th>Price</th><th>Account</th></tr></thead>
               <tbody>
                 @for (t of trades(); track t.id) {
                   <tr>
                     <td>{{ t.time | date: 'MMM d, h:mm a' }}</td>
-                    <td>
-                      <span class="side" [class.buy]="t.side === 'Buy'" [class.sell]="t.side === 'Sell'">{{ t.side }}</span>
-                      <strong>{{ t.ticker }}</strong>
-                    </td>
-                    <td>{{ t.shares | number }}</td>
-                    <td>{{ t.price | currency }}</td>
-                    <td>{{ t.account }}</td>
+                    <td><span class="side" [class.buy]="t.side === 'Buy'" [class.sell]="t.side === 'Sell'">{{ t.side }}</span><strong>{{ t.ticker }}</strong></td>
+                    <td>{{ t.shares | number }}</td><td>{{ t.price | currency }}</td><td>{{ t.account }}</td>
                   </tr>
-                } @empty {
-                  <tr><td colspan="5" class="empty">No trades yet.</td></tr>
-                }
+                } @empty { <tr><td colspan="5" class="empty">No trades yet.</td></tr> }
               </tbody>
             </table>
           </div>
-=======
-                    </span>
-                  </td>
-                  <td>{{ w.price !== undefined ? (w.price | currency) : '—' }}</td>
-                  <td [class.gain]="w.change !== undefined && w.change >= 0" [class.loss]="w.change !== undefined && w.change < 0">
-                    {{ w.changePct !== undefined ? ((w.changePct >= 0 ? '+' : '') + (w.changePct | number: '1.2-2') + '%') : '—' }}
-                  </td>
-                </tr>
-              } @empty {
-                <tr><td colspan="3" class="empty">Your watchlist is empty.</td></tr>
-              }
-            </tbody>
-          </table>
->>>>>>> Stashed changes
         </div>
-      </div>
 
-      <div class="card">
-        <div class="card-head"><h3>Market Movers</h3></div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Stock</th><th>Price</th><th>P/L</th><th>Volume</th></tr>
-            </thead>
-            <tbody>
-              @for (m of visibleMovers(); track m.ticker) {
-                <tr>
-                  <td>
-                    <span class="ticker">
-                      <span class="badge small">{{ m.ticker[0] }}</span>
-                      <span class="ticker-text">
-                        {{ m.ticker }}
-                        <small>{{ m.name }}</small>
-                      </span>
-                    </span>
-                  </td>
-                  <td>{{ m.price | currency }}</td>
-                  <td [class.gain]="m.change >= 0" [class.loss]="m.change < 0">
-                    {{ m.change >= 0 ? '+' : '' }}{{ m.change | currency }}
-                    ({{ m.changePct >= 0 ? '+' : '' }}{{ m.changePct | number: '1.2-2' }}%)
-                  </td>
-                  <td>{{ m.volume !== undefined ? volume(m.volume) : '—' }}</td>
-                </tr>
-              } @empty {
-                <tr><td colspan="4" class="empty">No market data available.</td></tr>
-              }
-            </tbody>
-          </table>
+        <div class="card movers">
+          <div class="card-head"><h3>Market Movers</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Stock</th><th>Price</th><th>P/L</th><th>Volume</th></tr></thead>
+              <tbody>
+                @for (m of visibleMovers(); track m.ticker) {
+                  <tr>
+                    <td><span class="ticker"><span class="badge small">{{ m.ticker[0] }}</span><span class="ticker-text">{{ m.ticker }}<small>{{ m.name }}</small></span></span></td>
+                    <td>{{ m.price | currency }}</td>
+                    <td [class.gain]="m.change >= 0" [class.loss]="m.change < 0">{{ m.change >= 0 ? '+' : '' }}{{ m.change | currency }} ({{ m.changePct >= 0 ? '+' : '' }}{{ m.changePct | number: '1.2-2' }}%)</td>
+                    <td>{{ m.volume !== undefined ? volume(m.volume) : '—' }}</td>
+                  </tr>
+                } @empty { <tr><td colspan="4" class="empty">No market data available.</td></tr> }
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

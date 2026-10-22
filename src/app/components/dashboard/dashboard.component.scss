@@ -186,9 +186,6 @@ h2, h3, p { margin: 0; }
 
 /* ---------- Tables ---------- */
 
-<<<<<<< Updated upstream
-.table-wrap { overflow-x: auto; }
-=======
 .table-wrap {
   flex: 1;
   min-height: 0;
@@ -198,7 +195,6 @@ h2, h3, p { margin: 0; }
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
->>>>>>> Stashed changes
 
 .watchlist .table-wrap,
 .recent-trades .table-wrap,
