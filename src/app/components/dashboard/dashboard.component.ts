@@ -21,22 +21,13 @@ import {
 } from 'chart.js';
 
 import { DashboardService } from '../../core/services/dashboard.service';
-import { ThemeService } from '../../core/services/theme.service';
 
 // Register only what the line chart needs (keeps the bundle small).
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
 
-/** Reads the current theme's chart colours from the CSS tokens in styles.scss. */
-function chartColors() {
-  const css = getComputedStyle(document.documentElement);
-  const token = (name: string) => css.getPropertyValue(name).trim();
-  return {
-    line: token('--pf-chart'),
-    fill: token('--pf-chart-fill'),
-    muted: token('--pf-muted'),
-    border: token('--pf-border')
-  };
-}
+const GREEN = '#2f6f2a';
+const MUTED = '#5f7267';
+const BORDER = '#dbe5de';
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const usdCompact = new Intl.NumberFormat('en-US', {
@@ -56,29 +47,31 @@ const volumeFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumF
 })
 export class DashboardComponent {
   private readonly data = inject(DashboardService);
-  private readonly theme = inject(ThemeService).theme;
 
   protected readonly asOf = new Date();
 
   protected readonly accounts = this.data.accounts;
-  protected readonly watchlist = this.data.watchlist;
-  protected readonly trades = this.data.trades;
+  protected readonly watchlist = computed(() => this.data.watchlist().slice(0, 3));
+  protected readonly trades = computed(() => this.data.trades().slice(0, 5));
   protected readonly movers = this.data.movers;
+  protected readonly visibleMovers = computed(() => this.movers().slice(0, 3));
+  protected readonly loading = this.data.loading;
+  protected readonly error = this.data.error;
 
   /** Combined value and today's P/L across every account. */
   protected readonly totals = computed(() => {
     const accts = this.accounts();
     const value = accts.reduce((s, a) => s + a.value, 0);
-    const dayPL = accts.reduce((s, a) => s + a.dayPL, 0);
-    const prev = value - dayPL;
-    return { value, dayPL, dayPct: prev ? (dayPL / prev) * 100 : 0 };
+    return {
+      value,
+      dayPL: this.data.todayProfitLoss(),
+      dayPct: this.data.todayProfitLossPercent()
+    };
   });
 
   /** Total value of all accounts for each day, oldest first. */
   protected readonly series = computed(() => {
-    const accts = this.accounts();
-    const length = accts[0]?.history.length ?? 0;
-    return Array.from({ length }, (_, i) => accts.reduce((s, a) => s + a.history[i], 0));
+    return this.data.portfolioHistory();
   });
 
   protected readonly period = computed(() => {
@@ -103,16 +96,9 @@ export class DashboardComponent {
     effect(() => {
       const data = this.series();
       if (!this.chart) return;
+      this.chart.data.labels = this.data.labels();
       this.chart.data.datasets[0].data = data;
       this.chart.update();
-    });
-
-    // Recolour the chart when switching light / dark mode
-    effect(() => {
-      this.theme();
-      if (!this.chart) return;
-      this.applyColors(this.chart);
-      this.chart.update('none');
     });
 
     inject(DestroyRef).onDestroy(() => this.chart?.destroy());
@@ -122,36 +108,24 @@ export class DashboardComponent {
     return volumeFmt.format(v);
   }
 
-  private applyColors(chart: Chart<'line'>): void {
-    const c = chartColors();
-    const ds = chart.data.datasets[0];
-    ds.borderColor = c.line;
-    ds.backgroundColor = c.fill;
-    ds.pointBackgroundColor = c.line;
-    const { x, y } = chart.options.scales!;
-    x!.ticks!.color = c.muted;
-    y!.ticks!.color = c.muted;
-    y!.grid!.color = c.border;
-  }
-
   private createChart(el: HTMLCanvasElement): Chart<'line'> {
-    const c = chartColors();
     return new Chart(el, {
       type: 'line',
       data: {
-        labels: this.data.labels,
+        labels: this.data.labels(),
         datasets: [
           {
             label: 'Total value',
             data: this.series(),
-            borderColor: c.line,
-            backgroundColor: c.fill,
+            borderColor: GREEN,
+            backgroundColor: 'rgba(47, 111, 42, 0.12)',
             borderWidth: 2,
-            fill: true,
+            fill: false,
             tension: 0.25,
-            pointRadius: 3,
+            pointRadius: 0,
             pointHoverRadius: 5,
-            pointBackgroundColor: c.line
+            pointHitRadius: 12,
+            pointBackgroundColor: GREEN
           }
         ]
       },
@@ -167,10 +141,10 @@ export class DashboardComponent {
           }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: c.muted, maxTicksLimit: 7 } },
+          x: { grid: { display: false }, ticks: { color: MUTED, maxTicksLimit: 7 } },
           y: {
-            grid: { color: c.border },
-            ticks: { color: c.muted, callback: v => usdCompact.format(Number(v)) }
+            grid: { color: BORDER },
+            ticks: { color: MUTED, maxTicksLimit: 3, callback: v => usdCompact.format(Number(v)) }
           }
         }
       }
