@@ -1,0 +1,123 @@
+:host {
+  display: block;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  color: var(--pf-text);
+}
+
+.card {
+  background: var(--pf-card);
+  border: 1px solid var(--pf-border);
+  border-top: 4px solid var(--pf-green);
+  border-radius: 12px;
+  box-shadow: var(--pf-shadow);
+}
+
+// Comfortable reading width for a long document
+.agreement {
+  max-width: 52rem;
+  margin: 0 auto 2rem;
+  padding: 2.5rem 3rem;
+  line-height: 1.6;
+}
+
+a { color: var(--pf-accent); font-weight: 700; }
+
+header {
+  margin-bottom: 1.25rem;
+
+  .eyebrow { margin: 0; font-weight: 800; letter-spacing: 0.08em; color: var(--pf-muted); font-size: 0.85rem; }
+  h1 { margin: 0.25rem 0 0.5rem; font-family: 'Fredoka', 'Baloo 2', sans-serif; font-size: 2.1rem; line-height: 1.15; color: var(--pf-accent); }
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.25rem;
+  margin: 0;
+  color: var(--pf-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+
+  strong { color: var(--pf-text); }
+  .download { margin-left: auto; }
+}
+
+.notice {
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background: var(--pf-inset);
+  color: var(--pf-muted);
+  font-weight: 700;
+
+  &.error { background: var(--pf-sell-bg); color: var(--pf-loss); border: 1px solid var(--pf-loss); }
+}
+
+.toc {
+  margin: 1.25rem 0 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  background: var(--pf-inset);
+  font-size: 0.92rem;
+
+  ol { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 2rem; }
+  li { break-inside: avoid; padding: 0.1rem 0; }
+  .num { display: inline-block; min-width: 1.8rem; color: var(--pf-muted); }
+}
+
+section {
+  scroll-margin-top: 1rem;
+  padding-top: 1.25rem;
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--pf-border);
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+    color: var(--pf-accent);
+
+    .num { display: block; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pf-muted); }
+  }
+}
+
+h3 { scroll-margin-top: 1rem; margin: 1.1rem 0 0.35rem; font-size: 0.98rem; }
+
+.text p { margin: 0 0 0.25rem; }
+.text { margin-bottom: 0.6rem; }
+
+ul { margin: 0 0 0.75rem; padding-left: 1.4rem; }
+li { margin-bottom: 0.2rem; }
+li ul { margin: 0.2rem 0 0.3rem; list-style: circle; }
+
+// Section 20 certification list: numbered items with a box, like the printed form's "___"
+.checklist {
+  margin: 0.5rem 0 1rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+
+  li { display: flex; gap: 0.75rem; align-items: baseline; margin: 0; }
+  .n {
+    flex: none;
+    min-width: 1.9rem;
+    padding: 0.05rem 0.4rem;
+    border: 1.5px solid var(--pf-border);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--pf-muted);
+  }
+}
+
+footer { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--pf-border); }
+
+@media (max-width: 700px) {
+  .agreement { padding: 1.5rem; }
+  .toc ol { columns: 1; }
+  .meta .download { margin-left: 0; }
+}

@@ -177,4 +177,7 @@
       }
     </div>
   </div>
+
+  <!-- Client Agreement: must be accepted before the account is created -->
+  <app-agreement-dialog (accepted)="createAccount()" />
 </section>

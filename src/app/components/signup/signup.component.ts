@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -13,6 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService, SignupRequest, SignupResponse } from '../../core/services/auth.service';
 import { PortfolioSizeRange, RiskTolerance } from '../../core/services/client-api.service';
 import { RISK_OPTIONS, SIZE_OPTIONS } from '../../core/client-profile-options';
+import { AgreementDialogComponent } from '../agreement/agreement-dialog.component';
 
 // Same rules as agents-middleware validatePassword()
 const PASSWORD_RULES = [
@@ -65,7 +66,7 @@ const adultBirthDate: ValidatorFn = (c: AbstractControl): ValidationErrors | nul
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AgreementDialogComponent],
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss']
 })
@@ -107,6 +108,9 @@ export class SignupComponent {
   protected readonly isSubmitting = signal(false);
   protected readonly serverError = signal<string | null>(null);
 
+  // Client Agreement pop-up, shown after the form is valid and before anything is sent
+  private readonly agreementDialog = viewChild.required(AgreementDialogComponent);
+
   /** True once a field has been touched (or a submit was attempted) and is invalid. */
   protected invalid(name: keyof typeof this.form.controls): boolean {
     const c = this.form.controls[name];
@@ -117,12 +121,18 @@ export class SignupComponent {
     return this.form.hasError('mismatch') && this.form.controls.confirmPassword.touched;
   }
 
+  /** "Create account": check the form, then ask the user to accept the Client Agreement. */
   protected submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
+    this.agreementDialog().open();
+  }
 
+  /** Runs only after the Client Agreement pop-up was accepted */
+  protected createAccount(): void {
+    if (this.isSubmitting()) return;
     const v = this.form.getRawValue();
     const middleName = v.middleName.trim();
     // Matches agents-middleware SignupDto (POST /api/v1/auth/signup)

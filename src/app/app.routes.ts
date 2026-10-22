@@ -20,6 +20,11 @@ export const routes: Routes = [
     path: 'signup',
     loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent)
   },
+  {
+    // Full Client Agreement, linked from the sign-up pop-up; readable without logging in
+    path: 'agreement',
+    loadComponent: () => import('./components/agreement/agreement.component').then(m => m.AgreementComponent)
+  },
 
   // ---------- App (after logging in) ----------
   {

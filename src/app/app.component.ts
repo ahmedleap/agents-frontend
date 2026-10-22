@@ -8,7 +8,7 @@ import { PortfolioApiService } from './core/services/portfolio-api.service';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
 
-const isAuthUrl = (url: string) => /^\/(login|signup)(\/|\?|#|$)/.test(url);
+const isAuthUrl = (url: string) => /^\/(login|signup|agreement)(\/|\?|#|$)/.test(url);
 
 @Component({
   selector: 'app-root',

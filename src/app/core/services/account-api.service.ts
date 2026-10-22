@@ -37,7 +37,7 @@ export class AccountApiService {
   private readonly api = inject(ApiService);
   private readonly changedSubject = new Subject<void>();
 
-  /** Emits after an account is added, so lists (like the sidebar) can reload. */
+  /** Emits after an account is added or renamed, so lists (like the sidebar) can reload. */
   readonly changed$ = this.changedSubject.asObservable();
 
   getAccountSummary(accountId: string): Observable<AccountSummaryDto> {
@@ -46,5 +46,10 @@ export class AccountApiService {
 
   createAccount(request: CreateAccountRequest): Observable<AccountDto> {
     return this.api.post<AccountDto>('accounts', request).pipe(tap(() => this.changedSubject.next()));
+  }
+
+  /** PUT /api/accounts/{accountId}; the backend only allows the logged-in client's own accounts */
+  renameAccount(accountId: string, name: string): Observable<AccountDto> {
+    return this.api.put<AccountDto>(`accounts/${accountId}`, { name }).pipe(tap(() => this.changedSubject.next()));
   }
 }

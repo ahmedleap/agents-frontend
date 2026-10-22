@@ -44,6 +44,71 @@ h2, h3, p { margin: 0; }
   }
   p, .asof { font-size: 0.95rem; font-weight: 700; color: var(--pf-muted); }
   p { margin-top: 0.2rem; font-size: 1.85rem; font-weight: 700; line-height: 1.2; }
+
+  h2 { display: flex; align-items: center; gap: 0.5rem; }
+  .rename-error { margin-top: 0.35rem; font-size: 0.85rem; color: var(--pf-loss); }
+}
+
+// Pencil next to the account name
+.rename-btn {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--pf-border);
+  border-radius: 6px;
+  background: var(--pf-inset);
+  color: var(--pf-accent);
+  cursor: pointer;
+
+  svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  &:hover { background: var(--pf-active); }
+  &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+}
+
+// Same height and spot as the title it replaces, so nothing jumps
+.rename {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.49rem;
+
+  input {
+    width: min(22rem, 60vw);
+    height: 2.09rem; // = the title's line height (1.9rem x 1.1)
+    padding: 0 0.75rem;
+    border: 1.5px solid var(--pf-green);
+    border-radius: 8px;
+    background: var(--pf-card);
+    color: var(--pf-text);
+    font: 600 1.3rem 'Fredoka', 'Baloo 2', sans-serif;
+    box-shadow: 0 0 0 3px var(--pf-buy-bg);
+
+    &:focus { outline: none; }
+    &[aria-invalid='true'] { border-color: var(--pf-loss); box-shadow: 0 0 0 3px var(--pf-sell-bg); }
+  }
+
+  button {
+    height: 2.09rem;
+    padding: 0 1rem;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    &:disabled { opacity: 0.6; cursor: progress; }
+  }
+  .rename-save { border: 0; color: #fff; background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%); }
+  .rename-cancel { border: 1px solid var(--pf-border); color: var(--pf-accent); background: var(--pf-inset); }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .cash {
