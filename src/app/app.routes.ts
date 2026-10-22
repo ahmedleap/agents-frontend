@@ -30,9 +30,16 @@ export const routes: Routes = [
 
   // ---------- App (after logging in) ----------
   {
-    path: 'client',
+    // A client's home page (their dashboard)
+    path: 'home',
     canActivate: [authGuard, clientRoleGuard],
     loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
+  },
+  {
+    // Old address, kept so existing links and bookmarks still work
+    path: 'client',
+    redirectTo: 'home',
+    pathMatch: 'full'
   },
   {
     path: 'dashboard',
@@ -47,7 +54,7 @@ export const routes: Routes = [
   {
     // There is no combined all-accounts view; pick an account from the sidebar
     path: 'portfolio',
-    redirectTo: 'client',
+    redirectTo: 'home',
     pathMatch: 'full'
   },
   {

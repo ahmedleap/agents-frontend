@@ -40,7 +40,7 @@ h2, h3, p { margin: 0; }
     font-size: 2rem;
     font-weight: 600;
     line-height: 1.5; // Fredoka's natural line height, as on Transactions; fixed so the rename row can match
-    color: var(--pf-green-dark);
+    color: var(--pf-accent);
   }
   .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 0.95rem; }
   .asof { color: var(--pf-muted); font-size: 0.75rem; }

@@ -1,5 +1,4 @@
-import { expect, test } from '@playwright/test';
-import { CLIENT_ID, loginAsClient, openAccountFromSidebar } from './helpers';
+import { expect, test, CLIENT_ID, loginAsClient, openAccountFromSidebar } from './helpers';
 
 // A client can't have two accounts with the same name (ignoring capitals and extra spaces)
 const ROTH = { accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', name: 'Roth IRA' };

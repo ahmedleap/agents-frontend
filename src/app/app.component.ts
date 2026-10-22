@@ -59,7 +59,7 @@ export class AppComponent {
 
   protected readonly accountsOpen = signal(false);
   protected readonly role = computed(() => this.auth.currentUser()?.role ?? null);
-  protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/client'
+  protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/home'
     : this.role() === 'ADMIN' ? '/admin' : '/dashboard');
   protected readonly theme = inject(ThemeService);
   // Full-width pages with no sidebar (log in, sign up). Seeded from the URL so the

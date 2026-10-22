@@ -97,22 +97,33 @@ app-root {
   height: 100%;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar styling: a slim rounded pill in theme colours (light and dark), no track behind it */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--pf-bg-2);
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--pf-green);
-  border-radius: 0;
+  // The transparent border + padding-box clip leaves a gap around the pill so it looks slimmer
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--pf-muted) 45%, transparent);
+  background-clip: padding-box;
 
-  &:hover {
-    background: #245a20;
+  &:hover { background-color: color-mix(in srgb, var(--pf-muted) 75%, transparent); }
+  &:active { background-color: var(--pf-green); }
+}
+
+// Firefox doesn't support the ::-webkit-scrollbar styles above; give it the closest match
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--pf-muted) 55%, transparent) transparent;
   }
 }
 

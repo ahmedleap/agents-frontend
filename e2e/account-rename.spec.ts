@@ -1,6 +1,6 @@
-import { expect, Page, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-import { CLIENT_ID, loginAsClient, openAccountFromSidebar } from './helpers';
+import { expect, test, CLIENT_ID, loginAsClient, openAccountFromSidebar } from './helpers';
 
 // Fake middleware + backend (see helpers.ts), so this runs without either
 const ACCOUNT = { accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', name: 'Roth IRA' };

@@ -1,5 +1,4 @@
-import { expect, test } from '@playwright/test';
-import { loginAsClient } from './helpers';
+import { expect, test, loginAsClient } from './helpers';
 
 test.describe('Header', () => {
   test('light/dark, then settings, then Logout on the far right', async ({ page }) => {
@@ -22,5 +21,29 @@ test.describe('Header', () => {
     await expect(page).toHaveURL(/\/login$/);
     await expect.poll(() => loggedOut).toBe(true);
     await expect(page.getByRole('button', { name: 'Logout' })).toHaveCount(0);
+  });
+
+  test("a client's home page is /home, and the old /client address redirects there", async ({ page }) => {
+    await loginAsClient(page, []);
+    await expect(page).toHaveURL(/\/home$/);
+    await expect(page.getByRole('heading', { level: 2, name: 'Dashboard', exact: true })).toBeVisible();
+    // The sidebar link to it is called Dashboard
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Dashboard', exact: true })).toHaveAttribute('href', '/home');
+
+    await page.goto('/client');
+    await expect(page).toHaveURL(/\/home$/);
+  });
+
+  test('the dashboard scrolls when the window is too short to show it all', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 600 });
+    await loginAsClient(page, []);
+    const dashboard = page.locator('app-dashboard');
+    await expect(page.getByRole('heading', { name: 'Market Movers' })).not.toBeInViewport();
+
+    await dashboard.hover();
+    await page.mouse.wheel(0, 2000);
+
+    await expect.poll(() => dashboard.evaluate(e => e.scrollTop)).toBeGreaterThan(0);
+    await expect(page.getByRole('heading', { name: 'Market Movers' })).toBeInViewport();
   });
 });

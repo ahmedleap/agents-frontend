@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+// test/expect from helpers.ts block any middleware/backend call a test hasn't faked
+import { expect, test } from './helpers';
 
 const CLIENT_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
@@ -9,6 +10,12 @@ function tokenFor(role: 'CLIENT' | 'ADMIN' | 'ANALYST', sub: string, email: stri
 
 async function stubLogin(page: import('@playwright/test').Page, role: 'CLIENT' | 'ADMIN' | 'ANALYST', endpoint: 'login' | 'admin/login', sub = CLIENT_ID) {
   const email = 'jane@example.com';
+  if (role === 'CLIENT') {
+    // Loaded after a client logs in (GET /dashboard?clientId=...&period=30D)
+    await page.route(url => url.pathname === '/dashboard' && url.searchParams.has('clientId'), route => route.fulfill({
+      json: { accounts: [], marketMovers: [], watchlist: [], recentTrades: [], portfolioHistory: [], todayProfitLoss: 0, todayProfitLossPercent: 0 }
+    }));
+  }
   await page.route(`**/api/v1/auth/${endpoint}`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -47,11 +54,14 @@ test.describe('Login', () => {
     await page.getByLabel(/^Password/).fill('Secret123!');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    await expect(page).toHaveURL(/\/client$/);
-    await expect(page.getByRole('heading', { name: 'Welcome, Jane' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Primary' })).toBeVisible();
-    // The sidebar is back once the user is past the login page
-    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+    await expect(page).toHaveURL(/\/home$/);
+    // /home is the client's dashboard
+    await expect(page.getByRole('heading', { level: 2, name: 'Dashboard', exact: true })).toBeVisible();
+    // The sidebar is back once the user is past the login page, listing the client's own accounts
+    const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
+    await expect(sidebar).toBeVisible();
+    await sidebar.getByRole('button', { name: 'Account' }).click();
+    await expect(sidebar.getByRole('link', { name: /Primary/ })).toBeVisible();
   });
 
   test('routes staff logins by the role returned by the issuer', async ({ page }) => {

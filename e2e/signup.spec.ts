@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { expect, Page, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+// test/expect from helpers.ts block any middleware/backend call a test hasn't faked
+import { expect, test } from './helpers';
 import { AGREEMENT_TITLE, AGREEMENT_VERSION } from '../src/app/core/client-agreement';
 
 // The signup POST is answered by a fake middleware here, so nothing is written to the database
