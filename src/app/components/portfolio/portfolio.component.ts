@@ -176,7 +176,7 @@ export class PortfolioComponent {
 function describeError(err: HttpErrorResponse): string {
   // Status 0 means the browser never got a usable response: backend down, or blocked by CORS
   if (err.status === 0) {
-    return `Couldn't reach the backend at ${environment.apiUrl}. If it is running, check the browser console for a CORS error.`;
+    return `Couldn't reach the backend at ${environment.backendUrl}. If it is running, check the browser console for a CORS error.`;
   }
   return `The backend returned ${err.status} for ${err.url ?? 'the request'}.`;
 }

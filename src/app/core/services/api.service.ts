@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
+import { AuthService } from './auth.service';
 
 export interface RequestOptions {
   headers?: HttpHeaders | Record<string, string | string[]>;
@@ -21,10 +22,14 @@ export interface RequestOptions {
 })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = environment.apiUrl;
+  private readonly auth = inject(AuthService);
+  private readonly baseUrl = environment.backendUrl;
+  private readonly serverUrl = environment.production
+    ? environment.backendUrl.replace(/\/api\/?$/, '')
+    : '';
 
   private withAuth(options?: RequestOptions): RequestOptions | undefined {
-    const token = localStorage.getItem('access_token');
+    const token = this.auth.getToken();
     if (!token) return options;
 
     const headers = options?.headers instanceof HttpHeaders
@@ -42,6 +47,10 @@ export class ApiService {
    */
   get<T>(endpoint: string, options?: RequestOptions): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}/${endpoint}`, this.withAuth(options));
+  }
+
+  getRoot<T>(endpoint: string, options?: RequestOptions): Observable<T> {
+    return this.http.get<T>(`${this.serverUrl}/${endpoint}`, this.withAuth(options));
   }
 
   /**
