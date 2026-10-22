@@ -32,7 +32,7 @@
 }
 
 h2, p { margin: 0; }
-.muted { color: var(--pf-muted); font-size: 1rem; }
+.muted { color: var(--pf-muted); font-size: 1.06rem; font-weight: 700; }
 
 /* ---------- Brand panel ---------- */
 
@@ -65,6 +65,26 @@ h2, p { margin: 0; }
 /* ---------- Form panel ---------- */
 
 .panel { padding: 2.75rem 3rem; }
+
+.account-type {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--pf-border);
+    color: var(--pf-muted);
+    cursor: pointer;
+
+    &.selected { border-color: var(--pf-green); color: var(--pf-accent); background: var(--pf-active); }
+    input { accent-color: var(--pf-green); }
+  }
+}
 
 .panel-head {
   margin-bottom: 1.5rem;
@@ -163,6 +183,8 @@ fieldset {
   font-size: 0.95rem;
 }
 
+.row-end { justify-content: flex-end; }
+
 .check {
   display: inline-flex;
   align-items: center;
@@ -204,6 +226,7 @@ fieldset {
   &.block { width: 100%; margin-top: 0.25rem; }
   &:hover { filter: brightness(1.08); }
   &:active { transform: translateY(1px); }
+  &:disabled { cursor: wait; opacity: 0.7; }
 }
 
 /* ---------- Responsive ---------- */

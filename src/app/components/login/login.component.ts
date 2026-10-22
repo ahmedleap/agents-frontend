@@ -1,10 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 
-// Matches agents-middleware LoginDto (POST /api/v1/auth/login). Not wired up yet:
-// the middleware is still being tested, so submit validates the form and goes straight to the dashboard.
 export interface LoginRequest {
   email: string;
   password: string;
@@ -25,10 +24,12 @@ export class LoginComponent {
   protected readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
-    remember: [false]
   });
 
   protected readonly showPassword = signal(false);
+  protected readonly accountType = signal<'client' | 'staff'>('client');
+  protected readonly isAuthenticating = this.auth.isAuthenticating;
+  protected readonly serverError = signal<string | null>(null);
 
   /** True once a field has been touched (or a submit was attempted) and is invalid. */
   protected invalid(name: 'email' | 'password'): boolean {
@@ -44,10 +45,31 @@ export class LoginComponent {
 
     const v = this.form.getRawValue();
     const body: LoginRequest = { email: v.email.trim(), password: v.password };
+    this.serverError.set(null);
+    this.form.setErrors(null);
 
-    this.auth.login(body.email, body.password).subscribe({
-      next: () => this.router.navigate([this.auth.isAnalyst() ? '/analytics' : '/dashboard']),
-      error: () => this.form.setErrors({ badCredentials: true })
+    this.auth.login(body.email, body.password, this.accountType()).subscribe({
+      next: () => {
+        const role = this.auth.currentUser()?.role;
+        const destination = role === 'CLIENT' ? '/client'
+          : role === 'ADMIN' ? '/admin'
+          : '/dashboard';
+        void this.router.navigateByUrl(destination);
+      },
+      error: (error: unknown) => {
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+          this.form.setErrors({ badCredentials: true });
+        } else if (error instanceof HttpErrorResponse && error.status === 429) {
+          this.serverError.set('Too many sign-in attempts. Wait before trying again.');
+        } else {
+          if (error instanceof HttpErrorResponse) {
+            console.error('Sign-in request failed', { status: error.status, url: error.url });
+          }
+          this.serverError.set(error instanceof HttpErrorResponse && error.status === 0
+            ? 'Unable to reach the backend. Check that it is running and CORS allows this app.'
+            : 'Sign-in could not be completed. Please try again.');
+        }
+      }
     });
   }
 }

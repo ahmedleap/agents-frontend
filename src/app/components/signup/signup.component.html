@@ -22,12 +22,10 @@
       @if (created(); as body) {
         <div class="success" role="status">
           <span class="success-icon" aria-hidden="true"></span>
-          <h2>Looks good, {{ body.firstName }}!</h2>
-          <p class="muted">Sign-up isn't connected yet. This is what will be sent to the server:</p>
-          <pre class="payload">{{ preview(body) }}</pre>
+          <h2>Account created</h2>
+          <p class="muted">{{ body.message }}</p>
           <div class="actions">
-            <button type="button" class="btn ghost" (click)="startOver()">Start over</button>
-            <a class="btn primary" routerLink="/dashboard">Go to dashboard</a>
+            <a class="btn primary" routerLink="/login">Go to log in</a>
           </div>
         </div>
       } @else {
@@ -38,6 +36,9 @@
 
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <fieldset>
+            @if (serverError()) {
+              <p class="alert" role="alert">{{ serverError() }}</p>
+            }
             <!-- Left two columns: personal details. Right column: password, confirm, rules -->
             <div class="fields">
               <label class="field a-first" [class.has-error]="invalid('firstName')">
@@ -74,6 +75,8 @@
                   placeholder="(202) 555-0123">
                 @if (form.controls.phoneNumber.hasError('phoneInvalid')) {
                   <small class="err">That isn't a valid US phone number</small>
+                } @else if (form.controls.phoneNumber.hasError('taken')) {
+                  <small class="err">That phone number is already registered</small>
                 } @else if (invalid('phoneNumber')) {
                   <small class="err">Enter a 10-digit phone number</small>
                 }
@@ -142,7 +145,9 @@
               </ul>
             </div>
 
-            <button type="submit" class="btn primary block">Create account</button>
+            <button type="submit" class="btn primary block" [disabled]="isSubmitting()">
+              {{ isSubmitting() ? 'Creating account…' : 'Create account' }}
+            </button>
 
             <p class="switch muted">Already have an account? <a class="link" routerLink="/login">Log in</a></p>
           </fieldset>

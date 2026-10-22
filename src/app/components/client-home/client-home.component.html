@@ -1,0 +1,46 @@
+<section class="client-home">
+  <header class="page-head">
+    <div>
+      <span class="eyebrow">CLIENT ACCOUNT</span>
+      <h2>Welcome{{ user()?.firstName ? ', ' + user()?.firstName : ' back' }}</h2>
+      <p>Your accounts and portfolio data.</p>
+    </div>
+    <span class="asof">{{ today | date: 'MMM d, y' }}</span>
+  </header>
+
+  @if (state().status === 'loading') {
+    <p class="notice">Loading your accounts…</p>
+  } @else if (state().status === 'error') {
+    <p class="notice error" role="alert">{{ state().message }}</p>
+  } @else if (state().portfolio; as portfolio) {
+    <div class="summary-grid">
+      <article class="summary-card"><span>Total portfolio value</span><strong>{{ portfolio.totalPortfolioValue | currency }}</strong></article>
+      <article class="summary-card"><span>Cost basis</span><strong>{{ portfolio.totalCostBasis | currency }}</strong></article>
+      <article class="summary-card">
+        <span>Total gain / loss</span>
+        <strong [class.gain]="portfolio.totalGainLossDollars >= 0" [class.loss]="portfolio.totalGainLossDollars < 0">
+          {{ portfolio.totalGainLossDollars >= 0 ? '+' : '' }}{{ portfolio.totalGainLossDollars | currency }}
+        </strong>
+        <small>{{ portfolio.totalGainLossPercent | number: '1.2-2' }}%</small>
+      </article>
+    </div>
+
+    <div class="accounts-head"><h3>Your accounts</h3><span>{{ portfolio.accounts.length }} accounts</span></div>
+    <div class="accounts-grid">
+      @for (account of portfolio.accounts; track account.accountId) {
+        <a class="account-card" [routerLink]="['/portfolio', account.accountId]">
+          <span class="account-label">Investment account</span>
+          <h4>{{ account.accountName }}</h4>
+          <strong>{{ account.totalPortfolioValue | currency }}</strong>
+          <span [class.gain]="account.totalGainLossDollars >= 0" [class.loss]="account.totalGainLossDollars < 0">
+            {{ account.totalGainLossDollars >= 0 ? '+' : '' }}{{ account.totalGainLossDollars | currency }}
+            ({{ account.totalGainLossPercent | number: '1.2-2' }}%)
+          </span>
+          <span class="view-account">View account <span aria-hidden="true">→</span></span>
+        </a>
+      } @empty {
+        <p class="notice">No accounts are linked to your profile yet.</p>
+      }
+    </div>
+  }
+</section>

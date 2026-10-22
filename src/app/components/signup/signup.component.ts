@@ -9,6 +9,8 @@ import {
   Validators
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { AuthService, SignupRequest as AuthSignupRequest, SignupResponse } from '../../core/services/auth.service';
 
 // Matches agents-middleware SignupDto (POST /api/v1/auth/signup). Not wired up yet:
 // the middleware is still being tested, so submit only validates and previews the payload.
@@ -99,6 +101,7 @@ const adultBirthDate: ValidatorFn = (c: AbstractControl): ValidationErrors | nul
 })
 export class SignupComponent {
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly auth = inject(AuthService);
 
   protected readonly minAge = MIN_AGE;
   protected readonly today = new Date().toISOString().slice(0, 10);
@@ -125,8 +128,9 @@ export class SignupComponent {
 
   protected readonly showPassword = signal(false);
   protected readonly showSsn = signal(false);
-  /** The request body that would be sent, shown once the form is valid. */
-  protected readonly created = signal<SignupRequest | null>(null);
+  protected readonly created = signal<SignupResponse | null>(null);
+  protected readonly isSubmitting = signal(false);
+  protected readonly serverError = signal<string | null>(null);
 
   /** True once a field has been touched (or a submit was attempted) and is invalid. */
   protected invalid(name: keyof typeof this.form.controls): boolean {
@@ -155,9 +159,29 @@ export class SignupComponent {
       ssn: ssnDigits(v.ssn)
     };
 
-    // TODO: POST to agents-middleware /api/v1/auth/signup once it's tested.
-    // Handle 409 (email taken) with this.form.controls.email.setErrors({ taken: true }).
-    this.created.set(body);
+    this.serverError.set(null);
+    this.isSubmitting.set(true);
+    this.auth.signup(body as AuthSignupRequest).subscribe({
+      next: response => this.created.set(response),
+      error: (error: unknown) => {
+        if (error instanceof HttpErrorResponse && error.status === 409) {
+          const message = String(error.error?.message ?? '').toLowerCase();
+          if (message.includes('phone')) {
+            this.form.controls.phoneNumber.setErrors({ ...this.form.controls.phoneNumber.errors, taken: true });
+          } else {
+            this.form.controls.email.setErrors({ ...this.form.controls.email.errors, taken: true });
+          }
+        } else if (error instanceof HttpErrorResponse && error.status === 0) {
+          this.serverError.set('Unable to connect to the registration service. Check that the middleware is running at the configured address.');
+        } else if (error instanceof HttpErrorResponse && error.status === 400) {
+          this.serverError.set('Some registration details were rejected. Review the form and try again.');
+        } else {
+          this.serverError.set('Account creation failed. Please try again later.');
+        }
+        this.isSubmitting.set(false);
+      },
+      complete: () => this.isSubmitting.set(false)
+    });
   }
 
   protected startOver(): void {
@@ -177,12 +201,4 @@ export class SignupComponent {
     if (formatted !== input.value) this.form.controls.ssn.setValue(formatted);
   }
 
-  /** Payload preview with the password and all but the last 4 SSN digits masked. */
-  protected preview(body: SignupRequest): string {
-    return JSON.stringify({
-      ...body,
-      password: '•'.repeat(body.password.length),
-      ssn: `•••••${body.ssn.slice(-4)}`
-    }, null, 2);
-  }
 }

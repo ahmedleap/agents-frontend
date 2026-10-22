@@ -35,15 +35,15 @@ h2, h3, p { margin: 0; }
 
   // Account name and "Portfolio" pushed down together so they line up with the bottom of the cash box
   h2 {
-    margin-top: 1.33rem;
+    margin-top: 1.49rem;
     font-family: 'Fredoka', 'Baloo 2', sans-serif;
     font-size: 1.9rem;
     font-weight: 600;
     line-height: 1.1;
     color: var(--pf-green-dark);
   }
-  p, .asof { font-size: 0.9rem; color: var(--pf-muted); }
-  p { margin-top: 0.2rem; font-size: 1.5rem; font-weight: 700; }
+  p, .asof { font-size: 0.95rem; font-weight: 700; color: var(--pf-muted); }
+  p { margin-top: 0.2rem; font-size: 1.85rem; font-weight: 700; line-height: 1.2; }
 }
 
 .cash {
@@ -61,7 +61,7 @@ h2, h3, p { margin: 0; }
   text-align: left;
   font-weight: 700;
 
-  .cash-label { font-size: 0.95rem; color: var(--pf-muted); }
+  .cash-label { font-size: 0.95rem; font-weight: 700; color: var(--pf-muted); }
   strong {
     font-size: clamp(1.6rem, 2.4vw, 2.1rem);
     font-weight: 800;
@@ -69,7 +69,7 @@ h2, h3, p { margin: 0; }
     color: var(--pf-gain);
     font-variant-numeric: tabular-nums;
   }
-  small { font-size: 0.82rem; font-weight: 700; color: var(--pf-muted); font-variant-numeric: tabular-nums; }
+  small { font-size: 0.88rem; font-weight: 700; color: var(--pf-muted); font-variant-numeric: tabular-nums; }
 }
 
 .summary {
@@ -112,7 +112,7 @@ h2, h3, p { margin: 0; }
   padding: 1.2rem 1.5rem;
 
   h3 { font-size: 1.1rem; }
-  .sub { font-size: 0.85rem; color: var(--pf-muted); margin-bottom: 0.3rem; }
+  .sub { font-size: 0.9rem; font-weight: 700; color: var(--pf-muted); margin-bottom: 0.3rem; }
 }
 
 .alloc-row {
@@ -131,7 +131,7 @@ h2, h3, p { margin: 0; }
   margin-bottom: 0.35rem;
   font-size: 0.95rem;
 
-  small { color: var(--pf-muted); margin-left: 0.35rem; }
+  small { color: var(--pf-muted); font-weight: 700; font-size: 0.88em; margin-left: 0.35rem; }
 }
 
 .alloc-value {
@@ -139,7 +139,8 @@ h2, h3, p { margin: 0; }
   margin-top: 0.15rem;
   text-align: right;
   color: var(--pf-muted);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .track { height: 0.625rem; border-radius: 0; background: var(--pf-inset); overflow: hidden; }
@@ -172,7 +173,7 @@ h2, h3, p { margin: 0; }
   gap: 0.25rem;
   border-left: 5px solid var(--pf-green);
 
-  .stat-label { font-size: 0.88rem; color: var(--pf-muted); }
+  .stat-label { font-size: 0.94rem; font-weight: 700; color: var(--pf-muted); }
   strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
 }
 
@@ -182,6 +183,8 @@ h2, h3, p { margin: 0; }
   gap: 0.2rem;
   padding: 0.8rem 1.25rem;
   color: var(--pf-muted);
+  font-weight: 700;
+  font-size: 1.05em;
   border-left: 5px solid var(--pf-green);
 
   &.error {
@@ -244,8 +247,8 @@ table {
 th {
   padding: 0.7rem 1rem;
   text-align: right;
-  font-weight: 600;
-  font-size: 0.82rem;
+  font-weight: 700;
+  font-size: 0.88rem;
   color: var(--pf-muted);
   background: var(--pf-inset);
   position: sticky;
@@ -267,7 +270,7 @@ tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: var(--pf-inset); }
 
 .ticker { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; }
-.empty { text-align: center; color: var(--pf-muted); padding: 2rem; }
+.empty { text-align: center; color: var(--pf-muted); font-weight: 700; font-size: 1.05em; padding: 2rem; }
 
 @media (max-width: 800px) {
   :host, .page { flex: 1 0 auto; }

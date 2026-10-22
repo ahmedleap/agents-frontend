@@ -1,8 +1,7 @@
 <div class="app-container">
   @if (appInitialized()) {
     <header class="app-header">
-      <a class="logo-link" [routerLink]="isAnalyst() ? '/analytics' : '/dashboard'"
-         [attr.aria-label]="isAnalyst() ? 'Go to analysis' : 'Go to dashboard'">
+      <a class="logo-link" routerLink="/dashboard" aria-label="Go to dashboard">
       <svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
         <g fill="#fff" stroke="#245a20" stroke-width="5" stroke-linejoin="round">
           <g transform="translate(94 102) rotate(-18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
@@ -19,14 +18,14 @@
       </a>
       <h1>{{ title() }}</h1>
       <p>{{ subtitle() }}</p>
+      @if (role()) { <span class="role-badge">{{ role() }}</span> }
 
-      <div class="header-actions">
       <button
         type="button"
-        class="theme-toggle"
+        class="icon-btn tip"
         (click)="theme.toggle()"
         [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-        [attr.title]="theme.theme() === 'dark' ? 'Light mode' : 'Dark mode'">
+        [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
         @if (theme.theme() === 'dark') {
           <!-- Sun -->
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -40,29 +39,21 @@
           </svg>
         }
       </button>
-      </div>
     </header>
 
     <div class="app-body">
       @if (!isAuthPage()) {
       <nav class="app-sidebar" aria-label="Main navigation">
-      @if (isAnalyst()) {
-        <!-- Analysts only get the analysis view, not the client dashboard or accounts -->
-        <a class="nav-link" routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">Analysis</a>
-      } @else {
         <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
         <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           <span class="trade-icon" aria-hidden="true">↗</span>
           Trade
         </a>
         <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-          Orders
+          History
         </a>
         <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           Transactions
-        </a>
-        <a class="nav-link" routerLink="/news" routerLinkActive="active" ariaCurrentWhenActive="page">
-          News
         </a>
 
         <div class="nav-row">
@@ -109,7 +100,6 @@
             }
           </div>
         }
-      }
       </nav>
       }
 
