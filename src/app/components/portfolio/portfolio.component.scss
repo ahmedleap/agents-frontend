@@ -12,7 +12,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.2rem; // same as Transactions
 }
 
 .card {
@@ -28,22 +28,22 @@ h2, h3, p { margin: 0; }
 .toolbar {
   display: flex;
   justify-content: space-between;
-  // Title on the left, cash on the right, both starting at the top
-  align-items: flex-start;
+  // Same header as Transactions: eyebrow, title and intro on the left, controls bottom-aligned on the right
+  align-items: flex-end;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 1rem;
 
-  // Account name and "Portfolio" pushed down together so they line up with the bottom of the cash box
+  .eyebrow { color: var(--pf-green); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; }
   h2 {
-    margin-top: 1.49rem;
+    margin-top: 0.25rem;
     font-family: 'Fredoka', 'Baloo 2', sans-serif;
-    font-size: 1.9rem;
+    font-size: 2rem;
     font-weight: 600;
-    line-height: 1.1;
+    line-height: 1.5; // Fredoka's natural line height, as on Transactions; fixed so the rename row can match
     color: var(--pf-green-dark);
   }
-  p, .asof { font-size: 0.95rem; font-weight: 700; color: var(--pf-muted); }
-  p { margin-top: 0.2rem; font-size: 1.85rem; font-weight: 700; line-height: 1.2; }
+  .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 0.95rem; }
+  .asof { color: var(--pf-muted); font-size: 0.75rem; }
 
   h2 { display: flex; align-items: center; gap: 0.5rem; }
   .rename-error { margin-top: 0.35rem; font-size: 0.85rem; color: var(--pf-loss); }
@@ -72,11 +72,12 @@ h2, h3, p { margin: 0; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 1.49rem;
+  margin-top: 0.25rem;
+  height: 3rem; // = the title's height (2rem x 1.5), so the intro below doesn't move
 
   input {
     width: min(22rem, 60vw);
-    height: 2.09rem; // = the title's line height (1.9rem x 1.1)
+    height: 2.6rem; // = the title's height (Fredoka 2rem at its natural line height)
     padding: 0 0.75rem;
     border: 1.5px solid var(--pf-green);
     border-radius: 8px;
@@ -90,7 +91,7 @@ h2, h3, p { margin: 0; }
   }
 
   button {
-    height: 2.09rem;
+    height: 2.6rem;
     padding: 0 1rem;
     border-radius: 8px;
     font: inherit;
@@ -119,14 +120,14 @@ h2, h3, p { margin: 0; }
   gap: 0.1rem;
   height: 18.75rem;
   padding: 1.5rem;
-  border-top: 5px solid var(--pf-gain);
+  border-left: 4px solid var(--pf-green);
   border-radius: 2px;
   background: linear-gradient(225deg, var(--pf-buy-bg) 0%, var(--pf-card) 100%);
   box-shadow: var(--pf-shadow);
   text-align: left;
   font-weight: 700;
 
-  .cash-label { font-size: 0.95rem; font-weight: 700; color: var(--pf-muted); }
+  .cash-label { font-size: 0.75rem; color: var(--pf-muted); }
   strong {
     font-size: clamp(1.6rem, 2.4vw, 2.1rem);
     font-weight: 800;
@@ -156,7 +157,7 @@ h2, h3, p { margin: 0; }
   border: 0;
   background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
 
-  .label { font-size: 0.95rem; opacity: 0.85; }
+  .label { font-size: 0.75rem; opacity: 0.78; }
   .value {
     font-size: clamp(1.6rem, 2.4vw, 2.1rem);
     font-weight: 700;
@@ -232,14 +233,14 @@ h2, h3, p { margin: 0; }
 }
 
 .stat {
-  padding: 1rem 1.25rem;
+  padding: 1.1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  border-left: 5px solid var(--pf-green);
+  gap: 0.2rem;
+  border-left: 4px solid var(--pf-green);
 
-  .stat-label { font-size: 0.94rem; font-weight: 700; color: var(--pf-muted); }
-  strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+  .stat-label { font-size: 0.75rem; color: var(--pf-muted); }
+  strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 }
 
 .notice {
@@ -277,9 +278,11 @@ h2, h3, p { margin: 0; }
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 0.9rem 1.25rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--pf-border);
 
   h3 { font-size: 1.15rem; }
+  .caption { margin-top: 0.2rem; color: var(--pf-muted); font-size: 0.8rem; }
 }
 
 .controls {
@@ -287,13 +290,13 @@ h2, h3, p { margin: 0; }
   gap: 0.6rem;
 
   input, select {
-    padding: 0.5rem 0.85rem;
+    padding: 0.55rem 0.7rem;
     border: 1px solid var(--pf-border);
     border-radius: 2px;
     background: var(--pf-inset);
     color: var(--pf-text);
     font: inherit;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 
     &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 1px; }
   }
@@ -305,15 +308,16 @@ table {
   width: 100%;
   min-width: 40rem;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
 th {
   padding: 0.7rem 1rem;
   text-align: right;
-  font-weight: 700;
-  font-size: 0.88rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--pf-muted);
   background: var(--pf-inset);
   position: sticky;
@@ -324,7 +328,7 @@ th {
 }
 
 td {
-  padding: 0.8rem 1rem;
+  padding: 0.9rem 1rem;
   text-align: right;
   border-bottom: 1px solid var(--pf-border);
 }
@@ -335,7 +339,7 @@ tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: var(--pf-inset); }
 
 .ticker { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; }
-.empty { text-align: center; color: var(--pf-muted); font-weight: 700; font-size: 1.05em; padding: 2rem; }
+.empty { padding: 3.5rem 1rem; color: var(--pf-muted); text-align: center; }
 
 @media (max-width: 800px) {
   :host, .page { flex: 1 0 auto; }
@@ -346,7 +350,7 @@ tbody tr:hover { background: var(--pf-inset); }
   .toolbar-actions { margin-top: 0; }
 }
 
-.toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
+.toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
 .trade-link {
   display: inline-flex;
   align-items: center;

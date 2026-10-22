@@ -1,6 +1,7 @@
 <section class="page">
   <div class="toolbar">
     <div class="title">
+      <p class="eyebrow">PORTFOLIO</p>
       @if (renaming()) {
         <form class="rename" (submit)="$event.preventDefault(); saveRename()">
           <label class="sr-only" for="rename-input">Account name</label>
@@ -31,7 +32,7 @@
       } @else if (renameError(); as message) {
         <p class="rename-error" role="alert">{{ message }}</p>
       }
-      <p>Portfolio</p>
+      <p class="intro">Holdings, allocation and cash for this account.</p>
     </div>
     <div class="toolbar-actions">
       <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
@@ -117,7 +118,10 @@
 
   <div class="card holdings">
     <div class="holdings-head">
-      <h3>Holdings</h3>
+      <div>
+        <h3>Holdings</h3>
+        <p class="caption">Stocks held in this account</p>
+      </div>
       <div class="controls">
         <input type="search" placeholder="Search holdings..." (input)="onSearch($event)" aria-label="Search holdings">
         <select (change)="onSort($event)" aria-label="Sort holdings">
