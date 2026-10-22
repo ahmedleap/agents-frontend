@@ -37,7 +37,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     canActivate: [authGuard, adminRoleGuard],
-    loadComponent: () => import('./components/admin-overview/admin-overview.component').then(m => m.AdminOverviewComponent)
+    loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)
   },
   {
     // There is no combined all-accounts view; pick an account from the sidebar

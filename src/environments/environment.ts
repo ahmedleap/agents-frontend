@@ -7,7 +7,7 @@ export const environment = {
   logLevel: 'debug',
   features: {
     enableDevTools: true,
-    enableMocking: true,
+    enableMocking: false,
     enableAnalytics: false
   }
 };
