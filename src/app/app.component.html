@@ -20,12 +20,20 @@
       <p>{{ subtitle() }}</p>
       @if (role()) { <span class="role-badge">{{ role() }}</span> }
 
-      <button
-        type="button"
-        class="icon-btn tip"
-        (click)="theme.toggle()"
-        [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-        [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+      <div class="header-actions">
+        <a class="icon-btn tip" routerLink="/settings" routerLinkActive="active"
+           aria-label="Settings" data-tip="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.75 13.1 4.9a7.8 7.8 0 0 1 1.8.75l2.25-.55 1.85 1.85-.55 2.25c.3.56.55 1.16.75 1.8L21.25 12l-2.05 1.1a7.8 7.8 0 0 1-.75 1.8l.55 2.25-1.85 1.85-2.25-.55a7.8 7.8 0 0 1-1.8.75L12 21.25l-1.1-2.05a7.8 7.8 0 0 1-1.8-.75l-2.25.55L5 17.15l.55-2.25a7.8 7.8 0 0 1-.75-1.8L2.75 12 4.8 10.9c.2-.64.45-1.24.75-1.8L5 6.95 6.85 5.1l2.25.55c.56-.3 1.16-.55 1.8-.75L12 2.75Z"/>
+            <circle cx="12" cy="12" r="2.75"/>
+          </svg>
+        </a>
+        <button
+          type="button"
+          class="icon-btn tip"
+          (click)="theme.toggle()"
+          [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
         @if (theme.theme() === 'dark') {
           <!-- Sun -->
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -38,12 +46,17 @@
             <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>
           </svg>
         }
-      </button>
+        </button>
+        <button type="button" class="sign-out" (click)="signOut()">Sign out</button>
+      </div>
     </header>
 
     <div class="app-body">
       @if (!isAuthPage()) {
       <nav class="app-sidebar" aria-label="Main navigation">
+      @if (isAnalyst()) {
+        <a class="nav-link" routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">Analysis</a>
+      } @else {
         <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
         <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           <span class="trade-icon" aria-hidden="true">↗</span>
@@ -55,7 +68,9 @@
         <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
           Transactions
         </a>
-
+        <a class="nav-link" routerLink="/news" routerLinkActive="active" ariaCurrentWhenActive="page">
+          News
+        </a>
         <div class="nav-row">
           <button
             type="button"
@@ -100,6 +115,7 @@
             }
           </div>
         }
+      }
       </nav>
       }
 

@@ -9,7 +9,6 @@ import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
 
 const isAuthUrl = (url: string) => /^\/(login|signup)(\/|\?|#|$)/.test(url);
-import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',

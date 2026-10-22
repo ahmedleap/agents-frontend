@@ -6,11 +6,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
 import { DestroyRef } from '@angular/core';
 import { AccountApiService } from '../../core/services/account-api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { AccountSummary, DashboardService } from '../../core/services/dashboard.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
-import { environment } from '../../../environments/environment';
 
 interface Instrument {
   instrumentId: string;
@@ -43,6 +43,7 @@ export class TradesComponent {
   private readonly router = inject(Router);
   private readonly accounts = inject(DashboardService).accounts;
   private readonly accountApi = inject(AccountApiService);
+  private readonly auth = inject(AuthService);
   private readonly tradingApi = inject(TradingApiService);
   private readonly portfolioApi = inject(PortfolioApiService);
   private readonly orderHistory = inject(OrderHistoryService);
@@ -61,7 +62,7 @@ export class TradesComponent {
       switchMap(accountId => accountId
         ? forkJoin({
             summary: this.accountApi.getAccountSummary(accountId),
-            portfolio: this.portfolioApi.getAccountPortfolio(environment.devClientId, accountId)
+            portfolio: this.portfolioApi.getAccountPortfolio(this.auth.clientId() ?? '', accountId)
           }).pipe(
             map(({ summary, portfolio }): AccountSummary => ({
               id: accountId,
@@ -320,7 +321,7 @@ export class TradesComponent {
     const accountId = this.account()?.id;
     if (!accountId) return;
 
-    this.portfolioApi.getAccountPortfolio(environment.devClientId, accountId).subscribe({
+    this.portfolioApi.getAccountPortfolio(this.auth.clientId() ?? '', accountId).subscribe({
       next: portfolio => {
         if (this.selected()?.instrumentId !== instrument.instrumentId) return;
         const holding = (portfolio.holdings ?? []).find(item => item.instrumentId === instrument.instrumentId);

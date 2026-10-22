@@ -4,4 +4,4 @@ import { AuthService } from '../services/auth.service';
 
 /** Only signed-in analysts may open the analytics page; everyone else goes to the dashboard. */
 export const analystGuard: CanActivateFn = () =>
-  inject(AuthService).isAnalyst() || inject(Router).createUrlTree(['/dashboard']);
+  inject(AuthService).isAnalyst() || inject(Router).createUrlTree(['/analytics']);

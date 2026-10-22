@@ -95,6 +95,7 @@ export const routes: Routes = [
   },
   {
     path: 'news',
+    canActivate: [authGuard, clientRoleGuard],
     loadComponent: () => import('./components/news/news.component').then(m => m.NewsComponent)
   },
   {

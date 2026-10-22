@@ -87,6 +87,7 @@ export class AuthService {
   readonly isAuthenticating = this.isAuthenticatingState.asReadonly();
   readonly clientId = computed(() => this.currentUserState()?.clientId ?? null);
   readonly isAuthenticated = computed(() => !!this.accessToken() && !!this.currentUserState());
+  readonly isAnalyst = computed(() => this.currentUserState()?.role === 'ANALYST' || this.readTokenClaims()?.role === 'ANALYST');
   readonly hasError = computed(() => !!this.authError());
   readonly authErrorMessage = computed(() => this.authError());
 
@@ -104,9 +105,10 @@ export class AuthService {
     const loginPath = accountType === 'staff' ? 'auth/admin/login' : 'auth/login';
     return this.http.post<LoginResponse>(`${environment.middlewareUrl}/${loginPath}`, { email, password }).pipe(
       tap(response => {
-        this.accessToken.set(response.token);
-        this.currentUser.set(response.user);
-        this.isAuthenticating.set(false);
+        this.accessToken.set(response.accessToken);
+        this.refreshToken.set(response.refreshToken);
+        this.currentUserState.set(response.user);
+        this.persistSession();
       }),
       catchError(error => {
         this.accessToken.set(null);
