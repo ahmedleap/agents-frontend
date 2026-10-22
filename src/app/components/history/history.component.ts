@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
+import { OrderDetailDto, TradingApiService } from '../../core/services/trading-api.service';
+import { downloadCsv } from '../../core/utils/csv-export';
 
 type SortKey = 'side' | 'kind' | 'quantity' | 'limitPrice' | 'status' | 'createdAt';
 
@@ -20,6 +22,7 @@ export class HistoryComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly accounts = inject(DashboardService).accounts;
   private readonly orderHistory = inject(OrderHistoryService);
+  private readonly tradingApi = inject(TradingApiService);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
     { initialValue: this.route.snapshot.paramMap.get('accountId') }
@@ -41,6 +44,9 @@ export class HistoryComponent {
   protected readonly quantityDescending = signal(true);
   protected readonly limitPriceDescending = signal(true);
   protected readonly pendingCancellation = signal<string | null>(null);
+  protected readonly expandedOrderId = signal<string | null>(null);
+  protected readonly orderDetails = signal<Record<string, OrderDetailDto | null>>({});
+  protected readonly orderDetailsLoading = signal<string | null>(null);
   protected readonly visibleOrders = computed(() => {
     const query = this.query().trim().toLowerCase();
     const sortKey = this.sortBy();
@@ -121,5 +127,46 @@ export class HistoryComponent {
 
   protected dismissCancellation(): void {
     this.pendingCancellation.set(null);
+  }
+
+  protected exportOrders(): void {
+    const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    downloadCsv(
+      `orders-${this.account()?.name ?? 'account'}.csv`.replace(/[^a-z0-9._-]+/gi, '-'),
+      ['Order ID', 'Account', 'Instrument', 'Created', 'Type', 'Order Type', 'Quantity', 'Limit Price', 'Filled Price', 'Status'],
+      this.visibleOrders().map(order => [
+        order.orderId,
+        this.account()?.name ?? '',
+        order.instrument,
+        this.centralTime(order.createdAt),
+        order.orderType,
+        order.limitPrice === null ? 'Market' : 'Limit',
+        order.quantity,
+        order.limitPrice == null ? '' : currency.format(order.limitPrice),
+        order.filledPrice == null ? '' : currency.format(order.filledPrice),
+        order.status
+      ])
+    );
+  }
+
+  protected toggleDetails(orderId: string): void {
+    if (this.expandedOrderId() === orderId) {
+      this.expandedOrderId.set(null);
+      return;
+    }
+
+    this.expandedOrderId.set(orderId);
+    if (this.orderDetails()[orderId]) return;
+    this.orderDetailsLoading.set(orderId);
+    this.tradingApi.getOrder(orderId).subscribe({
+      next: detail => {
+        this.orderDetails.update(details => ({ ...details, [orderId]: detail }));
+        if (this.orderDetailsLoading() === orderId) this.orderDetailsLoading.set(null);
+      },
+      error: () => {
+        this.orderDetails.update(details => ({ ...details, [orderId]: null }));
+        if (this.orderDetailsLoading() === orderId) this.orderDetailsLoading.set(null);
+      }
+    });
   }
 }

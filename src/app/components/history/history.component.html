@@ -30,6 +30,7 @@
         <p>Most recent activity for this account</p>
       </div>
       <div class="controls">
+        <button type="button" class="export-button" (click)="exportOrders()">Export CSV</button>
         <label class="search-field">
           <span class="visually-hidden">Search orders</span>
           <input type="search" placeholder="Search orders" [value]="query()" (input)="onSearch($event)" aria-label="Search orders">
@@ -79,14 +80,49 @@
               <td>{{ order.limitPrice === null ? '—' : (order.limitPrice | currency) }}</td>
               <td>{{ order.filledPrice === null ? '—' : (order.filledPrice | currency) }}</td>
               <td><span class="status" [class]="'status ' + order.status.toLowerCase()">{{ order.status }}</span></td>
-              <td>
+              <td class="action-cell">
                 @if (order.limitPrice !== null && order.status === 'PENDING') {
                   <button type="button" class="cancel-button" (click)="cancelOrder(order.orderId)">Cancel</button>
                 } @else {
                   <span class="muted">—</span>
                 }
+                <button type="button" class="details-button" [class.open]="expandedOrderId() === order.orderId"
+                        [attr.aria-expanded]="expandedOrderId() === order.orderId"
+                        [attr.aria-label]="expandedOrderId() === order.orderId ? 'Hide order details' : 'Show order details'"
+                        [attr.title]="expandedOrderId() === order.orderId ? 'Hide order details' : 'Show order details'"
+                        (click)="toggleDetails(order.orderId)">
+                  <span aria-hidden="true"></span>
+                </button>
               </td>
             </tr>
+            @if (expandedOrderId() === order.orderId) {
+              <tr class="details-row">
+                <td colspan="9">
+                  @if (orderDetailsLoading() === order.orderId) {
+                    <span class="muted">Loading order details...</span>
+                  } @else if (orderDetails()[order.orderId]; as detail) {
+                    <dl class="order-details">
+                      <div><dt>Pending</dt><dd>{{ centralTime(detail.createdAt) }}</dd></div>
+                      @if (detail.filledAt) {
+                        <div><dt>Filled</dt><dd>{{ centralTime(detail.filledAt) }}</dd></div>
+                      }
+                      <div><dt>Current status</dt><dd>{{ detail.status }}</dd></div>
+                      @if (detail.filledPrice !== null && detail.filledPrice !== undefined) {
+                        <div><dt>Filled price</dt><dd>{{ detail.filledPrice | currency }}</dd></div>
+                      }
+                      @if (detail.cancelledAt) {
+                        <div><dt>Cancelled</dt><dd>{{ centralTime(detail.cancelledAt) }}</dd></div>
+                      }
+                      @if (detail.cancelReason) {
+                        <div><dt>Reason</dt><dd>{{ detail.cancelReason }}</dd></div>
+                      }
+                    </dl>
+                  } @else {
+                    <span class="error-text">Order details couldn't be loaded.</span>
+                  }
+                </td>
+              </tr>
+            }
           } @empty {
             <tr>
               <td colspan="9" class="empty">

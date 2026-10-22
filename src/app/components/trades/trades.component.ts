@@ -403,14 +403,15 @@ export class TradesComponent {
 
   private withHistory(instrument: Instrument, history: HistoryResponseDto): Instrument {
     const points = history.bars
-      .map(bar => this.numberValue(bar.close))
-      .filter(price => Number.isFinite(price) && price > 0);
-    const latest = points[points.length - 1] ?? this.numberValue(history.summary?.endPrice);
+      .map(bar => ({ price: this.numberValue(bar.close), timestamp: bar.timestamp }))
+      .filter(point => Number.isFinite(point.price) && point.price > 0);
+    const prices = points.map(point => point.price);
+    const latest = prices[prices.length - 1] ?? this.numberValue(history.summary?.endPrice);
     if (points.length < 2 && latest <= 0) return instrument;
 
     return {
       ...instrument,
-      points: points.length > 1 ? points : instrument.points,
+      points: prices.length > 1 ? prices : instrument.points,
       price: instrument.price > 0 ? instrument.price : latest,
       chartPlaceholder: points.length < 2,
       priceState: instrument.price > 0 || latest > 0 ? 'ready' : instrument.priceState,
@@ -499,4 +500,5 @@ export class TradesComponent {
     const range = max - min || 1;
     return points.map((point, index) => `${(index / (points.length - 1)) * 100},${42 - ((point - min) / range) * 34}`).join(' ');
   }
+
 }

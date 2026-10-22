@@ -39,9 +39,12 @@
         <h3>Cash transactions</h3>
         <p>Deposits and withdrawals for this account</p>
       </div>
-      <button type="button" class="primary-button" (click)="showDepositForm.set(!showDepositForm())">
-        {{ showDepositForm() ? 'Cancel' : 'Add or withdraw cash' }}
-      </button>
+      <div class="panel-actions">
+        <button type="button" class="export-button" (click)="exportTransactions()">Export CSV</button>
+        <button type="button" class="primary-button" (click)="showDepositForm.set(!showDepositForm())">
+          {{ showDepositForm() ? 'Cancel' : 'Add or withdraw cash' }}
+        </button>
+      </div>
     </div>
 
     <div class="table-tools">
@@ -103,6 +106,24 @@
         }
         <button type="submit" class="primary-button full" [disabled]="!canSubmitTransaction()">{{ transactionAction() === 'DEPOSIT' ? 'Add to cash balance' : 'Withdraw from cash balance' }}</button>
       </form>
+    </section>
+  </div>
+}
+
+@if (showConfirmation()) {
+  <div class="modal-backdrop" role="presentation" (click)="cancelCashConfirmation()">
+    <section class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="cash-confirm-title"
+             (click)="$event.stopPropagation()">
+      <h2 id="cash-confirm-title">Confirm {{ transactionAction() === 'DEPOSIT' ? 'deposit' : 'withdrawal' }}</h2>
+      <p>
+        {{ transactionAction() === 'DEPOSIT' ? 'Add' : 'Withdraw' }}
+        {{ depositAmount() | currency }} {{ transactionAction() === 'DEPOSIT' ? 'to' : 'from' }}
+        {{ account()?.name }}?
+      </p>
+      <div class="confirm-actions">
+        <button type="button" class="secondary-button" (click)="cancelCashConfirmation()">Go back</button>
+        <button type="button" class="primary-button" (click)="confirmCashTransaction()">Confirm</button>
+      </div>
     </section>
   </div>
 }

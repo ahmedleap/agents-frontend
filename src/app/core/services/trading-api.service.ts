@@ -27,6 +27,17 @@ export interface InstrumentDetailDto {
   industry?: string;
 }
 
+export interface NewsItemDto {
+  title: string;
+  link: string;
+  publishedAt: string;
+  description: string;
+  guid: string;
+  source: string;
+  relevanceScore: number;
+  imageUrl: string;
+}
+
 export interface QuoteDto {
   ticker: string;
   bid?: number;
@@ -114,6 +125,9 @@ export interface OrderSummaryDto {
 
 export interface OrderDetailDto extends OrderSummaryDto {
   createdAt: string;
+  filledAt?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
   instrument?: { ticker?: string; name?: string };
 }
 
@@ -137,6 +151,10 @@ export class TradingApiService {
 
   getInstrumentDetails(ticker: string): Observable<InstrumentDetailDto> {
     return this.api.get<InstrumentDetailDto>(`instruments/${encodeURIComponent(ticker)}`);
+  }
+
+  getNews(ticker: string, limit = 10, sort: 'latest' | 'popular' = 'latest'): Observable<NewsItemDto[]> {
+    return this.api.get<NewsItemDto[]>('news', { params: { ticker, limit, sort } });
   }
 
   getQuote(ticker: string): Observable<QuoteDto> {

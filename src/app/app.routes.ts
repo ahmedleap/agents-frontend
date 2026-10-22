@@ -72,6 +72,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/transactions/transactions.component').then(m => m.TransactionsComponent)
   },
   {
+    path: 'news',
+    loadComponent: () => import('./components/news/news.component').then(m => m.NewsComponent)
+  },
+  {
     // Only analysts get here; their sidebar shows just this page
     path: 'analytics',
     canActivate: [analystGuard],

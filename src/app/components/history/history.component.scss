@@ -29,6 +29,8 @@ h2, h3, p { margin: 0; }
 .panel-heading h3 { font-size: 1.15rem; }
 .panel-heading p { margin-top: 0.2rem; }
 .controls { display: flex; gap: 0.6rem; }
+.export-button { padding: 0.5rem 0.7rem; border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-card); color: var(--pf-accent); font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+.export-button:hover { background: var(--pf-active); }
 .search-field, .controls select { border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-inset); color: var(--pf-text); font: inherit; font-size: 0.85rem; }
 .search-field input { width: 12rem; padding: 0.5rem 0.7rem; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; }
 .controls select { padding: 0.5rem 0.7rem; }
@@ -55,6 +57,16 @@ tbody tr:hover { background: var(--pf-inset); }
 .status.cancelled, .status.rejected { background: var(--pf-sell-bg); color: var(--pf-loss); }
 .cancel-button { padding: 0.35rem 0.6rem; border: 1px solid var(--pf-loss); border-radius: 2px; background: transparent; color: var(--pf-loss); font: inherit; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
 .cancel-button:hover { background: var(--pf-sell-bg); }
+.action-cell { display: flex; align-items: center; gap: 0.8rem; }
+.details-button { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; padding: 0; border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-card); color: var(--pf-accent); cursor: pointer; }
+.details-button span { width: 0.45rem; height: 0.45rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translate(-0.1rem, -0.1rem); transition: transform 0.15s; }
+.details-button.open span { transform: rotate(-135deg) translate(-0.1rem, -0.1rem); }
+.details-button:hover { background: var(--pf-active); }
+.details-row td { padding: 0.8rem 1rem; background: var(--pf-inset); }
+.order-details { display: flex; flex-wrap: wrap; gap: 0.8rem 2rem; margin: 0; }
+.order-details div { min-width: 9rem; }
+.order-details dt { color: var(--pf-muted); font-size: 0.72rem; }
+.order-details dd { margin: 0.15rem 0 0; color: var(--pf-text); font-size: 0.82rem; font-weight: 700; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 1rem; background: rgba(16, 30, 22, 0.48); }
 .confirm-modal { width: min(100%, 25rem); padding: 1.5rem; border: 1px solid var(--pf-border); border-radius: 3px; background: var(--pf-card); box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2); }
 .confirm-modal h2 { color: var(--pf-text); font-family: 'Fredoka', 'Baloo 2', sans-serif; font-size: 1.35rem; }
