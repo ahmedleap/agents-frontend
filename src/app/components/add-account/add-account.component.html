@@ -29,11 +29,13 @@
               type="button"
               class="type"
               [class.selected]="selectedType() === t.name.toLowerCase()"
+              [class.owned]="owns(t.name)"
               [attr.aria-pressed]="selectedType() === t.name.toLowerCase()"
               (click)="pickType(t.name)">
               <span class="badge" aria-hidden="true">{{ t.badge }}</span>
               <strong>{{ t.label ?? t.name }}</strong>
               <small>{{ t.blurb }}</small>
+              @if (owns(t.name)) { <small class="owned-tag">You already have one</small> }
             </button>
           }
         </div>
@@ -47,7 +49,9 @@
           <label class="field" [class.has-error]="invalid('name')">
             <span>Account name</span>
             <input formControlName="name" placeholder="Pick a type above or type a name" autocomplete="off">
-            @if (invalid('name')) {
+            @if (form.controls.name.getError('duplicate'); as existing) {
+              <small class="err" role="alert">You already have an account called "{{ existing }}". Choose a different name.</small>
+            } @else if (invalid('name')) {
               <small class="err">
                 {{ form.controls.name.hasError('maxlength') ? 'Keep it under 100 characters' : 'Give the account a name' }}
               </small>

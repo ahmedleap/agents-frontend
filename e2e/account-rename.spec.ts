@@ -1,43 +1,15 @@
 import { expect, Page, test } from '@playwright/test';
 
-// Fake middleware + backend, so this runs without either. Same login stub as e2e/login.spec.ts.
-const CLIENT_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-const ACCOUNT_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+import { CLIENT_ID, loginAsClient, openAccountFromSidebar } from './helpers';
 
-function tokenFor(sub: string, email: string): string {
-  const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
-  return `${encode({ alg: 'RS256', typ: 'JWT' })}.${encode({ sub, email, role: 'CLIENT', exp: Math.floor(Date.now() / 1000) + 900 })}.test-signature`;
-}
+// Fake middleware + backend (see helpers.ts), so this runs without either
+const ACCOUNT = { accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', name: 'Roth IRA' };
+const ACCOUNT_ID = ACCOUNT.accountId;
 
-/** Logs in as a client and opens their one account from the sidebar (in-app, so the session is kept) */
-async function openAccount(page: Page, accountName = 'Roth IRA') {
-  const email = 'jane@example.com';
-  await page.route('**/api/v1/auth/login', route => route.fulfill({
-    json: {
-      accessToken: tokenFor(CLIENT_ID, email), refreshToken: 'test-refresh-token', expiresIn: 900,
-      user: { clientId: CLIENT_ID, email, firstName: 'Jane', lastName: 'Trader', role: 'CLIENT' }
-    }
-  }));
-  const account = { accountId: ACCOUNT_ID, accountName, holdings: [], totalPortfolioValue: 0, totalCostBasis: 0, totalGainLossDollars: 0, totalGainLossPercent: 0 };
-  await page.route(`**/api/portfolio/v1/${CLIENT_ID}`, route => route.fulfill({
-    json: { clientId: CLIENT_ID, accounts: [account], totalPortfolioValue: 0, totalCostBasis: 0, totalGainLossDollars: 0, totalGainLossPercent: 0 }
-  }));
-  await page.route(`**/api/portfolio/v1/${CLIENT_ID}/${ACCOUNT_ID}`, route => route.fulfill({ json: account }));
-  await page.route(`**/api/portfolio/v1/allocation/${CLIENT_ID}/${ACCOUNT_ID}`, route => route.fulfill({ json: { industryBreakdown: [], assetClassBreakdown: [] } }));
-  await page.route(`**/api/accounts/${ACCOUNT_ID}/summary`, route => route.fulfill({
-    json: { cashBalance: 100, availableBalance: 100, holdingsValue: 0, totalValue: 100, summaryDate: '' }
-  }));
-
-  await page.goto('/login');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel(/^Password/).fill('Secret123!');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/client$/);
-
-  await page.getByRole('button', { name: 'Account' }).click();
-  await page.getByRole('link', { name: new RegExp(accountName) }).click();
-  await expect(page).toHaveURL(new RegExp(`/portfolio/${ACCOUNT_ID}$`));
-  await expect(page.getByRole('heading', { level: 2, name: accountName })).toBeVisible();
+async function openAccount(page: Page) {
+  await loginAsClient(page, [ACCOUNT]);
+  await openAccountFromSidebar(page, ACCOUNT);
+  await expect(page.getByRole('heading', { level: 2, name: ACCOUNT.name })).toBeVisible();
 }
 
 test.describe('Rename account', () => {

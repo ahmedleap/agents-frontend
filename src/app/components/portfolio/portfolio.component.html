@@ -11,9 +11,9 @@
             (keydown.escape)="cancelRename()"
             maxlength="100"
             autocomplete="off"
-            [attr.aria-invalid]="!!renameError()"
+            [attr.aria-invalid]="!!renameError() || !!renameDuplicate()"
             [disabled]="renameSaving()">
-          <button type="submit" class="rename-save" [disabled]="renameSaving()">{{ renameSaving() ? 'Saving…' : 'Save' }}</button>
+          <button type="submit" class="rename-save" [disabled]="renameSaving() || !!renameDuplicate()">{{ renameSaving() ? 'Saving…' : 'Save' }}</button>
           <button type="button" class="rename-cancel" (click)="cancelRename()" [disabled]="renameSaving()">Cancel</button>
         </form>
       } @else {
@@ -26,7 +26,11 @@
           }
         </h2>
       }
-      @if (renameError(); as message) { <p class="rename-error" role="alert">{{ message }}</p> }
+      @if (renaming() && renameDuplicate(); as existing) {
+        <p class="rename-error" role="alert">You already have an account called "{{ existing.name }}". Choose a different name.</p>
+      } @else if (renameError(); as message) {
+        <p class="rename-error" role="alert">{{ message }}</p>
+      }
       <p>Portfolio</p>
     </div>
     <div class="toolbar-actions">

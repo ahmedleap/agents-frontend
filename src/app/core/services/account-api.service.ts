@@ -31,6 +31,16 @@ export interface AccountSummaryDto {
   summaryDate: string;
 }
 
+// Mirrors com.agentsbackend.DTO.response.AccountsResponse.AccountListItem
+export interface AccountListItemDto {
+  accountId: string;
+  name: string;
+  status: string;
+  cashBalance: number;
+  availableBalance: number;
+  totalValue: number;
+}
+
 /** AccountController: /api/accounts */
 @Injectable({ providedIn: 'root' })
 export class AccountApiService {
@@ -39,6 +49,11 @@ export class AccountApiService {
 
   /** Emits after an account is added or renamed, so lists (like the sidebar) can reload. */
   readonly changed$ = this.changedSubject.asObservable();
+
+  /** GET /api/accounts: every account of the logged-in client */
+  listAccounts(): Observable<AccountListItemDto[]> {
+    return this.api.get<AccountListItemDto[]>('accounts');
+  }
 
   getAccountSummary(accountId: string): Observable<AccountSummaryDto> {
     return this.api.get<AccountSummaryDto>(`accounts/${accountId}/summary`);

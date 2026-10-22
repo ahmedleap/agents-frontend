@@ -160,6 +160,10 @@ fieldset {
 }
 
 .type {
+  // A type the client already has: still clickable (they may want to see the message), but muted
+  &.owned { opacity: 0.6; }
+  .owned-tag { margin-top: 0.2rem; color: var(--pf-loss); font-weight: 800; }
+
   strong { font-size: 0.98rem; }
   small { color: var(--pf-muted); font-size: 0.86rem; font-weight: 700; line-height: 1.3; }
 }

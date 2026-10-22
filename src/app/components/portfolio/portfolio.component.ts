@@ -7,6 +7,7 @@ import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
 import { AccountApiService, AccountSummaryDto } from '../../core/services/account-api.service';
+import { NamedAccount, findAccountWithName } from '../../core/account-names';
 import {
   AllocationDto,
   HoldingDto,
@@ -90,6 +91,11 @@ export class PortfolioComponent {
   protected readonly renameDraft = signal('');
   protected readonly renameSaving = signal(false);
   protected readonly renameError = signal<string | null>(null);
+  /** The client's other accounts, loaded when renaming starts; names must stay unique */
+  private readonly otherAccounts = signal<NamedAccount[]>([]);
+  /** Another account already using the typed name (this account's own name doesn't count) */
+  protected readonly renameDuplicate = computed(() =>
+    findAccountWithName(this.renameDraft(), this.otherAccounts(), this.accountId()));
 
   protected readonly query = signal('');
   protected readonly sortBy = signal<SortKey>('value');
@@ -153,6 +159,12 @@ export class PortfolioComponent {
     this.renameDraft.set(this.account());
     this.renameError.set(null);
     this.renaming.set(true);
+    // If this fails the backend still renames; we just can't warn about a duplicate name
+    this.otherAccounts.set([]);
+    this.accountApi.listAccounts().subscribe({
+      next: accounts => this.otherAccounts.set(accounts.map(a => ({ accountId: a.accountId, name: a.name }))),
+      error: () => this.otherAccounts.set([])
+    });
     setTimeout(() => {
       const input = document.getElementById('rename-input') as HTMLInputElement | null;
       input?.focus();
@@ -178,6 +190,7 @@ export class PortfolioComponent {
       this.renameError.set(`Keep the name under ${MAX_ACCOUNT_NAME} characters.`);
       return;
     }
+    if (this.renameDuplicate()) return; // the message is already showing
     if (name === this.account()) {
       this.cancelRename();
       return;
