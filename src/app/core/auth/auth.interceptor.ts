@@ -8,17 +8,19 @@ import { environment } from '../../../environments/environment';
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  const isBackendRequest = request.url.startsWith(environment.apiUrl)
-    || request.url.startsWith(environment.authUrl);
+  const serverUrl = environment.backendUrl.replace(/\/api\/?$/, '');
+  const isServiceRequest = request.url.startsWith(environment.backendUrl)
+    || request.url.startsWith(environment.middlewareUrl)
+    || request.url.startsWith(`${serverUrl}/`);
   const isAuthFlowRequest = /\/auth\/(?:admin\/)?(?:login|signup|refresh|logout)$/.test(request.url);
   const token = auth.getToken();
-  const outgoing = isBackendRequest && !isAuthFlowRequest && token
+  const outgoing = isServiceRequest && !isAuthFlowRequest && token
     ? request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : request;
 
   return next(outgoing).pipe(
     catchError(error => {
-      if (error.status === 401 && isBackendRequest && !isAuthFlowRequest && token) {
+      if (error.status === 401 && isServiceRequest && !isAuthFlowRequest && token) {
         return auth.refreshAccessToken().pipe(
           switchMap(refreshedToken => next(request.clone({
             setHeaders: { Authorization: `Bearer ${refreshedToken}` }

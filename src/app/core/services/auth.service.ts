@@ -52,6 +52,14 @@ interface JwtClaims {
   exp: number;
 }
 
+interface StoredSession {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthenticatedUser;
+}
+
+const SESSION_STORAGE_KEY = 'stash-auth-session';
+
 /**
  * Authentication Service
  * 
@@ -83,6 +91,10 @@ export class AuthService {
   readonly hasError = computed(() => !!this.authError());
   readonly authErrorMessage = computed(() => this.authError());
 
+  constructor() {
+    this.restoreSession();
+  }
+
   /**
    * Analysts can see the analytics dashboard. Accepts either `user.role` or a
    * `user.roles` array from the login response, e.g. 'ANALYST' or 'ROLE_ANALYST'.
@@ -109,7 +121,7 @@ export class AuthService {
     this.authError.set(null);
 
     const loginPath = accountType === 'staff' ? 'auth/admin/login' : 'auth/login';
-    return this.http.post<LoginResponse>(`${environment.authUrl}/${loginPath}`, { email, password }).pipe(
+    return this.http.post<LoginResponse>(`${environment.middlewareUrl}/${loginPath}`, { email, password }).pipe(
       tap(response => {
         const claims = decodeClaims(response.accessToken);
         if (!response.accessToken || !claims || claims.sub !== response.user?.clientId
@@ -121,6 +133,7 @@ export class AuthService {
         this.accessToken.set(response.accessToken);
         this.refreshToken.set(response.refreshToken);
         this.currentUserState.set({ ...response.user, role: claims.role });
+        this.persistSession();
       }),
       catchError(error => {
         this.accessToken.set(null);
@@ -134,7 +147,7 @@ export class AuthService {
   }
 
   signup(request: SignupRequest): Observable<SignupResponse> {
-    return this.http.post<SignupResponse>(`${environment.authUrl}/auth/signup`, request);
+    return this.http.post<SignupResponse>(`${environment.middlewareUrl}/auth/signup`, request);
   }
 
   /** Rotates the access and refresh tokens once; concurrent 401s share this request. */
@@ -147,7 +160,7 @@ export class AuthService {
       return throwError(() => new Error('No active refresh session.'));
     }
 
-    this.refreshRequest = this.http.post<RefreshResponse>(`${environment.authUrl}/auth/refresh`, {
+    this.refreshRequest = this.http.post<RefreshResponse>(`${environment.middlewareUrl}/auth/refresh`, {
       clientId: user.clientId,
       refreshToken
     }).pipe(
@@ -161,6 +174,7 @@ export class AuthService {
         }
         this.accessToken.set(response.accessToken);
         this.refreshToken.set(response.refreshToken);
+        this.persistSession();
       }),
       map(response => response.accessToken),
       catchError(error => {
@@ -182,6 +196,7 @@ export class AuthService {
     this.refreshToken.set(null);
     this.currentUserState.set(null);
     this.authError.set(null);
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
   }
 
   logoutRemote(): Observable<unknown> {
@@ -189,7 +204,7 @@ export class AuthService {
     const refreshToken = this.refreshToken();
     this.logout();
     if (!user || !refreshToken) return of(null);
-    return this.http.post(`${environment.authUrl}/auth/logout`, {
+    return this.http.post(`${environment.middlewareUrl}/auth/logout`, {
       clientId: user.clientId,
       refreshToken
     });
@@ -207,6 +222,38 @@ export class AuthService {
    */
   getCurrentUser(): AuthenticatedUser | null {
     return this.currentUserState();
+  }
+
+  private persistSession(): void {
+    const accessToken = this.accessToken();
+    const refreshToken = this.refreshToken();
+    const user = this.currentUserState();
+    if (!accessToken || !refreshToken || !user) return;
+
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ accessToken, refreshToken, user } satisfies StoredSession));
+  }
+
+  private restoreSession(): void {
+    try {
+      const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+      if (!stored) return;
+
+      const session = JSON.parse(stored) as Partial<StoredSession>;
+      const claims = decodeClaims(session.accessToken);
+      if (!session.accessToken || !session.refreshToken || !session.user || !claims
+        || claims.sub !== session.user.clientId || claims.email !== session.user.email
+        || claims.role !== session.user.role || !Number.isFinite(claims.exp)
+        || claims.exp * 1000 <= Date.now() || !isRole(claims.role)) {
+        this.logout();
+        return;
+      }
+
+      this.accessToken.set(session.accessToken);
+      this.refreshToken.set(session.refreshToken);
+      this.currentUserState.set(session.user);
+    } catch {
+      this.logout();
+    }
   }
 }
 

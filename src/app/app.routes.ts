@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminRoleGuard, analystRoleGuard, authGuard, clientRoleGuard } from './core/auth/auth.guard';
+import { adminRoleGuard, analystRoleGuard, authGuard, clientRoleGuard, guestGuard } from './core/auth/auth.guard';
 
 // Listed in the order a user moves through the app:
 // log in -> sign up (if they don't have an account) -> dashboard -> accounts from the sidebar
@@ -14,10 +14,12 @@ export const routes: Routes = [
   // ---------- Auth (full-width, no sidebar) ----------
   {
     path: 'login',
+    canActivate: [guestGuard],
     loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent)
   },
   {
     path: 'signup',
+    canActivate: [guestGuard],
     loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent)
   },
 
@@ -25,7 +27,7 @@ export const routes: Routes = [
   {
     path: 'client',
     canActivate: [authGuard, clientRoleGuard],
-    loadComponent: () => import('./components/client-home/client-home.component').then(m => m.ClientHomeComponent)
+    loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
   {
     path: 'dashboard',
