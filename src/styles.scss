@@ -48,7 +48,7 @@
   --pf-card: #18221d;
   --pf-border: #2a3a31;
   --pf-text: #e3ece6;
-  --pf-muted: #93a69a;
+  --pf-muted: #ffffff; // secondary text is white in dark mode (it's gray in light mode)
   --pf-inset: #1f2b25;
   --pf-hover: #1f2b25;
   --pf-active: #24372b;
@@ -62,6 +62,39 @@
   --pf-buy-bg: rgba(76, 192, 114, 0.15);
   --pf-sell-bg: rgba(255, 107, 91, 0.15);
   --pf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+/*
+ * Dark mode: small gray text (labels, captions, column headings, dates, hints) is hard to read,
+ * so make it bold and a little bigger. Light mode is unchanged.
+ * The repeated [data-theme] makes these rules more specific than the component styles they override
+ * (Angular adds an attribute to every part of a component selector, e.g. .toolbar .asof counts as 0,4,0).
+ */
+:root[data-theme="dark"][data-theme][data-theme] {
+  // Small gray text: bold and bigger (most of these are 0.72-0.8rem in the components)
+  .asof, .sub, .caption, .summary-label, .summary-caption, .stat-label, .cash-label,
+  .account-label, .result-count, .updated, .optional, .ref, .role-badge, .tag.lock,
+  .sort-header, th, .panel-heading p, app-trades .muted, app-trades .cash-card span,
+  app-signup .option small, app-agreement .eyebrow, app-agreement .num, app-agreement .checklist .n {
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  // Gray text that's already a readable size: bold only
+  .intro, .muted, .hint, .version, .order-count, .empty, td.empty, app-trades .empty-state span,
+  app-login .account-type label,
+  app-portfolio small:not(.err), app-add-account small:not(.err), app-signup small:not(.err) {
+    font-weight: 700;
+  }
+
+  // Text that's white but see-through (so it reads as gray): fully white in dark mode
+  app-dashboard .hero .label, app-dashboard .hero .hero-total, app-portfolio .hero .label,
+  app-transactions .balance-card .summary-label, app-transactions .balance-card .summary-caption,
+  app-login .brand *, app-signup .brand *, app-login .brand .brand-top p, app-signup .brand .brand-top p,
+  app-add-account .hero p, app-add-account .type.owned {
+    color: #fff;
+    opacity: 1;
+  }
 }
 
 * {
