@@ -28,15 +28,20 @@
           <div class="card-head">
             <div>
               <h3>Total Value, All Accounts</h3>
-              <p class="sub">Last {{ period().days }} days</p>
+              <p class="sub">Last {{ historyDays }} days</p>
             </div>
-            <strong [class.gain]="period().change >= 0" [class.loss]="period().change < 0">
-              {{ period().change >= 0 ? '+' : '' }}{{ period().change | currency }}
-              ({{ period().pct >= 0 ? '+' : '' }}{{ period().pct | number: '1.2-2' }}%)
-            </strong>
+            @if (period(); as p) {
+              <strong [class.gain]="p.change >= 0" [class.loss]="p.change < 0">
+                {{ p.change >= 0 ? '+' : '' }}{{ p.change | currency }}
+                ({{ p.pct >= 0 ? '+' : '' }}{{ p.pct | number: '1.2-2' }}%)
+              </strong>
+            }
           </div>
           <div class="chart-wrap">
             <canvas #valueChart role="img" aria-label="Line chart of combined account value by day"></canvas>
+            @if (!loading() && !period()) {
+              <p class="chart-empty">No value history yet. Your daily totals will show here as they're recorded.</p>
+            }
           </div>
         </div>
       </div>
@@ -62,20 +67,46 @@
 
         <div class="side-lists">
           <div class="card watchlist">
-            <div class="card-head"><h3>Watchlist</h3></div>
+            <div class="card-head">
+              <h3>Watchlist</h3>
+              @if (watchlist().length) {
+                <button type="button" class="edit-btn" [class.on]="editingWatchlist()" [attr.aria-pressed]="editingWatchlist()"
+                        (click)="toggleWatchlistEdit()">{{ editingWatchlist() ? 'Done' : 'Edit' }}</button>
+              }
+            </div>
+            @if (watchlistError(); as message) {
+              <p class="watch-error" role="alert">{{ message }}</p>
+            }
+            @if (editingWatchlist()) {
+              <p class="watch-note">Remove stocks with &#10005;. Add more with the &#9734; on the <a routerLink="/trades">Trade</a> page.</p>
+            }
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Ticker</th><th>Price</th><th>Change</th></tr></thead>
+                <thead><tr><th>Ticker</th><th>Price</th><th>Change</th>@if (editingWatchlist()) { <th><span class="sr-only">Remove</span></th> }</tr></thead>
                 <tbody>
-                  @for (w of watchlist(); track w.ticker) {
+                  @for (w of watchlist(); track w.instrumentId) {
                     <tr>
                       <td><span class="ticker"><span class="badge small">{{ w.ticker[0] }}</span><span class="ticker-text">{{ w.ticker }}<small>{{ w.name }}</small></span></span></td>
                       <td>{{ w.price !== undefined ? (w.price | currency) : '—' }}</td>
                       <td [class.gain]="w.change !== undefined && w.change >= 0" [class.loss]="w.change !== undefined && w.change < 0">
                         {{ w.changePct !== undefined ? ((w.changePct >= 0 ? '+' : '') + (w.changePct | number: '1.2-2') + '%') : '—' }}
                       </td>
+                      @if (editingWatchlist()) {
+                        <td class="remove-cell">
+                          <button type="button" class="remove-btn" [disabled]="isRemoving(w.instrumentId)"
+                                  [attr.aria-label]="'Remove ' + w.ticker + ' from watchlist'" (click)="removeFromWatchlist(w.instrumentId)">&#10005;</button>
+                        </td>
+                      }
                     </tr>
-                  } @empty { <tr><td colspan="3" class="empty">Your watchlist is empty.</td></tr> }
+                  } @empty {
+                    <tr><td colspan="3" class="empty">
+                      @if (watchlistLoaded()) {
+                        Your watchlist is empty. Tap the &#9734; on a stock on the <a routerLink="/trades">Trade</a> page to add it.
+                      } @else {
+                        Loading your watchlist...
+                      }
+                    </td></tr>
+                  }
                 </tbody>
               </table>
             </div>

@@ -38,8 +38,7 @@ export class AdminComponent {
       orders: this.admin.orders().pipe(
         map(rows => ({ rows, available: true })),
         catchError(() => of({ rows: [] as AdminOrder[], available: false }))
-      ),
-      health: this.admin.health().pipe(catchError(() => of(null)))
+      )
     }).pipe(catchError(() => of(null)))
   });
 

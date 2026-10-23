@@ -1,0 +1,32 @@
+@if (secondsLeft() !== null) {
+  <div class="timer" [class.warning]="warning()" role="timer" [attr.aria-label]="'Session time left ' + time()"
+       data-tip="Time left in your session">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="13" r="8"/>
+      <path d="M12 9v4l2.5 2M9.5 2.5h5"/>
+    </svg>
+    <span class="time">{{ time() }}</span>
+  </div>
+
+  @if (warning()) {
+    <div class="backdrop">
+      <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="session-title" aria-describedby="session-text">
+        <p class="eyebrow">SESSION ENDING</p>
+        <h2 id="session-title">Are you still there?</h2>
+        <p id="session-text">
+          For your security, your session ends in <strong>{{ time() }}</strong>.
+          Refresh your session to stay logged in, or you will be logged out.
+        </p>
+        @if (refreshFailed()) {
+          <p class="error" role="alert">Your session couldn't be refreshed. Please log in again.</p>
+        }
+        <div class="actions">
+          <button type="button" class="secondary" (click)="logOut()">Log out now</button>
+          <button #stayButton type="button" class="primary" [disabled]="refreshing()" (click)="stayLoggedIn()">
+            {{ refreshing() ? 'Refreshing...' : 'Refresh session' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+}

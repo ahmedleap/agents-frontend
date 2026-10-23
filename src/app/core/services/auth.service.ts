@@ -92,6 +92,11 @@ export class AuthService {
   readonly isAuthenticating = this.isAuthenticatingState.asReadonly();
   readonly clientId = computed(() => this.currentUserState()?.clientId ?? null);
   readonly isAuthenticated = computed(() => !!this.accessToken() && !!this.currentUserState());
+  /** When the current access token expires (ms since epoch), from its exp claim; null when logged out */
+  readonly accessTokenExpiresAt = computed(() => {
+    const exp = decodeClaims(this.accessToken() ?? undefined)?.exp;
+    return Number.isFinite(exp) ? exp! * 1000 : null;
+  });
   readonly hasError = computed(() => !!this.authError());
   readonly authErrorMessage = computed(() => this.authError());
 

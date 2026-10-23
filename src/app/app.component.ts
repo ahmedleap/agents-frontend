@@ -7,6 +7,7 @@ import { AccountApiService } from './core/services/account-api.service';
 import { PortfolioApiService } from './core/services/portfolio-api.service';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
+import { SessionTimerComponent } from './components/session-timer/session-timer.component';
 
 const isLandingUrl = (url: string) => url.split(/[?#]/)[0].replace(/\/$/, '') === '';
 const isAuthUrl = (url: string) => isLandingUrl(url) || /^\/(login|signup|agreement)(\/|\?|#|$)/.test(url);
@@ -16,7 +17,7 @@ const isAuthUrl = (url: string) => isLandingUrl(url) || /^\/(login|signup|agreem
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, SessionTimerComponent],
   host: {
     class: 'app-root'
   }

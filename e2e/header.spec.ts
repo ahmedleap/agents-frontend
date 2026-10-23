@@ -1,14 +1,15 @@
 import { expect, test, loginAsClient } from './helpers';
 
 test.describe('Header', () => {
-  test('light/dark, then settings, then Logout on the far right', async ({ page }) => {
+  test('session timer, light/dark, then settings, then Logout on the far right', async ({ page }) => {
     await loginAsClient(page, []);
 
-    const actions = page.locator('.header-actions > *');
-    await expect(actions).toHaveCount(3);
-    await expect(actions.nth(0)).toHaveAttribute('aria-label', /Switch to (light|dark) mode/);
-    await expect(actions.nth(1)).toHaveAttribute('aria-label', 'Settings');
-    await expect(actions.nth(2)).toHaveText('Logout');
+    const actions = page.locator('.header-actions > :not(app-session-timer), .header-actions > app-session-timer > .timer');
+    await expect(actions).toHaveCount(4);
+    await expect(actions.nth(0)).toHaveAttribute('role', 'timer');
+    await expect(actions.nth(1)).toHaveAttribute('aria-label', /Switch to (light|dark) mode/);
+    await expect(actions.nth(2)).toHaveAttribute('aria-label', 'Settings');
+    await expect(actions.nth(3)).toHaveText('Logout');
   });
 
   test('Logout ends the session and returns to the login page', async ({ page }) => {

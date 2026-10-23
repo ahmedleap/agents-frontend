@@ -93,8 +93,8 @@
                     autocomplete="off"
                     placeholder="XXX-XX-XXXX">
                   <button type="button" class="reveal" (click)="showSsn.set(!showSsn())"
-                          [attr.aria-label]="showSsn() ? 'Hide SSN' : 'Show SSN'">
-                    {{ showSsn() ? 'Hide' : 'Show' }}
+                          [attr.aria-label]="showSsn() ? 'Hide SSN' : 'Show SSN'" [attr.aria-pressed]="showSsn()">
+                    <app-eye-icon [closed]="showSsn()" />
                   </button>
                 </span>
                 @if (form.controls.ssn.hasError('ssnInvalid')) {
@@ -117,15 +117,21 @@
                     autocomplete="new-password"
                     aria-describedby="pw-rules">
                   <button type="button" class="reveal" (click)="showPassword.set(!showPassword())"
-                          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
-                    {{ showPassword() ? 'Hide' : 'Show' }}
+                          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword()">
+                    <app-eye-icon [closed]="showPassword()" />
                   </button>
                 </span>
               </label>
 
               <label class="field a-confirm" [class.has-error]="mismatch">
                 <span>Confirm password <span class="req">*</span></span>
-                <input [type]="showPassword() ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password">
+                <span class="input-wrap">
+                  <input [type]="showConfirm() ? 'text' : 'password'" formControlName="confirmPassword" autocomplete="new-password">
+                  <button type="button" class="reveal" (click)="showConfirm.set(!showConfirm())"
+                          [attr.aria-label]="showConfirm() ? 'Hide confirm password' : 'Show confirm password'" [attr.aria-pressed]="showConfirm()">
+                    <app-eye-icon [closed]="showConfirm()" />
+                  </button>
+                </span>
                 @if (mismatch) { <small class="err">Passwords don't match</small> }
               </label>
 

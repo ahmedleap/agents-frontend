@@ -1,0 +1,45 @@
+// Same look as the chart range tabs in the order pop-up
+.filters {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  background: var(--pf-inset);
+  border: 1px solid var(--pf-border);
+  border-radius: 2px;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--pf-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover { color: var(--pf-accent); }
+  &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 1px; }
+
+  &.active {
+    background: var(--pf-card);
+    color: var(--pf-accent);
+    box-shadow: var(--pf-shadow);
+  }
+}
+
+.count {
+  min-width: 1.3rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--pf-active);
+  color: var(--pf-text);
+  font-size: 0.7rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

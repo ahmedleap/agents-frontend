@@ -1,0 +1,46 @@
+<div class="tools">
+  <div class="mode-toggle" role="group" aria-label="Chart type">
+    <button type="button" [class.active]="mode() === 'line'" [attr.aria-pressed]="mode() === 'line'" (click)="setMode('line')">Line</button>
+    <button type="button" [class.active]="mode() === 'candles'" [attr.aria-pressed]="mode() === 'candles'" (click)="setMode('candles')">Line + Candles</button>
+  </div>
+
+  @if (mode() === 'candles' && readout(); as c) {
+    <div class="readout" aria-live="polite">
+      @if (c.timestamp) { <span class="date">{{ c.timestamp | date: dateFormat() }}</span> }
+      <dl>
+      <div><dt>O</dt><dd>{{ c.open | currency }}</dd></div>
+      <div><dt>H</dt><dd>{{ c.high | currency }}</dd></div>
+      <div><dt>L</dt><dd>{{ c.low | currency }}</dd></div>
+      <div><dt>C</dt><dd [class.gain]="c.close >= c.open" [class.loss]="c.close < c.open">{{ c.close | currency }}</dd></div>
+      @if (hasVolume()) { <div><dt>V</dt><dd>{{ volumeLabel(c.volume) }}</dd></div> }
+      </dl>
+    </div>
+  }
+</div>
+
+<!-- One chart: the line, with the candles layered over it on the same price scale -->
+<div class="plot" [class.tall]="mode() === 'candles'">
+  <svg viewBox="0 0 100 48" preserveAspectRatio="none" role="img"
+       [attr.aria-label]="mode() === 'candles' ? 'Price history line chart with candlesticks' : 'Price history line chart'"
+       (mouseleave)="hovered.set(null)">
+    <!-- Hover strips first, so the highlight sits behind everything (volume, line and candles stay visible) -->
+    @if (mode() === 'candles') {
+      @for (c of candleShapes(); track $index) {
+        <rect class="slot" [class.hover]="hovered() === $index" [attr.x]="c.slotX" y="0" [attr.width]="c.slot" height="48" (mouseenter)="hovered.set($index)" />
+      }
+    }
+    <!-- Volume: shaded bars along the bottom, behind the price -->
+    @for (v of volumeBars(); track $index) {
+      <rect class="vol" [class.up]="v.up" [class.down]="!v.up" [attr.x]="v.x" [attr.y]="v.y" [attr.width]="v.width" [attr.height]="v.height" />
+    }
+    <polyline class="line" [class.under]="mode() === 'candles'" [attr.points]="linePoints()" fill="none" [attr.stroke]="color()" stroke-width="2.2" vector-effect="non-scaling-stroke" />
+    @if (mode() === 'candles') {
+      @for (c of candleShapes(); track $index) {
+        <g class="candle" [class.up]="c.up" [class.down]="!c.up">
+          <line [attr.x1]="c.x" [attr.x2]="c.x" [attr.y1]="c.highY" [attr.y2]="c.lowY" vector-effect="non-scaling-stroke" />
+          <rect class="body" [attr.x]="c.bodyX" [attr.y]="c.top" [attr.width]="c.bodyWidth" [attr.height]="c.height" />
+        </g>
+      }
+    }
+  </svg>
+</div>

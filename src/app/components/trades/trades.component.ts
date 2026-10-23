@@ -1,9 +1,9 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
+import { Observable, Subscription, catchError, concat, forkJoin, from, interval, map, mergeMap, of, switchMap, takeWhile } from 'rxjs';
 import { DestroyRef } from '@angular/core';
 import { AccountApiService } from '../../core/services/account-api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -11,6 +11,10 @@ import { AccountSummary, DashboardService } from '../../core/services/dashboard.
 import { OrderHistoryService } from '../../core/services/order-history.service';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
+import { ChartBar, ChartMode, PriceChartComponent } from '../price-chart/price-chart.component';
+import { AssetFilter, AssetFilterComponent, matchesAssetFilter } from '../asset-filter/asset-filter.component';
+import { WatchButtonComponent } from '../watch-button/watch-button.component';
+import { WatchlistService } from '../../core/services/watchlist.service';
 
 interface Instrument {
   instrumentId: string;
@@ -31,22 +35,28 @@ type Side = 'buy' | 'sell';
 type OrderType = 'market' | 'limit';
 type ChartRange = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL';
 
+/** How many cards load their market data at the same time; the rest wait their turn, top to bottom */
+const CARD_LOAD_CONCURRENCY = 3;
+
 @Component({
   selector: 'app-trades',
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe],
+  imports: [CurrencyPipe, DecimalPipe, PriceChartComponent, AssetFilterComponent, WatchButtonComponent],
   templateUrl: './trades.component.html',
   styleUrls: ['./trades.component.scss']
 })
 export class TradesComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-  private readonly accounts = inject(DashboardService).accounts;
+  private readonly dashboard = inject(DashboardService);
+  private readonly accounts = this.dashboard.accounts;
   private readonly accountApi = inject(AccountApiService);
   private readonly auth = inject(AuthService);
   private readonly tradingApi = inject(TradingApiService);
   private readonly portfolioApi = inject(PortfolioApiService);
   private readonly orderHistory = inject(OrderHistoryService);
+  /** Star buttons on the cards; failures show as a message on this page */
+  protected readonly watchlistError = inject(WatchlistService).error;
   private readonly route = inject(ActivatedRoute);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
@@ -106,13 +116,26 @@ export class TradesComponent {
     } : null;
   });
 
-  protected readonly account = computed(() => {
+  private readonly baseAccount = computed(() => {
     const accounts = this.selectableAccounts();
     const routeAccountId = this.accountIdParam();
     return accounts.find(account => account.id === routeAccountId)
       ?? this.routeAccount()
       ?? this.routeAccountFallback()
       ?? (routeAccountId ? undefined : accounts[0]);
+  });
+  private readonly accountId = computed(() => this.baseAccount()?.id);
+
+  /**
+   * Latest balances from GET /api/accounts/{id}/summary. The dashboard's account list is loaded once at
+   * login, so it goes stale after a trade; these are fetched when the account is opened and after every order.
+   */
+  private readonly latestBalances = signal<Record<string, { cashBalance: number; availableBalance: number }>>({});
+
+  protected readonly account = computed(() => {
+    const account = this.baseAccount();
+    const latest = account ? this.latestBalances()[account.id] : undefined;
+    return account && latest ? { ...account, ...latest } : account;
   });
   protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
   protected readonly searchQuery = signal('');
@@ -129,8 +152,13 @@ export class TradesComponent {
   protected readonly orderStatus = signal<'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED'>('PENDING');
   protected readonly chartRange = signal<ChartRange>('1M');
   protected readonly chartRanges: ChartRange[] = ['1D', '1W', '1M', '3M', '6M', '1Y', 'ALL'];
-  protected readonly chartPointsForOrder = signal<number[]>([]);
+  protected readonly chartBarsForOrder = signal<ChartBar[]>([]);
   protected readonly chartLoading = signal(false);
+  /** Line or candlesticks in the order pop-up; kept when switching instruments */
+  protected readonly chartMode = signal<ChartMode>('line');
+  /** The current instrument list or search request, and the card data being loaded for it */
+  private listRequest?: Subscription;
+  private cardRequests?: Subscription;
 
   protected readonly instruments = signal<Instrument[]>([]);
 
@@ -146,10 +174,39 @@ export class TradesComponent {
     return this.orderType() === 'limit' ? this.limitPrice() : instrument.price;
   });
 
-  protected readonly visibleInstruments = computed(() => this.instruments());
+  /** Stocks / crypto / forex filter; works on the full list and on search results */
+  protected readonly assetFilter = signal<AssetFilter>('ALL');
+  protected readonly assetCounts = computed(() => {
+    const instruments = this.instruments();
+    const count = (filter: AssetFilter) => instruments.filter(item => matchesAssetFilter(item.type, filter)).length;
+    return { ALL: instruments.length, STOCK: count('STOCK'), CRYPTO: count('CRYPTO'), FOREX: count('FOREX') };
+  });
+  protected readonly visibleInstruments = computed(() =>
+    this.instruments().filter(instrument => matchesAssetFilter(instrument.type, this.assetFilter())));
+  protected readonly assetFilterLabel = computed(() =>
+    ({ ALL: 'instruments', STOCK: 'stocks', CRYPTO: 'crypto', FOREX: 'forex pairs' })[this.assetFilter()]);
 
   constructor() {
     this.loadInstruments();
+
+    // Fresh balance whenever a different account is shown
+    effect(() => {
+      const accountId = this.accountId();
+      if (accountId) untracked(() => this.refreshBalance(accountId));
+    });
+  }
+
+  /** Re-reads the account's cash from the backend and shares it with the dashboard */
+  private refreshBalance(accountId: string): void {
+    this.accountApi.getAccountSummary(accountId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: summary => {
+        const balances = { cashBalance: summary.cashBalance, availableBalance: summary.availableBalance };
+        this.latestBalances.update(all => ({ ...all, [accountId]: balances }));
+        this.dashboard.updateBalances(accountId, balances.cashBalance, balances.availableBalance);
+      },
+      // Keep showing the last known balance
+      error: () => undefined
+    });
   }
 
   protected readonly canSubmit = computed(() => {
@@ -172,7 +229,8 @@ export class TradesComponent {
     this.confirmed.set(false);
     this.error.set(null);
     this.chartRange.set('1M');
-    this.chartPointsForOrder.set(instrument.points);
+    // The card's 1M closes until the full bars arrive
+    this.chartBarsForOrder.set(instrument.points.map(close => ({ close })));
     this.loadOrderChart(instrument, '1M');
     this.loadAvailableToSell(instrument);
     if (instrument.price > 0) return;
@@ -195,7 +253,8 @@ export class TradesComponent {
       return;
     }
     this.loading.set(true);
-    this.tradingApi.searchInstruments(query).subscribe({
+    this.listRequest?.unsubscribe();
+    this.listRequest = this.tradingApi.searchInstruments(query).subscribe({
       next: response => {
         this.hydrateInstruments(response.results ?? []);
       },
@@ -277,6 +336,8 @@ export class TradesComponent {
         this.submitting.set(false);
         this.orderStatus.set((_response.status as 'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED') || 'PENDING');
         this.orderHistory.refresh(accountId);
+        // The order changes the cash (or holds it while pending)
+        this.refreshBalance(accountId);
         this.confirmed.set(true);
         if (_response.orderId) this.watchOrder(_response.orderId, accountId);
       },
@@ -307,7 +368,8 @@ export class TradesComponent {
   private loadInstruments(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.tradingApi.listInstruments().subscribe({
+    this.listRequest?.unsubscribe();
+    this.listRequest = this.tradingApi.listInstruments().subscribe({
       next: response => this.hydrateInstruments(response.results ?? []),
       error: () => {
         this.instruments.set([]);
@@ -334,6 +396,8 @@ export class TradesComponent {
   }
 
   private hydrateInstruments(results: InstrumentSearchResult[]): void {
+    // A new list replaces the old one: stop loading the old cards
+    this.cardRequests?.unsubscribe();
     const instruments = results.map((result, index) => {
       const instrument = this.toInstrument(result, index);
       const withQuote = 'lastPrice' in result
@@ -350,39 +414,41 @@ export class TradesComponent {
     this.instruments.set(instruments);
     this.loading.set(false);
 
-    for (const instrument of instruments) {
-      if (!this.isTicker(instrument.symbol)) {
-        this.instruments.update(current => current.map(item => item.symbol === instrument.symbol
-          ? { ...item, priceState: 'unavailable' as const }
-          : item));
-        continue;
-      }
-
-      this.tradingApi.getInstrumentDetails(instrument.symbol).pipe(
-        map(details => details.name && details.name !== details.ticker
-          ? { ...instrument, name: details.name, type: details.assetClass }
-          : instrument),
-        catchError(() => of(instrument)),
-        switchMap(namedInstrument => this.loadInstrumentData(namedInstrument))
-      ).subscribe(updated => {
-        this.instruments.update(current => current.map(item => item.symbol === updated.symbol ? updated : item));
-      });
-    }
+    // Show every card straight away, then fill them in a few at a time from the top, so the first
+    // cards are ready quickly instead of every card waiting on every other card's requests
+    this.cardRequests = from(instruments).pipe(
+      mergeMap(instrument => this.isTicker(instrument.symbol)
+        ? this.loadCard(instrument)
+        : of({ ...instrument, priceState: 'unavailable' as const }), CARD_LOAD_CONCURRENCY),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(updated => {
+      this.instruments.update(current => current.map(item => item.symbol === updated.symbol ? updated : item));
+    });
   }
 
-  private loadInstrumentData(instrument: Instrument): Observable<Instrument> {
-    return this.tradingApi.getQuote(instrument.symbol).pipe(
-      map(quote => this.withQuote(instrument, quote)),
-      catchError(() => of(instrument)),
-      switchMap(quotedInstrument => forkJoin({
-        month: this.tradingApi.getHistory(quotedInstrument.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
-        day: this.tradingApi.getHistory(quotedInstrument.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
-      }).pipe(
-        map(({ month, day }) => {
-          const withChart = month ? this.withHistory(quotedInstrument, month) : quotedInstrument;
-          return day ? this.withDailyChange(withChart, day) : withChart;
-        }),
-        catchError(() => of(quotedInstrument))
+  /** One card's data: emits once with the name and price, then again with the 1M chart and 1D change */
+  private loadCard(instrument: Instrument): Observable<Instrument> {
+    return forkJoin({
+      details: this.tradingApi.getInstrumentDetails(instrument.symbol).pipe(catchError(() => of(null))),
+      quote: this.tradingApi.getQuote(instrument.symbol).pipe(catchError(() => of(null)))
+    }).pipe(
+      map(({ details, quote }) => {
+        const named = details?.name && details.name !== details.ticker
+          ? { ...instrument, name: details.name, type: details.assetClass }
+          : instrument;
+        return quote ? this.withQuote(named, quote) : named;
+      }),
+      switchMap(quoted => concat(
+        of(quoted),
+        forkJoin({
+          month: this.tradingApi.getHistory(quoted.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
+          day: this.tradingApi.getHistory(quoted.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
+        }).pipe(map(({ month, day }) => {
+          const withChart = month ? this.withHistory(quoted, month) : quoted;
+          const done = day ? this.withDailyChange(withChart, day) : withChart;
+          // Nothing came back with a price: stop showing "Loading price..."
+          return done.priceState === 'loading' ? { ...done, priceState: 'unavailable' as const } : done;
+        }))
       ))
     );
   }
@@ -441,10 +507,20 @@ export class TradesComponent {
     this.chartLoading.set(true);
     this.tradingApi.getHistory(instrument.symbol, range).subscribe({
       next: history => {
-        const points = history.bars
-          .map(bar => this.numberValue(bar.close))
-          .filter(price => price > 0);
-        if (points.length > 1) this.chartPointsForOrder.set(points);
+        // Ignore an answer for an instrument or range the user has already moved away from
+        if (this.selected()?.symbol !== instrument.symbol || this.chartRange() !== range) return;
+        // Full bars (open/high/low/close) so the chart can also draw candlesticks
+        const bars = history.bars
+          .map(bar => ({
+            timestamp: bar.timestamp,
+            open: this.numberValue(bar.open),
+            high: this.numberValue(bar.high),
+            low: this.numberValue(bar.low),
+            close: this.numberValue(bar.close),
+            volume: this.numberValue(bar.volume)
+          }))
+          .filter(bar => bar.close > 0);
+        if (bars.length > 1) this.chartBarsForOrder.set(bars);
         this.chartLoading.set(false);
       },
       error: () => this.chartLoading.set(false)
@@ -464,6 +540,8 @@ export class TradesComponent {
       if (!order || !this.isTerminalOrderStatus(order.status)) return;
       this.orderStatus.set(this.normalizeOrderStatus(order.status));
       this.orderHistory.refresh(accountId);
+      // Filled, cancelled or rejected: the cash has settled
+      this.refreshBalance(accountId);
     });
   }
 
@@ -482,7 +560,8 @@ export class TradesComponent {
   }
 
   private isTicker(value: string): boolean {
-    return /^[A-Z][A-Z0-9.\-]{0,9}$/.test(value);
+    // Stocks (AAPL, BRK.B), crypto (BTC, BTC-USD) and forex (EUR/USD, EURUSD=X)
+    return /^[A-Z][A-Z0-9.\-\/=]{0,11}$/.test(value);
   }
 
   private placeholderPoints(index: number): number[] {

@@ -14,6 +14,7 @@ import { AuthService, SignupRequest, SignupResponse } from '../../core/services/
 import { PortfolioSizeRange, RiskTolerance } from '../../core/services/client-api.service';
 import { RISK_OPTIONS, SIZE_OPTIONS } from '../../core/client-profile-options';
 import { AgreementDialogComponent } from '../agreement/agreement-dialog.component';
+import { EyeIconComponent } from '../eye-icon/eye-icon.component';
 
 // Same rules as agents-middleware validatePassword()
 const PASSWORD_RULES = [
@@ -66,7 +67,7 @@ const adultBirthDate: ValidatorFn = (c: AbstractControl): ValidationErrors | nul
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AgreementDialogComponent],
+  imports: [ReactiveFormsModule, RouterLink, AgreementDialogComponent, EyeIconComponent],
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss']
 })
@@ -103,6 +104,8 @@ export class SignupComponent {
   });
 
   protected readonly showPassword = signal(false);
+  /** Confirm password has its own eye */
+  protected readonly showConfirm = signal(false);
   protected readonly showSsn = signal(false);
   protected readonly created = signal<SignupResponse | null>(null);
   protected readonly isSubmitting = signal(false);
