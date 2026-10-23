@@ -75,6 +75,10 @@ export async function loginAsClient(page: Page, accounts: FakeAccount[]): Promis
   await page.route('**/api/accounts', route => route.request().method() === 'GET'
     ? route.fulfill({ json: accounts.map(listItem) })
     : route.fallback());
+  // Watchlist (GET /api/watchlists/{clientId}); empty unless a test fakes it
+  await page.route(`**/api/watchlists/${CLIENT_ID}`, route => route.request().method() === 'GET'
+    ? route.fulfill({ json: [] })
+    : route.fallback());
   for (const a of accounts) {
     await page.route(`**/api/portfolio/v1/${CLIENT_ID}/${a.accountId}`, route => route.fulfill({ json: portfolio(a) }));
     await page.route(`**/api/portfolio/v1/allocation/${CLIENT_ID}/${a.accountId}`, route => route.fulfill({ json: { industryBreakdown: [], assetClassBreakdown: [] } }));

@@ -12,6 +12,9 @@ import { OrderHistoryService } from '../../core/services/order-history.service';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
 import { ChartBar, ChartMode, PriceChartComponent } from '../price-chart/price-chart.component';
+import { AssetFilter, AssetFilterComponent, matchesAssetFilter } from '../asset-filter/asset-filter.component';
+import { WatchButtonComponent } from '../watch-button/watch-button.component';
+import { WatchlistService } from '../../core/services/watchlist.service';
 
 interface Instrument {
   instrumentId: string;
@@ -38,7 +41,7 @@ const CARD_LOAD_CONCURRENCY = 3;
 @Component({
   selector: 'app-trades',
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, PriceChartComponent],
+  imports: [CurrencyPipe, DecimalPipe, PriceChartComponent, AssetFilterComponent, WatchButtonComponent],
   templateUrl: './trades.component.html',
   styleUrls: ['./trades.component.scss']
 })
@@ -51,6 +54,8 @@ export class TradesComponent {
   private readonly tradingApi = inject(TradingApiService);
   private readonly portfolioApi = inject(PortfolioApiService);
   private readonly orderHistory = inject(OrderHistoryService);
+  /** Star buttons on the cards; failures show as a message on this page */
+  protected readonly watchlistError = inject(WatchlistService).error;
   private readonly route = inject(ActivatedRoute);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
@@ -155,7 +160,17 @@ export class TradesComponent {
     return this.orderType() === 'limit' ? this.limitPrice() : instrument.price;
   });
 
-  protected readonly visibleInstruments = computed(() => this.instruments());
+  /** Stocks / crypto / forex filter; works on the full list and on search results */
+  protected readonly assetFilter = signal<AssetFilter>('ALL');
+  protected readonly assetCounts = computed(() => {
+    const instruments = this.instruments();
+    const count = (filter: AssetFilter) => instruments.filter(item => matchesAssetFilter(item.type, filter)).length;
+    return { ALL: instruments.length, STOCK: count('STOCK'), CRYPTO: count('CRYPTO'), FOREX: count('FOREX') };
+  });
+  protected readonly visibleInstruments = computed(() =>
+    this.instruments().filter(instrument => matchesAssetFilter(instrument.type, this.assetFilter())));
+  protected readonly assetFilterLabel = computed(() =>
+    ({ ALL: 'instruments', STOCK: 'stocks', CRYPTO: 'crypto', FOREX: 'forex pairs' })[this.assetFilter()]);
 
   constructor() {
     this.loadInstruments();
@@ -507,7 +522,8 @@ export class TradesComponent {
   }
 
   private isTicker(value: string): boolean {
-    return /^[A-Z][A-Z0-9.\-]{0,9}$/.test(value);
+    // Stocks (AAPL, BRK.B), crypto (BTC, BTC-USD) and forex (EUR/USD, EURUSD=X)
+    return /^[A-Z][A-Z0-9.\-\/=]{0,11}$/.test(value);
   }
 
   private placeholderPoints(index: number): number[] {

@@ -1,0 +1,55 @@
+:host { display: inline-flex; }
+
+.star {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--pf-border);
+  border-radius: 2px;
+  background: var(--pf-card);
+  color: var(--pf-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+
+  &:hover { background: var(--pf-inset); color: var(--pf-accent); }
+  &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 1px; }
+  &:disabled { cursor: wait; opacity: 0.6; }
+
+  // On the watchlist: filled gold star
+  &.on {
+    color: #d99a00;
+    svg { fill: currentColor; }
+  }
+
+  // Hover label, like the header buttons
+  &::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 0.4rem);
+    right: 0;
+    z-index: 5;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    background: var(--pf-text);
+    color: var(--pf-card);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  &:hover::after,
+  &:focus-visible::after { opacity: 1; }
+}

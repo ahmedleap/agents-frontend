@@ -6,8 +6,10 @@ import {
   computed,
   effect,
   inject,
+  signal,
   viewChild
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import {
   CategoryScale,
@@ -20,8 +22,10 @@ import {
   Tooltip
 } from 'chart.js';
 
-import { DashboardService } from '../../core/services/dashboard.service';
+import { DashboardService, WatchItem } from '../../core/services/dashboard.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { TradingApiService } from '../../core/services/trading-api.service';
+import { WatchlistService } from '../../core/services/watchlist.service';
 
 // Register only what the line chart needs (keeps the bundle small).
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
@@ -45,7 +49,7 @@ const volumeFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumF
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
@@ -56,7 +60,28 @@ export class DashboardComponent {
   protected readonly asOf = new Date();
 
   protected readonly accounts = this.data.accounts;
-  protected readonly watchlist = computed(() => this.data.watchlist().slice(0, 3));
+  private readonly watchlistApi = inject(WatchlistService);
+  private readonly tradingApi = inject(TradingApiService);
+  /** Prices for watchlist entries the dashboard response didn't include (e.g. just added) */
+  private readonly quotes = signal<Record<string, Pick<WatchItem, 'price' | 'change' | 'changePct'>>>({});
+  private readonly quoteRequested = new Set<string>();
+
+  /** The live watchlist (so stars on the Trades page and removals here show straight away), with prices */
+  protected readonly watchlist = computed(() => {
+    const prices = new Map(this.data.watchlist().map(item => [item.ticker, item]));
+    const quotes = this.quotes();
+    return this.watchlistApi.entries().map(entry => ({
+      ...prices.get(entry.ticker),
+      ...quotes[entry.ticker],
+      instrumentId: entry.instrumentId,
+      ticker: entry.ticker,
+      name: entry.instrumentName
+    }));
+  });
+  protected readonly watchlistLoaded = this.watchlistApi.loaded;
+  protected readonly watchlistError = this.watchlistApi.error;
+  /** Edit mode shows a remove button on each watchlist row */
+  protected readonly editingWatchlist = signal(false);
   protected readonly trades = computed(() => this.data.trades().slice(0, 5));
   protected readonly movers = this.data.movers;
   protected readonly visibleMovers = computed(() => this.movers().slice(0, 3));
@@ -114,7 +139,49 @@ export class DashboardComponent {
       requestAnimationFrame(() => this.applyThemeColors());
     });
 
+    // Fetch a price for any watchlist entry that doesn't have one yet
+    effect(() => {
+      for (const item of this.watchlist()) {
+        if (item.price !== undefined || this.quoteRequested.has(item.ticker)) continue;
+        this.quoteRequested.add(item.ticker);
+        this.tradingApi.getQuote(item.ticker).subscribe({
+          next: quote => {
+            const price = Number(quote.lastPrice ?? quote.currentPrice ?? quote.midPrice);
+            const change = quote.priceChange ?? quote.dayChange;
+            const changePct = quote.priceChangePercent ?? quote.dayChangePercent;
+            this.quotes.update(all => ({
+              ...all,
+              [item.ticker]: {
+                price: Number.isFinite(price) && price > 0 ? price : undefined,
+                change: change === undefined ? undefined : Number(change),
+                changePct: changePct === undefined ? undefined : Number(changePct)
+              }
+            }));
+          },
+          error: () => undefined
+        });
+      }
+    });
+
+    // Nothing left to edit: leave edit mode
+    effect(() => {
+      if (!this.watchlist().length) this.editingWatchlist.set(false);
+    });
+
     inject(DestroyRef).onDestroy(() => this.chart?.destroy());
+  }
+
+  protected toggleWatchlistEdit(): void {
+    this.editingWatchlist.update(on => !on);
+  }
+
+  protected isRemoving(instrumentId: string): boolean {
+    return this.watchlistApi.isPending(instrumentId);
+  }
+
+  protected removeFromWatchlist(instrumentId: string): void {
+    // Failures show in the card (WatchlistService.error)
+    this.watchlistApi.remove(instrumentId).subscribe({ error: () => undefined });
   }
 
   private applyThemeColors(): void {

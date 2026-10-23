@@ -31,15 +31,19 @@
   <div class="search-row">
     <label class="search-field">
       <span class="search-icon" aria-hidden="true">&#9906;</span>
-      <input type="search" placeholder="Search stocks or ETFs" aria-label="Search stocks or ETFs" [value]="searchQuery()" (input)="onSearch($event)">
+      <input type="search" placeholder="Search stocks, crypto or forex" aria-label="Search stocks, crypto or forex" [value]="searchQuery()" (input)="onSearch($event)">
     </label>
-    <span class="result-count">{{ visibleInstruments().length }} instruments</span>
+    <span class="result-count">{{ visibleInstruments().length }} {{ assetFilterLabel() }}</span>
+    <app-asset-filter [(value)]="assetFilter" [counts]="assetCounts()" />
   </div>
 
   @if (loading()) {
     <p class="status-message">Searching instruments...</p>
   }
   @if (error(); as message) {
+    <p class="error-banner" role="alert">{{ message }}</p>
+  }
+  @if (watchlistError(); as message) {
     <p class="error-banner" role="alert">{{ message }}</p>
   }
 
@@ -54,7 +58,10 @@
               <span>{{ instrument.name }}</span>
             </div>
           </div>
-          <span class="exchange">{{ instrument.type }}</span>
+          <span class="exchange">
+            {{ instrument.type }}
+            <app-watch-button [instrumentId]="instrument.instrumentId" [ticker]="instrument.symbol" [name]="instrument.name" />
+          </span>
         </div>
 
         <div class="price-row">
@@ -87,8 +94,13 @@
           <strong>Loading instruments...</strong>
           <span>Getting the latest market list.</span>
         } @else {
-          <strong>No instruments found</strong>
-          <span>Try searching by ticker or company name.</span>
+          @if (assetFilter() !== 'ALL' && instruments().length) {
+            <strong>No {{ assetFilterLabel() }} found</strong>
+            <span>Try another type, or search by ticker or name.</span>
+          } @else {
+            <strong>No instruments found</strong>
+            <span>Try searching by ticker or company name.</span>
+          }
         }
       </div>
     }

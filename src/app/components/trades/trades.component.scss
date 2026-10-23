@@ -29,12 +29,13 @@
 .market-bar > div { display: flex; align-items: center; gap: .5rem; }
 .market-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--pf-gain); box-shadow: 0 0 0 3px var(--pf-buy-bg); }
 .muted, .updated, .status-message, .exchange { color: var(--pf-muted); }
-.search-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.exchange { display: flex; align-items: center; gap: .5rem; }
+.search-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; }
 .search-field { display: flex; align-items: center; width: min(100%, 25rem); border: 1px solid var(--pf-border); border-radius: 2px; background: var(--pf-card); }
 .search-field:focus-within { outline: 2px solid var(--pf-green); outline-offset: 1px; }
 .search-icon { padding-left: .8rem; color: var(--pf-muted); font-size: 1.25rem; transform: rotate(-20deg); }
 .search-field input { width: 100%; padding: 0.65rem 0.75rem; border: 0; outline: 0; background: transparent; color: var(--pf-text); font: inherit; font-size: 0.88rem; }
-.result-count { color: var(--pf-muted); font-size: 0.78rem; }
+.result-count { margin-left: auto; color: var(--pf-muted); font-size: 0.78rem; }
 .error-banner { padding: 0.7rem 0.9rem; border-left: 4px solid var(--pf-loss); background: var(--pf-warning-bg); color: var(--pf-loss); font-size: 0.82rem; }
 
 .instrument-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }

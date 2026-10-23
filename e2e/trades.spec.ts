@@ -35,12 +35,12 @@ async function fakeMarket(page: Page, delayMs = 0) {
     const ticker = new URL(route.request().url()).pathname.split('/').pop()!;
     return route.fulfill({ json: { ticker, name: `${ticker} Corporation`, assetClass: 'EQUITY' } });
   });
-  await page.route(/\/api\/instruments\/[A-Z]+\/quote$/, route => {
+  await page.route(/\/api\/instruments\/[^/]+\/quote$/, route => {
     const ticker = new URL(route.request().url()).pathname.split('/')[3];
     stats.quoteOrder.push(ticker);
     return track(ticker, () => route.fulfill({ json: { ticker, lastPrice: 110, priceChange: 2, priceChangePercent: 1.85 } }));
   });
-  await page.route(/\/api\/instruments\/[A-Z]+\/history/, route => route.fulfill({
+  await page.route(/\/api\/instruments\/[^/]+\/history/, route => route.fulfill({
     json: { ticker: 'X', period: '1M', barCount: bars.length, bars }
   }));
   return stats;
@@ -101,5 +101,50 @@ test.describe('Trades', () => {
     await dialog.getByRole('button', { name: 'Close order' }).click();
     await page.locator('.instrument-card').nth(1).getByRole('button', { name: /Trade/ }).click();
     await expect(page.getByRole('dialog').getByRole('img', { name: 'Price history line chart with candlesticks' })).toBeVisible();
+  });
+
+  test('filters the instruments by stocks, crypto or forex', async ({ page }) => {
+    await loginAsClient(page, [account]);
+    await fakeMarket(page);
+    const mixed = [
+      { ticker: 'AAPL', assetClass: 'STOCK' }, { ticker: 'MSFT', assetClass: 'STOCK' },
+      { ticker: 'BTC', assetClass: 'CRYPTO' }, { ticker: 'EUR/USD', assetClass: 'FOREX' }, { ticker: 'SPY', assetClass: 'ETF' }
+    ];
+    const results = mixed.map(m => ({ instrumentId: `id-${m.ticker}`, ticker: m.ticker, name: `${m.ticker} name`, assetClass: m.assetClass }));
+    await page.route('**/api/instruments', route => route.fulfill({ json: { results } }));
+    await page.route('**/api/instruments/search?**', route => route.fulfill({ json: { results: results.filter(r => r.ticker.includes('U')) } }));
+    // Details keep the asset class
+    await page.route(/\/api\/instruments\/[^/?]+$/, route => {
+      const ticker = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop()!);
+      return route.fulfill({ json: { ticker, name: `${ticker} name`, assetClass: mixed.find(m => m.ticker === ticker)?.assetClass ?? 'STOCK' } });
+    });
+    await page.goto(`/trades/${account.accountId}`);
+
+    const filters = page.getByRole('group', { name: 'Filter by asset type' });
+    const cards = page.locator('.instrument-card');
+    await expect(cards).toHaveCount(5);
+    await expect(filters.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
+    await expect(filters.getByRole('button', { name: /^Stocks/ })).toContainText('2');
+
+    await filters.getByRole('button', { name: /^Stocks/ }).click();
+    await expect(cards).toHaveCount(2);
+    await expect(page.locator('.result-count')).toHaveText('2 stocks');
+
+    await filters.getByRole('button', { name: /^Crypto/ }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText('BTC');
+
+    await filters.getByRole('button', { name: /^Forex/ }).click();
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText('EUR/USD');
+    // Forex symbols with a slash still get a price
+    await expect(cards.first()).toContainText('$110.00');
+
+    // The filter also applies to search results
+    await page.getByRole('searchbox', { name: /Search stocks, crypto or forex/ }).fill('U');
+    await expect(cards).toHaveCount(1);
+    await filters.getByRole('button', { name: /^Crypto/ }).click();
+    await expect(cards).toHaveCount(0);
+    await expect(page.locator('.empty-state')).toContainText('No crypto found');
   });
 });
