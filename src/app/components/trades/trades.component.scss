@@ -64,7 +64,7 @@
 .order-note p { margin-top: 0.15rem; font-size: 0.8rem; }
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 1rem; background: rgba(16, 30, 22, 0.48); }
-.order-modal { width: min(100%, 31rem); max-height: calc(100vh - 2rem); overflow: auto; padding: 1.5rem; border: 1px solid var(--pf-border); border-radius: 3px; background: var(--pf-card); box-shadow: 0 1rem 3rem rgba(0, 0, 0, .2); }
+.order-modal { width: min(100%, 38rem); max-height: calc(100vh - 2rem); overflow: auto; padding: 1.5rem; border: 1px solid var(--pf-border); border-radius: 3px; background: var(--pf-card); box-shadow: 0 1rem 3rem rgba(0, 0, 0, .2); }
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; }
 .modal-header h2 { margin-top: 0.25rem; font-family: 'Fredoka', 'Baloo 2', sans-serif; font-size: 1.65rem; font-weight: 600; }
 .close-button { border: 0; background: none; color: var(--pf-muted); font-size: 1rem; cursor: pointer; }
@@ -77,8 +77,6 @@
 .chart-range-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.2rem; margin-top: 0.4rem; padding: 0.2rem; background: var(--pf-inset); }
 .chart-range-tabs button { min-width: 0; padding: .35rem .15rem; border: 0; border-radius: 2px; background: transparent; color: var(--pf-muted); font: inherit; font-size: .68rem; font-weight: 700; cursor: pointer; }
 .chart-range-tabs button.active { background: var(--pf-card); color: var(--pf-accent); box-shadow: var(--pf-shadow); }
-.order-chart { height: 6rem; margin: 0.45rem 0 0.8rem; padding: 0.4rem 0; border-top: 1px solid var(--pf-border); border-bottom: 1px solid var(--pf-border); }
-.order-chart svg { width: 100%; height: 100%; overflow: visible; }
 .side-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; padding: 0.25rem; background: var(--pf-inset); }
 .side-toggle button { padding: 0.55rem; border: 0; border-radius: 2px; background: transparent; color: var(--pf-muted); font: inherit; font-weight: 700; cursor: pointer; }
 .side-toggle button.active { background: var(--pf-card); color: var(--pf-accent); box-shadow: var(--pf-shadow); }

@@ -11,6 +11,15 @@ async function freshToken(page: Page): Promise<string> {
   return `${encode({ alg: 'RS256', typ: 'JWT' })}.${encode(claims)}.test-signature`;
 }
 
+/** Lets the given number of seconds pass while the user keeps moving the mouse (so the idle logout doesn't fire) */
+async function passTimeWhileActive(page: Page, seconds: number): Promise<void> {
+  for (let done = 0; done < seconds; done += 30) {
+    await page.mouse.move(200 + (done / 30) % 2 * 40, 300);
+    await page.clock.fastForward(Math.min(30, seconds - done) * 1000);
+  }
+  await page.mouse.move(260, 320);
+}
+
 test.describe('Session timer', () => {
   test.beforeEach(async ({ page }) => {
     // Fake clock, so the tests can jump ahead instead of waiting 15 minutes
@@ -33,7 +42,7 @@ test.describe('Session timer', () => {
     const themeBox = await header.getByRole('button', { name: /Switch to (dark|light) mode/ }).boundingBox();
     expect(timerBox!.x).toBeLessThan(themeBox!.x);
 
-    await page.clock.fastForward('05:00');
+    await passTimeWhileActive(page, 5 * 60);
     await expect(timer).toContainText(/^(9|10):\d\d$/);
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
   });
@@ -46,7 +55,7 @@ test.describe('Session timer', () => {
       await route.fulfill({ json: { accessToken: await freshToken(page), refreshToken: 'test-refresh-token-2', expiresIn: 900 } });
     });
 
-    await page.clock.fastForward('14:05');
+    await passTimeWhileActive(page, 14 * 60 + 5);
     const dialog = page.getByRole('alertdialog', { name: 'Are you still there?' });
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText('you will be logged out');
@@ -67,9 +76,9 @@ test.describe('Session timer', () => {
       return route.fulfill({ json: { success: true } });
     });
 
-    await page.clock.fastForward('14:05');
+    await passTimeWhileActive(page, 14 * 60 + 5);
     await expect(page.getByRole('alertdialog')).toBeVisible();
-    await page.clock.fastForward('01:00');
+    await passTimeWhileActive(page, 60);
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
@@ -85,7 +94,7 @@ test.describe('Session timer', () => {
     await loginAsClient(page, accounts);
     await page.route('**/api/v1/auth/logout', route => route.fulfill({ json: { success: true } }));
 
-    await page.clock.fastForward('14:30');
+    await passTimeWhileActive(page, 14 * 60 + 30);
     await page.getByRole('alertdialog').getByRole('button', { name: 'Log out now' }).click();
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('timer')).toHaveCount(0);
@@ -95,8 +104,42 @@ test.describe('Session timer', () => {
     await loginAsClient(page, accounts);
     await page.route('**/api/v1/auth/refresh', route => route.fulfill({ status: 401, json: { message: 'Session expired' } }));
 
-    await page.clock.fastForward('14:30');
+    await passTimeWhileActive(page, 14 * 60 + 30);
     await page.getByRole('alertdialog').getByRole('button', { name: 'Refresh session' }).click();
     await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test('logs out after a minute with no activity on the screen', async ({ page }) => {
+    await loginAsClient(page, accounts);
+    let logoutBody: unknown;
+    await page.route('**/api/v1/auth/logout', route => {
+      logoutBody = route.request().postDataJSON();
+      return route.fulfill({ json: { success: true } });
+    });
+
+    await page.clock.fastForward('00:50');
+    await expect(page).toHaveURL(/\/home$/);
+    await page.clock.fastForward('00:15');
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('timer')).toHaveCount(0);
+    expect(logoutBody).toEqual({ clientId: CLIENT_ID, refreshToken: 'test-refresh-token' });
+  });
+
+  test('moving the mouse, typing or scrolling restarts the idle minute', async ({ page }) => {
+    await loginAsClient(page, accounts);
+
+    await page.clock.fastForward('00:50');
+    await page.mouse.move(300, 300);
+    await page.clock.fastForward('00:50');
+    await page.keyboard.press('Shift');
+    await page.clock.fastForward('00:50');
+    await page.mouse.wheel(0, 200);
+    // mouse.wheel doesn't wait for the browser to deliver the event; give it a moment before jumping ahead
+    await page.waitForTimeout(200);
+    await page.clock.fastForward('00:50');
+
+    // Over three minutes in, but never a full minute idle
+    await expect(page).toHaveURL(/\/home$/);
+    await expect(page.getByRole('timer')).toBeVisible();
   });
 });

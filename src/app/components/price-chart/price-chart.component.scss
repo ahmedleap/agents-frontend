@@ -1,0 +1,81 @@
+:host {
+  display: block;
+  margin: 0.45rem 0 0.8rem;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 1.9rem;
+}
+
+// Same look as the range tabs above it
+.mode-toggle {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  background: var(--pf-inset);
+
+  button {
+    padding: 0.3rem 0.7rem;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--pf-muted);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button.active {
+    background: var(--pf-card);
+    color: var(--pf-accent);
+    box-shadow: var(--pf-shadow);
+  }
+}
+
+// Open / high / low / close of the hovered (or latest) candle
+.readout {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.6rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+
+  dl { display: contents; }
+  div { display: flex; gap: 0.2rem; }
+  dt { color: var(--pf-muted); font-weight: 700; }
+  dd { color: var(--pf-text); font-weight: 700; }
+  .date { margin-right: 0.2rem; color: var(--pf-muted); font-weight: 700; }
+  .gain { color: var(--pf-gain); }
+  .loss { color: var(--pf-loss); }
+}
+
+.plot {
+  height: 6rem;
+  margin-top: 0.4rem;
+  padding: 0.4rem 0;
+  border-top: 1px solid var(--pf-border);
+  border-bottom: 1px solid var(--pf-border);
+
+  // Candles need more height to read
+  &.tall { height: 10rem; }
+
+  svg { display: block; width: 100%; height: 100%; overflow: visible; }
+}
+
+.up { color: var(--pf-gain); }
+.down { color: var(--pf-loss); }
+
+line { stroke: currentColor; stroke-width: 1; }
+.body { fill: currentColor; }
+.slot { fill: transparent; }
+.slot.hover { fill: var(--pf-inset); }
+// The line and candles let the mouse through to the full-height hover strips underneath
+.line, .candle { pointer-events: none; }
+// With candles over it, the line steps back so the candles read clearly
+.line.under { stroke-opacity: 0.45; }

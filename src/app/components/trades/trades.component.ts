@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, catchError, forkJoin, interval, map, of, switchMap, takeWhile } from 'rxjs';
+import { Observable, Subscription, catchError, concat, forkJoin, from, interval, map, mergeMap, of, switchMap, takeWhile } from 'rxjs';
 import { DestroyRef } from '@angular/core';
 import { AccountApiService } from '../../core/services/account-api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -11,6 +11,7 @@ import { AccountSummary, DashboardService } from '../../core/services/dashboard.
 import { OrderHistoryService } from '../../core/services/order-history.service';
 import { PortfolioApiService } from '../../core/services/portfolio-api.service';
 import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteDto, TradingApiService } from '../../core/services/trading-api.service';
+import { ChartBar, ChartMode, PriceChartComponent } from '../price-chart/price-chart.component';
 
 interface Instrument {
   instrumentId: string;
@@ -31,10 +32,13 @@ type Side = 'buy' | 'sell';
 type OrderType = 'market' | 'limit';
 type ChartRange = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL';
 
+/** How many cards load their market data at the same time; the rest wait their turn, top to bottom */
+const CARD_LOAD_CONCURRENCY = 3;
+
 @Component({
   selector: 'app-trades',
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe],
+  imports: [CurrencyPipe, DecimalPipe, PriceChartComponent],
   templateUrl: './trades.component.html',
   styleUrls: ['./trades.component.scss']
 })
@@ -129,8 +133,13 @@ export class TradesComponent {
   protected readonly orderStatus = signal<'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED'>('PENDING');
   protected readonly chartRange = signal<ChartRange>('1M');
   protected readonly chartRanges: ChartRange[] = ['1D', '1W', '1M', '3M', '6M', '1Y', 'ALL'];
-  protected readonly chartPointsForOrder = signal<number[]>([]);
+  protected readonly chartBarsForOrder = signal<ChartBar[]>([]);
   protected readonly chartLoading = signal(false);
+  /** Line or candlesticks in the order pop-up; kept when switching instruments */
+  protected readonly chartMode = signal<ChartMode>('line');
+  /** The current instrument list or search request, and the card data being loaded for it */
+  private listRequest?: Subscription;
+  private cardRequests?: Subscription;
 
   protected readonly instruments = signal<Instrument[]>([]);
 
@@ -172,7 +181,8 @@ export class TradesComponent {
     this.confirmed.set(false);
     this.error.set(null);
     this.chartRange.set('1M');
-    this.chartPointsForOrder.set(instrument.points);
+    // The card's 1M closes until the full bars arrive
+    this.chartBarsForOrder.set(instrument.points.map(close => ({ close })));
     this.loadOrderChart(instrument, '1M');
     this.loadAvailableToSell(instrument);
     if (instrument.price > 0) return;
@@ -195,7 +205,8 @@ export class TradesComponent {
       return;
     }
     this.loading.set(true);
-    this.tradingApi.searchInstruments(query).subscribe({
+    this.listRequest?.unsubscribe();
+    this.listRequest = this.tradingApi.searchInstruments(query).subscribe({
       next: response => {
         this.hydrateInstruments(response.results ?? []);
       },
@@ -307,7 +318,8 @@ export class TradesComponent {
   private loadInstruments(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.tradingApi.listInstruments().subscribe({
+    this.listRequest?.unsubscribe();
+    this.listRequest = this.tradingApi.listInstruments().subscribe({
       next: response => this.hydrateInstruments(response.results ?? []),
       error: () => {
         this.instruments.set([]);
@@ -334,6 +346,8 @@ export class TradesComponent {
   }
 
   private hydrateInstruments(results: InstrumentSearchResult[]): void {
+    // A new list replaces the old one: stop loading the old cards
+    this.cardRequests?.unsubscribe();
     const instruments = results.map((result, index) => {
       const instrument = this.toInstrument(result, index);
       const withQuote = 'lastPrice' in result
@@ -350,39 +364,41 @@ export class TradesComponent {
     this.instruments.set(instruments);
     this.loading.set(false);
 
-    for (const instrument of instruments) {
-      if (!this.isTicker(instrument.symbol)) {
-        this.instruments.update(current => current.map(item => item.symbol === instrument.symbol
-          ? { ...item, priceState: 'unavailable' as const }
-          : item));
-        continue;
-      }
-
-      this.tradingApi.getInstrumentDetails(instrument.symbol).pipe(
-        map(details => details.name && details.name !== details.ticker
-          ? { ...instrument, name: details.name, type: details.assetClass }
-          : instrument),
-        catchError(() => of(instrument)),
-        switchMap(namedInstrument => this.loadInstrumentData(namedInstrument))
-      ).subscribe(updated => {
-        this.instruments.update(current => current.map(item => item.symbol === updated.symbol ? updated : item));
-      });
-    }
+    // Show every card straight away, then fill them in a few at a time from the top, so the first
+    // cards are ready quickly instead of every card waiting on every other card's requests
+    this.cardRequests = from(instruments).pipe(
+      mergeMap(instrument => this.isTicker(instrument.symbol)
+        ? this.loadCard(instrument)
+        : of({ ...instrument, priceState: 'unavailable' as const }), CARD_LOAD_CONCURRENCY),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(updated => {
+      this.instruments.update(current => current.map(item => item.symbol === updated.symbol ? updated : item));
+    });
   }
 
-  private loadInstrumentData(instrument: Instrument): Observable<Instrument> {
-    return this.tradingApi.getQuote(instrument.symbol).pipe(
-      map(quote => this.withQuote(instrument, quote)),
-      catchError(() => of(instrument)),
-      switchMap(quotedInstrument => forkJoin({
-        month: this.tradingApi.getHistory(quotedInstrument.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
-        day: this.tradingApi.getHistory(quotedInstrument.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
-      }).pipe(
-        map(({ month, day }) => {
-          const withChart = month ? this.withHistory(quotedInstrument, month) : quotedInstrument;
-          return day ? this.withDailyChange(withChart, day) : withChart;
-        }),
-        catchError(() => of(quotedInstrument))
+  /** One card's data: emits once with the name and price, then again with the 1M chart and 1D change */
+  private loadCard(instrument: Instrument): Observable<Instrument> {
+    return forkJoin({
+      details: this.tradingApi.getInstrumentDetails(instrument.symbol).pipe(catchError(() => of(null))),
+      quote: this.tradingApi.getQuote(instrument.symbol).pipe(catchError(() => of(null)))
+    }).pipe(
+      map(({ details, quote }) => {
+        const named = details?.name && details.name !== details.ticker
+          ? { ...instrument, name: details.name, type: details.assetClass }
+          : instrument;
+        return quote ? this.withQuote(named, quote) : named;
+      }),
+      switchMap(quoted => concat(
+        of(quoted),
+        forkJoin({
+          month: this.tradingApi.getHistory(quoted.symbol, '1M').pipe(catchError(() => of(null as HistoryResponseDto | null))),
+          day: this.tradingApi.getHistory(quoted.symbol, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
+        }).pipe(map(({ month, day }) => {
+          const withChart = month ? this.withHistory(quoted, month) : quoted;
+          const done = day ? this.withDailyChange(withChart, day) : withChart;
+          // Nothing came back with a price: stop showing "Loading price..."
+          return done.priceState === 'loading' ? { ...done, priceState: 'unavailable' as const } : done;
+        }))
       ))
     );
   }
@@ -441,10 +457,19 @@ export class TradesComponent {
     this.chartLoading.set(true);
     this.tradingApi.getHistory(instrument.symbol, range).subscribe({
       next: history => {
-        const points = history.bars
-          .map(bar => this.numberValue(bar.close))
-          .filter(price => price > 0);
-        if (points.length > 1) this.chartPointsForOrder.set(points);
+        // Ignore an answer for an instrument or range the user has already moved away from
+        if (this.selected()?.symbol !== instrument.symbol || this.chartRange() !== range) return;
+        // Full bars (open/high/low/close) so the chart can also draw candlesticks
+        const bars = history.bars
+          .map(bar => ({
+            timestamp: bar.timestamp,
+            open: this.numberValue(bar.open),
+            high: this.numberValue(bar.high),
+            low: this.numberValue(bar.low),
+            close: this.numberValue(bar.close)
+          }))
+          .filter(bar => bar.close > 0);
+        if (bars.length > 1) this.chartBarsForOrder.set(bars);
         this.chartLoading.set(false);
       },
       error: () => this.chartLoading.set(false)

@@ -154,11 +154,7 @@
             <button type="button" [class.active]="chartRange() === range" (click)="setChartRange(range)">{{ range === 'ALL' ? 'All' : range }}</button>
           }
         </div>
-        <div class="order-chart" aria-label="Selected instrument price history">
-          <svg viewBox="0 0 100 48" preserveAspectRatio="none" role="img">
-            <polyline [attr.points]="chartPoints(chartPointsForOrder())" fill="none" [attr.stroke]="instrument.color" stroke-width="2.2" vector-effect="non-scaling-stroke" />
-          </svg>
-        </div>
+        <app-price-chart [bars]="chartBarsForOrder()" [color]="instrument.color" [(mode)]="chartMode" />
 
         <div class="side-toggle" role="group" aria-label="Order side">
           <button type="button" [class.active]="side() === 'buy'" (click)="setSide('buy')">Buy</button>
