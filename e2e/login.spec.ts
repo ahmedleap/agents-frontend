@@ -30,8 +30,8 @@ async function stubLogin(page: import('@playwright/test').Page, role: 'CLIENT' |
 
 test.describe('Login', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    // The app opens on the login page
+    await page.goto('/login');
+    // Login is available directly from the public landing page.
     await expect(page).toHaveURL(/\/login$/);
   });
 
