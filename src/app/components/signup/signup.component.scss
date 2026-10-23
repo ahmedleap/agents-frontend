@@ -203,25 +203,27 @@ fieldset {
   position: relative;
   display: block;
 
-  input { padding-right: 4rem; }
+  input { padding-right: 3rem; }
 }
 
+// Eye inside the box: open eye shows the text; it closes while the text is showing
 .reveal {
   position: absolute;
   top: 50%;
   right: 0.4rem;
   transform: translateY(-50%);
-  padding: 0.25rem 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
   border: 0;
-  border-radius: 2px;
+  border-radius: 4px;
   background: none;
-  color: var(--pf-accent);
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: var(--pf-muted);
   cursor: pointer;
 
-  &:hover { background: var(--pf-active); }
+  &:hover { background: var(--pf-active); color: var(--pf-accent); }
+  &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 1px; }
 }
 
 // Password checklist on one line under the two password boxes

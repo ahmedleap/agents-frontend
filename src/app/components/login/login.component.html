@@ -54,17 +54,12 @@
                 formControlName="password"
                 autocomplete="current-password">
               <button type="button" class="reveal" (click)="showPassword.set(!showPassword())"
-                      [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
-                {{ showPassword() ? 'Hide' : 'Show' }}
+                      [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword()">
+                <app-eye-icon [closed]="showPassword()" />
               </button>
             </span>
             @if (invalid('password')) { <small class="err">Enter your password</small> }
           </label>
-
-          <div class="row row-end">
-            <!-- TODO: password reset page -->
-            <a class="link" href="#" (click)="$event.preventDefault()">Forgot password?</a>
-          </div>
 
           <button type="submit" class="btn primary block" [disabled]="isAuthenticating()">
             {{ isAuthenticating() ? 'Signing in…' : 'Log in' }}

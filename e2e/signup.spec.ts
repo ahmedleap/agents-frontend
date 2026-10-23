@@ -199,3 +199,34 @@ test.describe('Account agreement page', () => {
     expect(AGREEMENT_VERSION).toBe(fileVersion);
   });
 });
+
+test.describe('Sign up password eyes', () => {
+  test('Password and Confirm password each have their own eye, which closes while the text shows', async ({ page }) => {
+    await page.goto('/signup');
+    const password = page.locator('input[formcontrolname="password"]');
+    const confirm = page.locator('input[formcontrolname="confirmPassword"]');
+    const showPassword = page.getByRole('button', { name: 'Show password', exact: true });
+    const showConfirm = page.getByRole('button', { name: 'Show confirm password' });
+
+    // Open eyes, text hidden
+    await expect(password).toHaveAttribute('type', 'password');
+    await expect(confirm).toHaveAttribute('type', 'password');
+    await expect(showPassword.locator('svg.open')).toBeVisible();
+
+    // Clicking shows only that box's text, and its eye closes
+    await showPassword.click();
+    await expect(password).toHaveAttribute('type', 'text');
+    await expect(confirm).toHaveAttribute('type', 'password');
+    const hidePassword = page.getByRole('button', { name: 'Hide password', exact: true });
+    await expect(hidePassword).toHaveAttribute('aria-pressed', 'true');
+    await expect(hidePassword.locator('svg.closed')).toBeVisible();
+
+    await showConfirm.click();
+    await expect(confirm).toHaveAttribute('type', 'text');
+
+    // And back again
+    await hidePassword.click();
+    await expect(password).toHaveAttribute('type', 'password');
+    await expect(showPassword.locator('svg.open')).toBeVisible();
+  });
+});
