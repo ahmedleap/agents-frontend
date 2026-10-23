@@ -47,6 +47,15 @@ const usdCompact = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1
 });
 const volumeFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
+const shortDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+/** The dashboard asks the backend for this many days of history (DashboardService: period=30D) */
+const HISTORY_DAYS = 30;
+
+/** Today as YYYY-MM-DD in the user's time zone, to match the backend's snapshot dates */
+function todayIso(): string {
+  return new Date().toLocaleDateString('en-CA');
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -97,6 +106,8 @@ export class DashboardComponent {
   protected readonly trades = computed(() => this.data.trades().slice(0, 5));
   protected readonly movers = this.data.movers;
   protected readonly visibleMovers = computed(() => this.movers().slice(0, 3));
+  protected readonly moversLoading = this.data.moversLoading;
+  protected readonly moversError = this.data.moversError;
   protected readonly loading = this.data.loading;
   protected readonly error = this.data.error;
 
@@ -111,16 +122,35 @@ export class DashboardComponent {
     };
   });
 
-  /** Total value of all accounts for each day, oldest first. */
-  protected readonly series = computed(() => {
-    return this.data.portfolioHistory();
+  protected readonly historyDays = HISTORY_DAYS;
+
+  /**
+   * Combined value for each day, oldest first: the backend's daily snapshots, ending with today's
+   * live total (snapshots are only recorded once a day, so today's is usually missing or out of date).
+   */
+  private readonly history = computed(() => {
+    const dates = this.data.labels();
+    const values = this.data.portfolioHistory();
+    const points = dates.map((date, i) => ({ date, value: values[i] }));
+    if (!this.loading() && this.accounts().length) {
+      const today = todayIso();
+      const live = { date: today, value: this.totals().value };
+      if (points.at(-1)?.date === today) points[points.length - 1] = live;
+      else points.push(live);
+    }
+    return points;
   });
 
+  /** Total value of all accounts for each day, oldest first. */
+  protected readonly series = computed(() => this.history().map(point => point.value));
+  private readonly chartLabels = computed(() => this.history().map(point => shortDate.format(new Date(point.date))));
+
+  /** Change over the period; null until there are at least two days to compare */
   protected readonly period = computed(() => {
     const s = this.series();
-    if (s.length < 2) return { change: 0, pct: 0, days: 0 };
+    if (s.length < 2 || !s[0]) return null;
     const change = s[s.length - 1] - s[0];
-    return { change, pct: (change / s[0]) * 100, days: s.length };
+    return { change, pct: (change / s[0]) * 100 };
   });
 
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('valueChart');
@@ -138,7 +168,7 @@ export class DashboardComponent {
     effect(() => {
       const data = this.series();
       if (!this.chart) return;
-      this.chart.data.labels = this.data.labels();
+      this.chart.data.labels = this.chartLabels();
       this.chart.data.datasets[0].data = data;
       this.chart.update();
     });
@@ -226,7 +256,7 @@ export class DashboardComponent {
     return new Chart(el, {
       type: 'line',
       data: {
-        labels: this.data.labels(),
+        labels: this.chartLabels(),
         datasets: [
           {
             label: 'Total value',

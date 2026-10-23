@@ -14,9 +14,10 @@ import { adminRoleGuard, analystRoleGuard, authGuard, clientRoleGuard, guestGuar
 // log in -> sign up (if they don't have an account) -> dashboard -> accounts from the sidebar
 export const routes: Routes = [
   {
-    // The app opens on the login page
+    // Public welcome page; authentication remains on /login.
     path: '',
-    redirectTo: 'login',
+    title: 'S.T.A.S.H. | Stash Your Cash',
+    loadComponent: () => import('./components/landing/landing.component').then(m => m.LandingComponent),
     pathMatch: 'full'
   },
 

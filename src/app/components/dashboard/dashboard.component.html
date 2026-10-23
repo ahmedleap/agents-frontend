@@ -28,15 +28,20 @@
           <div class="card-head">
             <div>
               <h3>Total Value, All Accounts</h3>
-              <p class="sub">Last {{ period().days }} days</p>
+              <p class="sub">Last {{ historyDays }} days</p>
             </div>
-            <strong [class.gain]="period().change >= 0" [class.loss]="period().change < 0">
-              {{ period().change >= 0 ? '+' : '' }}{{ period().change | currency }}
-              ({{ period().pct >= 0 ? '+' : '' }}{{ period().pct | number: '1.2-2' }}%)
-            </strong>
+            @if (period(); as p) {
+              <strong [class.gain]="p.change >= 0" [class.loss]="p.change < 0">
+                {{ p.change >= 0 ? '+' : '' }}{{ p.change | currency }}
+                ({{ p.pct >= 0 ? '+' : '' }}{{ p.pct | number: '1.2-2' }}%)
+              </strong>
+            }
           </div>
           <div class="chart-wrap">
             <canvas #valueChart role="img" aria-label="Line chart of combined account value by day"></canvas>
+            @if (!loading() && !period()) {
+              <p class="chart-empty">No value history yet. Your daily totals will show here as they're recorded.</p>
+            }
           </div>
         </div>
       </div>
@@ -113,16 +118,16 @@
             <div class="card-head"><h3>Market Movers</h3></div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Stock</th><th>Price</th><th>P/L</th><th class="mover-volume">Volume</th></tr></thead>
+                <thead><tr><th>Stock</th><th>Price</th><th>Change</th><th class="mover-volume">Volume</th></tr></thead>
                 <tbody>
                   @for (m of visibleMovers(); track m.ticker) {
                     <tr>
                       <td><span class="ticker"><span class="badge small">{{ m.ticker[0] }}</span><span class="ticker-text">{{ m.ticker }}<small>{{ m.name }}</small></span></span></td>
                       <td>{{ m.price | currency }}</td>
-                      <td [class.gain]="m.change >= 0" [class.loss]="m.change < 0">{{ m.change >= 0 ? '+' : '' }}{{ m.change | currency }} ({{ m.changePct >= 0 ? '+' : '' }}{{ m.changePct | number: '1.2-2' }}%)</td>
+                      <td [class.gain]="m.changePct >= 0" [class.loss]="m.changePct < 0">{{ m.changePct >= 0 ? '+' : '' }}{{ m.changePct | number: '1.2-2' }}%</td>
                       <td class="mover-volume">{{ m.volume !== undefined ? volume(m.volume) : '—' }}</td>
                     </tr>
-                  } @empty { <tr><td colspan="4" class="empty">No market data available.</td></tr> }
+                  } @empty { <tr><td colspan="4" class="empty">{{ moversLoading() ? 'Loading market movers...' : (moversError() ?? 'No market data available.') }}</td></tr> }
                 </tbody>
               </table>
             </div>

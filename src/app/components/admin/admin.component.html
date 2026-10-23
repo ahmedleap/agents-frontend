@@ -1,5 +1,5 @@
 <section class="page">
-  <div class="toolbar"><div><h2>Admin Console</h2><p>Read-only platform operations and analytics</p></div><div class="toolbar-actions"><span class="health" [class.down]="data.value()?.health?.status !== 'UP'"><i></i> Analytics {{ data.value()?.health?.status ?? 'unavailable' }}</span><button class="refresh" type="button" (click)="refresh()">↻ Refresh</button></div></div>
+  <div class="toolbar"><div><h2>Admin Console</h2><p>Read-only platform operations and analytics</p></div></div>
   <nav class="tabs" aria-label="Admin views">
     @for (tab of [['clients', 'Clients'], ['accounts', 'Accounts'], ['orders', 'Orders']]; track tab[0]) {<button type="button" [class.active]="view() === tab[0]" (click)="setView($any(tab[0]))">{{ tab[1] }}</button>}
   </nav>

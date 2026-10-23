@@ -1,7 +1,7 @@
 <div class="app-container">
   @if (appInitialized()) {
-    <header class="app-header">
-  <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to your home page">
+    <header class="app-header" [class.landing-header]="isLandingPage()">
+  <a class="logo-link" [routerLink]="isAuthPage() ? '/' : homeRoute()" aria-label="Go to your home page">
       <svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
         <g fill="#fff" stroke="#245a20" stroke-width="5" stroke-linejoin="round">
           <g transform="translate(94 102) rotate(-18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
@@ -42,7 +42,13 @@
           </svg>
         }
       </button>
-      @if (!isAuthPage()) {
+      @if (isLandingPage()) {
+        <a class="icon-btn login-link" routerLink="/login">Login</a>
+        <a class="icon-btn signup-link" routerLink="/signup">Sign up</a>
+      }
+
+      <!-- Settings is for clients' own details; analysts and admins don't get it -->
+      @if (!isAuthPage() && role() === 'CLIENT') {
         <a
           class="icon-btn tip"
           routerLink="/settings"
@@ -131,7 +137,7 @@
       </nav>
       }
 
-      <main class="app-main">
+      <main class="app-main" [class.landing-main]="isLandingPage()">
         <router-outlet></router-outlet>
       </main>
     </div>
