@@ -1,4 +1,13 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { AuthService } from './core/services/auth.service';
+/** Keep legacy dashboard links aligned with the signed-in user's home page. */
+const home = () => {
+  const auth = inject(AuthService);
+  if (!auth.isAuthenticated()) return '/login';
+  const role = auth.currentUser()?.role;
+  return role === 'ANALYST' ? '/analytics' : role === 'CLIENT' ? '/home' : '/admin';
+};
 import { adminRoleGuard, analystRoleGuard, authGuard, clientRoleGuard, guestGuard } from './core/auth/auth.guard';
 
 // Listed in the order a user moves through the app:
@@ -22,17 +31,29 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent)
   },
+  {
+    // Full Client Agreement, linked from the sign-up pop-up; readable without logging in
+    path: 'agreement',
+    loadComponent: () => import('./components/agreement/agreement.component').then(m => m.AgreementComponent)
+  },
 
   // ---------- App (after logging in) ----------
   {
-    path: 'client',
+    // A client's home page (their dashboard)
+    path: 'home',
     canActivate: [authGuard, clientRoleGuard],
     loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
   {
+    // Old address, kept so existing links and bookmarks still work
+    path: 'client',
+    redirectTo: 'home',
+    pathMatch: 'full'
+  },
+  {
     path: 'dashboard',
-    canActivate: [authGuard, analystRoleGuard],
-    loadComponent: () => import('./components/analyst-dashboard/analyst-dashboard.component').then(m => m.AnalystDashboardComponent)
+    redirectTo: home,
+    pathMatch: 'full'
   },
   {
     path: 'admin',
@@ -42,7 +63,7 @@ export const routes: Routes = [
   {
     // There is no combined all-accounts view; pick an account from the sidebar
     path: 'portfolio',
-    redirectTo: 'client',
+    redirectTo: 'home',
     pathMatch: 'full'
   },
   {
@@ -86,6 +107,18 @@ export const routes: Routes = [
     path: 'transactions/:accountId',
     canActivate: [authGuard, clientRoleGuard],
     loadComponent: () => import('./components/transactions/transactions.component').then(m => m.TransactionsComponent)
+  },
+  {
+    path: 'news',
+    canActivate: [authGuard, clientRoleGuard],
+    loadComponent: () => import('./components/news/news.component').then(m => m.NewsComponent)
+  },
+  {
+    // Only analysts get here; their sidebar shows just this page
+    path: 'analytics',
+    canActivate: [authGuard, analystRoleGuard],
+    loadComponent: () =>
+      import('./components/analytics/analytics.component').then(m => m.AnalyticsComponent)
   },
   {
     // Header > gear

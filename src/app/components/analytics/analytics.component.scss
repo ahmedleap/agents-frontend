@@ -45,6 +45,10 @@
   color: var(--pf-muted);
 }
 
+.page > .date-selector {
+  align-self: flex-end;
+}
+
 .segmented, .custom-range input {
   border: 1px solid var(--pf-border);
   border-radius: 6px;

@@ -1,10 +1,12 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
-import { DashboardService } from '../../core/services/dashboard.service';
+import { catchError, map, of, switchMap } from 'rxjs';
+import { AccountApiService } from '../../core/services/account-api.service';
+import { ActivityAccountsService } from '../../core/services/activity-accounts.service';
 import { TransactionService } from '../../core/services/transaction.service';
+import { downloadCsv } from '../../core/utils/csv-export';
 
 type SortKey = 'createdAt' | 'amount' | 'type';
 type TransactionAction = 'DEPOSIT' | 'WITHDRAWAL';
@@ -12,14 +14,17 @@ type TransactionAction = 'DEPOSIT' | 'WITHDRAWAL';
 @Component({
   selector: 'app-transactions',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe],
+  imports: [CurrencyPipe],
   templateUrl: './transactions.component.html',
   styleUrls: ['./transactions.component.scss']
 })
 export class TransactionsComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly accounts = inject(DashboardService).accounts;
+  private readonly activityAccounts = inject(ActivityAccountsService);
+  protected readonly accounts = this.activityAccounts.accounts;
+  protected readonly accountsError = this.activityAccounts.error;
+  private readonly accountApi = inject(AccountApiService);
   private readonly transactionService = inject(TransactionService);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
@@ -28,19 +33,34 @@ export class TransactionsComponent {
 
   protected readonly accountId = computed(() => {
     const accountId = this.accountIdParam();
-    return this.accounts().find(account => account.id === accountId)?.id ?? this.accounts()[0]?.id ?? '';
+    return accountId || this.accounts()[0]?.id || '';
   });
   protected readonly account = computed(() => this.accounts().find(account => account.id === this.accountId()));
   protected readonly transactions = computed(() => this.transactionService.transactionsForAccount(this.accountId()));
-  protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
+  private readonly accountSummary = toSignal(toObservable(this.accountId).pipe(
+    switchMap(accountId => accountId
+      ? this.accountApi.getAccountSummary(accountId).pipe(
+          catchError(() => of(null)),
+          map(summary => ({ accountId, summary }))
+        )
+      : of(null))
+  ), { initialValue: null });
+  protected readonly cashBalance = computed(() => {
+    const summary = this.accountSummary();
+    return this.transactionService.balanceForAccount(this.accountId(),
+      summary?.accountId === this.accountId() ? summary.summary?.availableBalance ?? 0 : 0);
+  });
+  protected readonly depositCount = computed(() => this.transactions().filter(transaction => transaction.txnType === 'DEPOSIT').length);
+  protected readonly withdrawalCount = computed(() => this.transactions().filter(transaction => transaction.txnType === 'WITHDRAWAL').length);
   protected readonly query = signal('');
   protected readonly sortBy = signal<SortKey>('createdAt');
   protected readonly sortDescending = signal(true);
   protected readonly showDepositForm = signal(false);
+  protected readonly showConfirmation = signal(false);
   protected readonly transactionAction = signal<TransactionAction>('DEPOSIT');
   protected readonly depositAmount = signal(0);
   protected readonly canSubmitTransaction = computed(() =>
-    this.depositAmount() > 0 && (this.transactionAction() === 'DEPOSIT' || this.depositAmount() <= this.cashBalance())
+    !!this.accountId() && this.depositAmount() > 0 && (this.transactionAction() === 'DEPOSIT' || this.depositAmount() <= this.cashBalance())
   );
 
   protected readonly visibleTransactions = computed(() => {
@@ -81,13 +101,47 @@ export class TransactionsComponent {
   protected setTransactionAction(action: TransactionAction): void {
     this.transactionAction.set(action);
     this.depositAmount.set(0);
+    this.showConfirmation.set(false);
   }
 
   protected addCash(): void {
-    const amount = this.depositAmount();
     if (!this.canSubmitTransaction()) return;
-    this.transactionService.addTransaction(this.accountId(), this.transactionAction(), amount);
+    this.showConfirmation.set(true);
+  }
+
+  protected confirmCashTransaction(): void {
+    if (!this.canSubmitTransaction()) return;
+    this.transactionService.addTransaction(this.accountId(), this.transactionAction(), this.depositAmount());
     this.depositAmount.set(0);
+    this.showConfirmation.set(false);
     this.showDepositForm.set(false);
+  }
+
+  protected cancelCashConfirmation(): void {
+    this.showConfirmation.set(false);
+  }
+
+  protected exportTransactions(): void {
+    const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    downloadCsv(
+      `transactions-${this.account()?.name ?? 'account'}.csv`.replace(/[^a-z0-9._-]+/gi, '-'),
+      ['Transaction ID', 'Account', 'Type', 'Amount', 'Created'],
+      this.visibleTransactions().map(transaction => [
+        transaction.transactionId,
+        this.account()?.name ?? '',
+        transaction.txnType,
+        currency.format(transaction.amount),
+        this.centralTime(transaction.createdAt)
+      ])
+    );
+  }
+
+  protected centralTime(value: string): string {
+    const timestamp = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : `${value}Z`;
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(timestamp));
   }
 }

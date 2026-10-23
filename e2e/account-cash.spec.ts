@@ -1,11 +1,11 @@
-import { expect, Page, test } from '@playwright/test';
-import { environment } from '../src/environments/environment';
+import type { Page } from '@playwright/test';
+import { CLIENT_ID, expect, loginAsClient, test } from './helpers';
 
-// Same client the app uses until real login exists
-const CLIENT_ID = environment.devClientId;
 const ACCOUNT_ID = '11111111-2222-4333-8444-555555555555';
+const ACCOUNT = { accountId: ACCOUNT_ID, name: 'Roth IRA' };
 
-// Fake backend responses so this runs without agents-backend
+// Fake backend responses so this runs without agents-backend. Registered after loginAsClient,
+// so these take priority over the helper's default account fakes.
 async function mockAccount(page: Page, summary: { status: number; json?: unknown }) {
   await page.route(`**/api/portfolio/v1/${CLIENT_ID}/${ACCOUNT_ID}`, route => route.fulfill({
     json: {
@@ -21,6 +21,7 @@ async function mockAccount(page: Page, summary: { status: number; json?: unknown
 
 test.describe('Account cash balance', () => {
   test('shows how much cash the account has', async ({ page }) => {
+    await loginAsClient(page, [ACCOUNT]);
     await mockAccount(page, {
       status: 200,
       json: { cashBalance: 2500.5, availableBalance: 2000, holdingsValue: 0, totalValue: 2500.5, summaryDate: new Date().toISOString() }
@@ -35,6 +36,7 @@ test.describe('Account cash balance', () => {
   });
 
   test('still shows the portfolio if the cash balance fails to load', async ({ page }) => {
+    await loginAsClient(page, [ACCOUNT]);
     await mockAccount(page, { status: 500 });
 
     await page.goto(`/portfolio/${ACCOUNT_ID}`);

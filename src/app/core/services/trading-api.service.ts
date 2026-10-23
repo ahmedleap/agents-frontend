@@ -10,6 +10,34 @@ export interface InstrumentSearchResult {
   industry?: string;
 }
 
+export interface InstrumentWithQuoteDto extends InstrumentSearchResult {
+  bid?: number;
+  ask?: number;
+  lastPrice?: number;
+  priceChange?: number;
+  priceChangePercent?: number;
+  timestamp?: string;
+  stale?: boolean;
+}
+
+export interface InstrumentDetailDto {
+  ticker: string;
+  name: string;
+  assetClass: string;
+  industry?: string;
+}
+
+export interface NewsItemDto {
+  title: string;
+  link: string;
+  publishedAt: string;
+  description: string;
+  guid: string;
+  source: string;
+  relevanceScore: number;
+  imageUrl: string;
+}
+
 export interface QuoteDto {
   ticker: string;
   bid?: number;
@@ -74,6 +102,13 @@ export interface CreateOrderResponse {
   message?: string;
 }
 
+export interface CancelOrderResponse {
+  orderId: string;
+  status: 'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED';
+  cancelledAt?: string;
+  message?: string;
+}
+
 export interface OrderSummaryDto {
   orderId: string;
   accountId: string;
@@ -90,6 +125,9 @@ export interface OrderSummaryDto {
 
 export interface OrderDetailDto extends OrderSummaryDto {
   createdAt: string;
+  filledAt?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
   instrument?: { ticker?: string; name?: string };
 }
 
@@ -105,6 +143,18 @@ export class TradingApiService {
 
   listInstruments(): Observable<{ results: InstrumentSearchResult[] }> {
     return this.api.get<{ results: InstrumentSearchResult[] }>('instruments');
+  }
+
+  listInstrumentsWithQuotes(): Observable<InstrumentWithQuoteDto[]> {
+    return this.api.get<InstrumentWithQuoteDto[]>('instruments/with-quotes');
+  }
+
+  getInstrumentDetails(ticker: string): Observable<InstrumentDetailDto> {
+    return this.api.get<InstrumentDetailDto>(`instruments/${encodeURIComponent(ticker)}`);
+  }
+
+  getNews(ticker: string, limit = 10, sort: 'latest' | 'popular' = 'latest'): Observable<NewsItemDto[]> {
+    return this.api.get<NewsItemDto[]>('news', { params: { ticker, limit, sort } });
   }
 
   getQuote(ticker: string): Observable<QuoteDto> {
@@ -127,5 +177,12 @@ export class TradingApiService {
 
   getOrder(orderId: string): Observable<OrderDetailDto> {
     return this.api.get<OrderDetailDto>(`v1/orders/${encodeURIComponent(orderId)}`);
+  }
+
+  cancelOrder(orderId: string, cancellationReason = 'Cancelled by customer'): Observable<CancelOrderResponse> {
+    return this.api.delete<CancelOrderResponse>(`v1/orders/${encodeURIComponent(orderId)}`, undefined, {
+      orderId,
+      cancellationReason
+    });
   }
 }

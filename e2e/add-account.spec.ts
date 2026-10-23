@@ -1,15 +1,12 @@
-import { expect, test } from '@playwright/test';
-import { environment } from '../src/environments/environment';
+import { CLIENT_ID, expect, loginAsClient, test } from './helpers';
 
-// Same client the app uses until real login exists
-const DEV_CLIENT_ID = environment.devClientId;
 const NEW_ACCOUNT_ID = '11111111-2222-4333-8444-555555555555';
 
 // The POST is answered by a fake backend here, so this runs without agents-backend.
-// e2e/backend.spec.ts covers the real connection.
+// The app pages need a logged-in client, so each test logs in with the fake login from helpers.ts.
 test.describe('Add account', () => {
   test('plus button shows "Add account" on hover and opens the page', async ({ page }) => {
-    await page.goto('/dashboard');
+    await loginAsClient(page, []);
     const plus = page.getByRole('link', { name: 'Add account' });
 
     await plus.hover();
@@ -29,17 +26,18 @@ test.describe('Add account', () => {
       sent = route.request().postDataJSON();
       await route.fulfill({
         status: 201,
-        json: { accountId: NEW_ACCOUNT_ID, clientId: DEV_CLIENT_ID, name: 'Roth IRA', cashBalance: 2500.5, status: 'ACTIVE', openDate: new Date().toISOString() }
+        json: { accountId: NEW_ACCOUNT_ID, clientId: CLIENT_ID, name: 'Roth IRA', cashBalance: 2500.5, status: 'ACTIVE', openDate: new Date().toISOString() }
       });
     });
 
+    await loginAsClient(page, []);
     await page.goto('/accounts/new');
     await page.getByLabel('Account name').fill('  Roth IRA ');
     await page.getByLabel('Initial deposit').fill('2500.50');
     await page.getByLabel('Initial deposit').press('Enter');
 
     await expect(page).toHaveURL(new RegExp(`/portfolio/${NEW_ACCOUNT_ID}$`));
-    expect(sent).toEqual({ clientId: DEV_CLIENT_ID, name: 'Roth IRA', initialCashBalance: 2500.5 });
+    expect(sent).toEqual({ clientId: CLIENT_ID, name: 'Roth IRA', initialCashBalance: 2500.5 });
   });
 
   test('does not submit without a name and a positive deposit', async ({ page }) => {
@@ -49,6 +47,7 @@ test.describe('Add account', () => {
       return route.fallback();
     });
 
+    await loginAsClient(page, []);
     await page.goto('/accounts/new');
     await page.getByLabel('Initial deposit').fill('0');
     await page.getByLabel('Initial deposit').press('Enter');
@@ -64,6 +63,7 @@ test.describe('Add account', () => {
         ? route.fulfill({ status: 400, json: { message: 'Client not found' } })
         : route.fallback());
 
+    await loginAsClient(page, []);
     await page.goto('/accounts/new');
     await page.getByLabel('Account name').fill('HSA');
     await page.getByLabel('Initial deposit').fill('100');

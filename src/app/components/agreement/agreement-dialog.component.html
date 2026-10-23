@@ -1,0 +1,38 @@
+<dialog #dialog class="agreement-dialog" aria-labelledby="agreement-title" aria-describedby="agreement-intro">
+  <form class="body" (submit)="$event.preventDefault(); accept()">
+    <header>
+      <h2 id="agreement-title">{{ title }}</h2>
+      <p id="agreement-intro" class="muted">Before we create your account, please confirm you understand what you're agreeing to.</p>
+    </header>
+
+    <ul class="summary">
+      @for (point of summary; track point.text) {
+        <li>{{ point.text }} <span class="ref">(&sect;{{ point.section }})</span></li>
+      }
+    </ul>
+
+    <p class="full-link">
+      These are highlights only. Please read the full
+      <!-- click covers mouse and keyboard; auxclick covers middle-click -->
+      <a [href]="url" target="_blank" rel="noopener" (click)="openedAgreement.set(true)" (auxclick)="openedAgreement.set(true)">{{ title }}
+        <span class="sr-only">(opens in a new tab)</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>
+      </a>
+      <span class="version">(version {{ version }})</span>.
+    </p>
+
+    <label class="consent" [class.checked]="agreed()" [class.locked]="!openedAgreement()">
+      <input type="checkbox" [checked]="agreed()" [disabled]="!openedAgreement()"
+             aria-describedby="consent-hint" (change)="agreed.set($any($event.target).checked)">
+      <span>I have read and agree to the {{ title }}, including binding arbitration of disputes, and I understand I could lose money trading.</span>
+    </label>
+    @if (!openedAgreement()) {
+      <p id="consent-hint" class="hint" role="status">Open the {{ title }} above before you can agree.</p>
+    }
+
+    <div class="actions">
+      <button type="button" class="btn ghost" (click)="close()">Cancel</button>
+      <button type="submit" class="btn primary" [disabled]="!agreed()">Agree and create account</button>
+    </div>
+  </form>
+</dialog>

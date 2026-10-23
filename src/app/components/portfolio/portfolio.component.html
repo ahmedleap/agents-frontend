@@ -1,12 +1,42 @@
 <section class="page">
   <div class="toolbar">
-    <div>
-      <h2>{{ account() }}</h2>
-      <p>Portfolio</p>
+    <div class="title">
+      <p class="eyebrow">PORTFOLIO</p>
+      @if (renaming()) {
+        <form class="rename" (submit)="$event.preventDefault(); saveRename()">
+          <label class="sr-only" for="rename-input">Account name</label>
+          <input
+            id="rename-input"
+            [value]="renameDraft()"
+            (input)="renameDraft.set($any($event.target).value)"
+            (keydown.escape)="cancelRename()"
+            maxlength="100"
+            autocomplete="off"
+            [attr.aria-invalid]="!!renameError() || !!renameDuplicate()"
+            [disabled]="renameSaving()">
+          <button type="submit" class="rename-save" [disabled]="renameSaving() || !!renameDuplicate()">{{ renameSaving() ? 'Saving…' : 'Save' }}</button>
+          <button type="button" class="rename-cancel" (click)="cancelRename()" [disabled]="renameSaving()">Cancel</button>
+        </form>
+      } @else {
+        <h2>
+          {{ account() }}
+          @if (canRename()) {
+            <button type="button" class="rename-btn" (click)="startRename()" aria-label="Rename account" title="Rename account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg>
+            </button>
+          }
+        </h2>
+      }
+      @if (renaming() && renameDuplicate(); as existing) {
+        <p class="rename-error" role="alert">You already have an account called "{{ existing.name }}". Choose a different name.</p>
+      } @else if (renameError(); as message) {
+        <p class="rename-error" role="alert">{{ message }}</p>
+      }
+      <p class="intro">Holdings, allocation and cash for this account.</p>
     </div>
     <div class="toolbar-actions">
       <span class="asof">As of {{ asOf | date: 'MMM d, y, h:mm a' }}</span>
-      <a class="trade-link" [routerLink]="['/trades', accountId()]">Place a trade <span aria-hidden="true">&#8594;</span></a>
+      <a class="trade-link" [routerLink]="['/trades', accountId()]" [queryParams]="{ accountName: account() }">Place a trade <span aria-hidden="true">&#8594;</span></a>
     </div>
   </div>
 
@@ -88,7 +118,10 @@
 
   <div class="card holdings">
     <div class="holdings-head">
-      <h3>Holdings</h3>
+      <div>
+        <h3>Holdings</h3>
+        <p class="caption">Stocks held in this account</p>
+      </div>
       <div class="controls">
         <input type="search" placeholder="Search holdings..." (input)="onSearch($event)" aria-label="Search holdings">
         <select (change)="onSort($event)" aria-label="Sort holdings">

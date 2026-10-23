@@ -2,6 +2,7 @@ import { Injectable, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PortfolioSizeRange, RiskTolerance } from './client-api.service';
 
 export type UserRole = 'CLIENT' | 'ADMIN' | 'ANALYST';
 
@@ -31,10 +32,13 @@ export interface SignupRequest {
   email: string;
   password: string;
   firstName: string;
+  /** Optional; leave out when blank */
+  middleName?: string;
   lastName: string;
   dateOfBirth: string;
   ssn: string;
-  phoneNumber?: string;
+  riskTolerance: RiskTolerance;
+  portfolioSizeRange: PortfolioSizeRange;
   country?: string;
 }
 
@@ -123,16 +127,9 @@ export class AuthService {
     const loginPath = accountType === 'staff' ? 'auth/admin/login' : 'auth/login';
     return this.http.post<LoginResponse>(`${environment.middlewareUrl}/${loginPath}`, { email, password }).pipe(
       tap(response => {
-        const claims = decodeClaims(response.accessToken);
-        if (!response.accessToken || !claims || claims.sub !== response.user?.clientId
-          || claims.email !== response.user?.email || !isRole(claims.role)
-          || claims.role !== response.user?.role
-          || !Number.isFinite(claims.exp) || claims.exp * 1000 <= Date.now()) {
-          throw new Error('The backend returned an invalid or expired login token.');
-        }
         this.accessToken.set(response.accessToken);
         this.refreshToken.set(response.refreshToken);
-        this.currentUserState.set({ ...response.user, role: claims.role });
+        this.currentUserState.set(response.user);
         this.persistSession();
       }),
       catchError(error => {
@@ -214,7 +211,24 @@ export class AuthService {
    * Get current access token
    */
   getToken(): string | null {
-    return this.accessToken();
+    return this.accessToken() ?? this.readStoredToken();
+  }
+
+  private readStoredToken(): string | null {
+    return localStorage.getItem('access_token')
+      ?? localStorage.getItem('accessToken')
+      ?? localStorage.getItem('token');
+  }
+
+  private readTokenClaims(): { role?: unknown; roles?: unknown } | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    } catch {
+      return null;
+    }
   }
 
   /**

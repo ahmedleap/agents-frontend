@@ -8,7 +8,7 @@ import { PortfolioApiService } from './core/services/portfolio-api.service';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
 
-const isAuthUrl = (url: string) => /^\/(login|signup)(\/|\?|#|$)/.test(url);
+const isAuthUrl = (url: string) => /^\/(login|signup|agreement)(\/|\?|#|$)/.test(url);
 
 @Component({
   selector: 'app-root',
@@ -59,8 +59,8 @@ export class AppComponent {
 
   protected readonly accountsOpen = signal(false);
   protected readonly role = computed(() => this.auth.currentUser()?.role ?? null);
-  protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/client'
-    : this.role() === 'ADMIN' ? '/admin' : '/dashboard');
+  protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/home'
+    : this.role() === 'ADMIN' ? '/admin' : '/analytics');
   protected readonly theme = inject(ThemeService);
   // Full-width pages with no sidebar (log in, sign up). Seeded from the URL so the
   // sidebar doesn't flash on a direct load before the first navigation finishes.

@@ -51,9 +51,9 @@ export class LoginComponent {
     this.auth.login(body.email, body.password, this.accountType()).subscribe({
       next: () => {
         const role = this.auth.currentUser()?.role;
-        const destination = role === 'CLIENT' ? '/client'
+        const destination = role === 'CLIENT' ? '/home'
           : role === 'ADMIN' ? '/admin'
-          : '/dashboard';
+          : '/analytics';
         void this.router.navigateByUrl(destination);
       },
       error: (error: unknown) => {

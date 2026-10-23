@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
-import { Observable, catchError, forkJoin, of } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of } from 'rxjs';
 import { format, parseISO, startOfMonth, startOfWeek, subDays } from 'date-fns';
 import {
   CategoryScale,
@@ -28,15 +28,15 @@ import {
   AnalyticsService,
   InstrumentTrendResponse,
   SegmentType,
-  isoDate,
-  previousDay
+  VolumeTrendResponse,
+  isoDate
 } from '../../core/services/analytics.service';
 import { ThemeService } from '../../core/services/theme.service';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
 
 type Preset = 'today' | 'week' | 'month' | 'custom';
-type InstrumentSort = 'totalValue' | 'totalQuantity' | 'tradeCount' | 'uniqueTraders';
+type InstrumentSort = 'totalValue' | 'totalQuantity' | 'uniqueTraders';
 
 /** How many tickers / segments get their own line. Matches the --pf-series-N tokens. */
 const MAX_SERIES = 5;
@@ -49,6 +49,11 @@ const usdCompact = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1
 });
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
+const centralHour = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Chicago',
+  hour: 'numeric',
+  hour12: true
+});
 
 /** Rates may arrive as 0-1 or 0-100; always show them as 0-100. */
 function asPercent(v: number): number {
@@ -121,17 +126,19 @@ export class AnalyticsComponent {
     { id: 'month', label: 'This Month' },
     { id: 'custom', label: 'Custom' }
   ];
-  protected readonly preset = signal<Preset>('today');
+  protected readonly preset = signal<Preset>('month');
   protected readonly customStart = signal(isoDate(subDays(new Date(), 29)));
   protected readonly customEnd = signal(this.today);
 
   /**
    * KPI cards and the instruments table are daily, so they use the last day of the range.
-   * Trend charts use the whole range; "Today" shows the last 30 days so there is a trend to see.
+  * Trend charts use the whole range; "Today" is limited to the current trading day.
    */
   protected readonly range = computed(() => {
     const now = new Date();
     switch (this.preset()) {
+      case 'today':
+        return { start: this.today, end: this.today, label: 'Today' };
       case 'week':
         return { start: isoDate(startOfWeek(now, { weekStartsOn: 1 })), end: this.today, label: 'This week' };
       case 'month':
@@ -141,7 +148,7 @@ export class AnalyticsComponent {
         return { start, end, label: `${format(parseISO(start), 'MMM d, y')} – ${format(parseISO(end), 'MMM d, y')}` };
       }
       default:
-        return { start: isoDate(subDays(now, 29)), end: this.today, label: 'Last 30 days' };
+        return { start: this.today, end: this.today, label: 'Today' };
     }
   });
 
@@ -165,49 +172,32 @@ export class AnalyticsComponent {
     params: () => this.day(),
     stream: ({ params: date }) =>
       forkJoin({
-        volume: orNull(this.api.totalVolume(date)),
-        prevVolume: orNull(this.api.totalVolume(previousDay(date))),
-        trades: orNull(this.api.totalTrades(date)),
         clients: orNull(this.api.activeClients(date))
       })
   });
 
-  protected readonly volumeChange = computed(() => {
-    const k = this.kpis.value();
-    const now = k?.volume?.totalValueTraded;
-    const prev = k?.prevVolume?.totalValueTraded;
-    return now != null && prev ? ((now - prev) / prev) * 100 : null;
-  });
-
   // ---------- Most active instruments ----------
 
-  protected readonly instrumentSort = signal<InstrumentSort>('totalValue');
+  protected readonly instrumentSort = signal<InstrumentSort>('uniqueTraders');
   protected readonly sortOptions: { id: InstrumentSort; label: string }[] = [
     { id: 'totalValue', label: 'Value' },
     { id: 'totalQuantity', label: 'Volume' },
-    { id: 'tradeCount', label: 'Trades' },
     { id: 'uniqueTraders', label: 'Traders' }
   ];
 
   protected readonly instruments = rxResource({
-    params: () => this.day(),
-    stream: ({ params: date }) =>
-      forkJoin({
-        today: this.api.mostActiveInstruments(date, 20),
-        prev: orNull(this.api.mostActiveInstruments(previousDay(date), 20))
-      })
+    params: () => 20,
+    stream: ({ params: limit }) => this.api.topTradedInstruments(limit)
   });
 
   protected readonly instrumentRows = computed(() => {
     const res = this.instruments.value();
     if (!res) return [];
-    const prevValue = new Map((res.prev ?? []).map(r => [r.ticker, r.totalValue]));
     const key = this.instrumentSort();
-    return [...res.today]
+    return [...res]
       .sort((a, b) => (b[key] ?? 0) - (a[key] ?? 0))
       .map((r, i) => {
-        const prev = prevValue.get(r.ticker);
-        return { ...r, rank: i + 1, change: prev ? ((r.totalValue - prev) / prev) * 100 : null };
+        return { ...r, rank: i + 1, change: r.dayChangePercent ?? null };
       });
   });
 
@@ -215,14 +205,33 @@ export class AnalyticsComponent {
 
   protected readonly volumeTrend = rxResource({
     params: () => this.range(),
-    stream: ({ params: r }) => this.api.volumeTrend(r.start, r.end)
+    stream: ({ params: r }) => this.preset() === 'today'
+      ? this.api.intradayVolume(r.start).pipe(
+          map(rows => rows.map(row => ({
+            date: row.bucketStart,
+            totalQuantityTraded: row.totalQuantityTraded,
+            totalValueTraded: row.totalValueTraded,
+            tradeCount: row.tradeCount,
+            buyCount: row.buyCount,
+            sellCount: row.sellCount
+          } satisfies VolumeTrendResponse)))
+        )
+      : this.api.volumeTrend(r.start, r.end)
   });
 
   protected readonly volumeTotals = computed(() => {
     const rows = this.volumeTrend.value() ?? [];
+    const trades = rows.reduce((s, r) => s + r.tradeCount, 0);
+    const buys = rows.reduce((s, r) => s + r.buyCount, 0);
+    const sells = rows.reduce((s, r) => s + r.sellCount, 0);
     return {
+      quantity: rows.reduce((s, r) => s + r.totalQuantityTraded, 0),
       value: rows.reduce((s, r) => s + r.totalValueTraded, 0),
-      trades: rows.reduce((s, r) => s + r.tradeCount, 0)
+      trades,
+      buys,
+      sells,
+      buyPercent: trades ? (buys / trades) * 100 : 0,
+      sellPercent: trades ? (sells / trades) * 100 : 0
     };
   });
 
@@ -230,7 +239,7 @@ export class AnalyticsComponent {
     const rows = [...(this.volumeTrend.value() ?? [])].sort((a, b) => a.date.localeCompare(b.date));
     this.theme();
     return {
-      labels: rows.map(r => shortDate(r.date)),
+      labels: rows.map(r => this.preset() === 'today' ? centralHour.format(parseISO(r.date)) : shortDate(r.date)),
       series: [{ label: 'Value traded', data: rows.map(r => r.totalValueTraded), color: token('--pf-chart') }],
       format: v => usdCompact.format(v)
     };

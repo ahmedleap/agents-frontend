@@ -1,9 +1,7 @@
-import { expect, Locator, Page, test } from '@playwright/test';
-import { environment } from '../src/environments/environment';
+import type { Locator, Page } from '@playwright/test';
+import { CLIENT_ID, expect, loginAsClient, test } from './helpers';
 
-// Fake backend so this runs without agents-backend
-// Same client the app uses until real login exists
-const CLIENT_ID = environment.devClientId;
+// Fake backend so this runs without agents-backend; each test logs in with the fake login from helpers.ts
 const CLIENT = {
   clientId: CLIENT_ID,
   firstName: 'John',
@@ -33,7 +31,7 @@ async function expectTip(el: Locator, text: string) {
 test.describe('Header buttons', () => {
   test('theme button says the mode it switches to, and settings says Settings', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
-    await page.goto('/dashboard');
+    await loginAsClient(page, []);
 
     const themeBtn = page.getByRole('button', { name: 'Switch to dark mode' });
     await expectTip(themeBtn, 'Switch to dark mode');
@@ -55,6 +53,7 @@ test.describe('Header buttons', () => {
 test.describe('Settings page', () => {
   test('shows the get-client data (no client ID) and marks what can be edited', async ({ page }) => {
     await mockClient(page);
+    await loginAsClient(page, []);
     await page.goto('/settings');
 
     // Client ID is not shown; name and email are, and email is marked read-only
@@ -79,6 +78,7 @@ test.describe('Settings page', () => {
   test('Edit opens just that field, and Cancel closes it without saving', async ({ page }) => {
     let patched = false;
     await mockClient(page, () => { patched = true; return { status: 200, json: CLIENT }; });
+    await loginAsClient(page, []);
     await page.goto('/settings');
 
     await page.getByRole('button', { name: 'Edit first name' }).click();
@@ -101,6 +101,7 @@ test.describe('Settings page', () => {
       return { status: 200, json: { ...CLIENT, ...body } };
     });
 
+    await loginAsClient(page, []);
     await page.goto('/settings');
     await page.getByRole('button', { name: 'Edit middle name' }).click();
     await page.getByLabel('Middle name', { exact: true }).fill('Q');
@@ -117,6 +118,7 @@ test.describe('Settings page', () => {
   test('shows the reason when the backend rejects a change', async ({ page }) => {
     await mockClient(page, () => ({ status: 400, json: { message: 'Last name cannot be blank' } }));
 
+    await loginAsClient(page, []);
     await page.goto('/settings');
     await page.getByRole('button', { name: 'Edit first name' }).click();
     await page.getByLabel('First name', { exact: true }).fill('Johnny');
@@ -129,6 +131,7 @@ test.describe('Settings page', () => {
     let patched = false;
     await mockClient(page, () => { patched = true; return { status: 200, json: CLIENT }; });
 
+    await loginAsClient(page, []);
     await page.goto('/settings');
     await page.getByRole('button', { name: 'Edit first name' }).click();
     await page.getByLabel('First name', { exact: true }).fill('   ');
@@ -141,6 +144,7 @@ test.describe('Settings page', () => {
   test('appearance switches between light and dark', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await mockClient(page);
+    await loginAsClient(page, []);
     await page.goto('/settings');
 
     await page.getByText('Dark', { exact: true }).click();
