@@ -174,7 +174,6 @@
   .nav-toggle {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     width: 100%;
     border: 0;
     background: none;
@@ -183,6 +182,7 @@
     cursor: pointer;
 
     .chevron {
+      margin-left: auto; // pushed to the right edge, after the icon and label
       width: 0.45rem;
       height: 0.45rem;
       border-right: 2px solid currentColor;
@@ -246,8 +246,23 @@
   // Top-level items (Dashboard, Account); the account links under them keep their own size
   > .nav-link,
   > .nav-row > .nav-link {
+    display: flex;
+    align-items: center;
     font-size: 1.1rem;
     font-weight: 700;
+  }
+
+  // Small line icon before each top-level item; drawn in the link's colour so it follows hover/active/dark mode
+  .nav-icon {
+    flex: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-right: 0.6rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .sub-nav {
