@@ -21,13 +21,14 @@
       @if (role()) { <span class="role-badge">{{ role() }}</span> }
 
       <div class="header-actions">
-  <!-- Hover label names the mode it switches to -->
-      <button
-        type="button"
-        class="icon-btn tip"
-        (click)="theme.toggle()"
-        [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-        [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+        <!-- Access-token countdown, only once logged in -->
+        @if (role()) { <app-session-timer /> }
+        <button
+          type="button"
+          class="icon-btn tip"
+          (click)="theme.toggle()"
+          [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
         @if (theme.theme() === 'dark') {
           <!-- Sun -->
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -41,11 +42,8 @@
           </svg>
         }
       </button>
-      @if (role()) {
-        <button type="button" class="sign-out" (click)="signOut()">Sign out</button>
-      }
-
-      @if (!isAuthPage()) {
+      <!-- Settings is for clients' own details; analysts and admins don't get it -->
+      @if (!isAuthPage() && role() === 'CLIENT') {
         <a
           class="icon-btn tip"
           routerLink="/settings"
@@ -61,6 +59,9 @@
       }
 
       <!-- Far right -->
+      @if (role()) {
+        <button type="button" class="sign-out tip" data-tip="Log out of your account" (click)="signOut()">Logout</button>
+      }
       </div>
     </header>
 
@@ -69,18 +70,18 @@
       <nav class="app-sidebar" aria-label="Main navigation">
         @if (role() === 'ANALYST') {
           <!-- Analysts only get the analytics page -->
-          <a class="nav-link" routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">Analysis</a>
+          <a class="nav-link" routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg>Analysis</a>
         } @else if (role() === 'ADMIN') {
-          <a class="nav-link" routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin overview</a>
+          <a class="nav-link" routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg>Admin overview</a>
         } @else if (role() === 'CLIENT') {
           <div class="client-nav">
-            <a class="nav-link" [routerLink]="homeRoute()" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
+            <a class="nav-link" [routerLink]="homeRoute()" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg>Dashboard</a>
             <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-              <span class="trade-icon" aria-hidden="true">↗</span>Trade
+              <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Trade
             </a>
-            <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">History</a>
-            <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">Transactions</a>
-            <a class="nav-link" routerLink="/news" routerLinkActive="active" ariaCurrentWhenActive="page">News</a>
+            <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg>History</a>
+            <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4L3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7"/></svg>Transactions</a>
+            <a class="nav-link" routerLink="/news" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5zM17 9h3v8a2 2 0 0 1-2 2M8 9h5M8 13h5M8 16h3"/></svg>News</a>
           </div>
 
         <div class="nav-row">
@@ -91,7 +92,7 @@
             [attr.aria-expanded]="accountsOpen()"
             aria-controls="account-list"
             (click)="toggleAccounts()">
-            Account
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zM3 7l2-3h11M16 13.5h2"/></svg>Account
             <span class="chevron" aria-hidden="true"></span>
           </button>
           <a class="add-account" routerLink="/accounts/new" routerLinkActive="active" aria-label="Add account" data-tip="Add account">

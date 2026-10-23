@@ -87,6 +87,9 @@ test.describe('Login', () => {
     await expect(page).toHaveURL(/\/analytics$/);
     await expect(page.getByRole('heading', { name: 'Analytics Dashboard', exact: true })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Analysis']);
+    // No settings gear for analysts
+    await expect(page.getByRole('link', { name: 'Settings' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Switch to (dark|light) mode/ })).toBeVisible();
   });
 
   test('routes admins to the admin-only overview', async ({ page }) => {
@@ -102,7 +105,12 @@ test.describe('Login', () => {
     await page.getByRole('button', { name: 'Log in' }).click();
 
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole('heading', { name: 'Platform overview' })).toBeVisible();
+    // The admin page from 0.12.0 (it replaced the old "Platform overview" page)
+    await expect(page.getByRole('heading', { name: 'Admin Console' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Admin overview']);
+    // No settings gear for admins
+    await expect(page.getByRole('link', { name: 'Settings' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
   });
 
   test('stays on the login page when the form is empty', async ({ page }) => {
@@ -111,5 +119,30 @@ test.describe('Login', () => {
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByText('Enter a valid email address')).toBeVisible();
     await expect(page.getByText('Enter your password')).toBeVisible();
+  });
+});
+
+test.describe('Login password eye', () => {
+  test('the eye shows the password and closes, then hides it again; hovering says Show or Hide', async ({ page }) => {
+    await page.goto('/login');
+    const password = page.getByLabel(/^Password/);
+    await password.fill('Secret123!');
+    await expect(password).toHaveAttribute('type', 'password');
+
+    const show = page.getByRole('button', { name: 'Show password' });
+    await expect(show.locator('svg.open')).toBeVisible();
+    // Hovering says what a click will do
+    await show.hover();
+    await expect(show.locator('.tip')).toHaveText('Show');
+    await expect(show.locator('.tip')).toHaveCSS('opacity', '1');
+    await show.click();
+    await expect(password).toHaveAttribute('type', 'text');
+    const hide = page.getByRole('button', { name: 'Hide password' });
+    await expect(hide).toHaveAttribute('aria-pressed', 'true');
+    await expect(hide.locator('svg.closed')).toBeVisible();
+    await expect(hide.locator('.tip')).toHaveText('Hide');
+
+    await hide.click();
+    await expect(password).toHaveAttribute('type', 'password');
   });
 });

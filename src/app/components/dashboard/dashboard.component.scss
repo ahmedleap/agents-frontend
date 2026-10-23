@@ -216,6 +216,51 @@ h2, h3, p { margin: 0; }
   overflow: hidden;
 }
 
+/* ---------- Watchlist: scrolls when long; Edit shows a remove button per row ---------- */
+
+.watchlist { display: flex; flex-direction: column; min-height: 0; }
+.watchlist .table-wrap { flex: 1 1 auto; overflow-y: auto; }
+
+.edit-btn {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--pf-border);
+  border-radius: 2px;
+  background: var(--pf-inset);
+  color: var(--pf-accent);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover { background: var(--pf-active); }
+  &.on { border-color: var(--pf-green); background: var(--pf-green); color: #fff; }
+}
+
+.watch-note, .watch-error { padding: 0 1.1rem 0.6rem; font-size: 0.8rem; }
+.watch-note { color: var(--pf-muted); }
+.watch-error { color: var(--pf-loss); font-weight: 700; }
+.watchlist a { color: var(--pf-accent); font-weight: 700; }
+
+.remove-cell { width: 1%; padding-left: 0; }
+.remove-btn {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-left: auto;
+  border: 1px solid var(--pf-border);
+  border-radius: 2px;
+  background: var(--pf-card);
+  color: var(--pf-loss);
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover { border-color: var(--pf-loss); background: var(--pf-sell-bg); }
+  &:disabled { cursor: wait; opacity: 0.5; }
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
 table {
   width: 100%;
   border-collapse: collapse;
