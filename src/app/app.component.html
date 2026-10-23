@@ -21,6 +21,8 @@
       @if (role()) { <span class="role-badge">{{ role() }}</span> }
 
       <div class="header-actions">
+        <!-- Access-token countdown, only once logged in -->
+        @if (role()) { <app-session-timer /> }
         <button
           type="button"
           class="icon-btn tip"
@@ -58,7 +60,7 @@
 
       <!-- Far right -->
       @if (role()) {
-        <button type="button" class="sign-out" (click)="signOut()">Logout</button>
+        <button type="button" class="sign-out tip" data-tip="Log out of your account" (click)="signOut()">Logout</button>
       }
       </div>
     </header>
