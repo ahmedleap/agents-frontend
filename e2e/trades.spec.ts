@@ -191,4 +191,56 @@ test.describe('Trades', () => {
     await expect(page.getByRole('dialog')).toContainText('Trade filled');
     await expect(cash).toHaveText('$3,890.00');
   });
+
+  test('the stock list is paginated, 12 per page, and only the shown page loads prices', async ({ page }) => {
+    await loginAsClient(page, [account]);
+    await fakeMarket(page);
+    // 30 instruments: 26 stocks (AAA..ZZZ) and 4 crypto
+    const many = [
+      ...Array.from({ length: 26 }, (_, i) => ({ ticker: String.fromCharCode(65 + i).repeat(3), assetClass: 'STOCK' })),
+      ...['BTC', 'ETH', 'SOL', 'DOGE'].map(ticker => ({ ticker, assetClass: 'CRYPTO' }))
+    ];
+    await page.route('**/api/instruments', route => route.fulfill({
+      json: { results: many.map(m => ({ instrumentId: `id-${m.ticker}`, ticker: m.ticker, name: `${m.ticker} name`, assetClass: m.assetClass })) }
+    }));
+    await page.route(/\/api\/instruments\/[^/?]+$/, route => {
+      const ticker = new URL(route.request().url()).pathname.split('/').pop()!;
+      return route.fulfill({ json: { ticker, name: `${ticker} name`, assetClass: many.find(m => m.ticker === ticker)?.assetClass ?? 'STOCK' } });
+    });
+    const quoted: string[] = [];
+    page.on('request', request => {
+      const match = new URL(request.url()).pathname.match(/\/api\/instruments\/([^/]+)\/quote$/);
+      if (match) quoted.push(match[1]);
+    });
+    await page.goto(`/trades/${account.accountId}`);
+
+    const cards = page.locator('.instrument-card');
+    const pager = page.getByRole('navigation', { name: 'Stock list pages' });
+    await expect(cards).toHaveCount(12);
+    await expect(cards.first()).toContainText('AAA');
+    await expect(pager).toContainText('Showing 1–12 of 30');
+    await expect(page.locator('.result-count')).toHaveText('30 instruments');
+    await expect(cards.last()).toContainText('$110.00');
+    // Only page 1's cards asked for a price
+    expect(new Set(quoted)).toEqual(new Set(many.slice(0, 12).map(m => m.ticker)));
+
+    await pager.getByRole('button', { name: 'Next page' }).click();
+    await expect(cards.first()).toContainText('MMM');
+    await expect(pager.getByRole('button', { name: 'Page 2' })).toHaveAttribute('aria-current', 'page');
+    await expect(cards.last()).toContainText('$110.00');
+    expect(quoted).toContain('MMM');
+    expect(quoted).not.toContain('YYY');
+
+    await pager.getByRole('button', { name: 'Page 3' }).click();
+    await expect(cards).toHaveCount(6);
+    await expect(pager).toContainText('Showing 25–30 of 30');
+    await expect(pager.getByRole('button', { name: 'Next page' })).toBeDisabled();
+
+    // Filtering starts again on page 1; a single page has no pager
+    await page.getByRole('group', { name: 'Filter by asset type' }).getByRole('button', { name: /^Crypto/ }).click();
+    await expect(cards).toHaveCount(4);
+    await expect(pager).toHaveCount(0);
+    await page.getByRole('group', { name: 'Filter by asset type' }).getByRole('button', { name: /^All/ }).click();
+    await expect(page.getByRole('navigation', { name: 'Stock list pages' }).getByRole('button', { name: 'Page 1' })).toHaveAttribute('aria-current', 'page');
+  });
 });

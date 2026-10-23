@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -26,6 +27,7 @@ import { DashboardService, WatchItem } from '../../core/services/dashboard.servi
 import { ThemeService } from '../../core/services/theme.service';
 import { TradingApiService } from '../../core/services/trading-api.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
+import { PagerComponent } from '../pager/pager.component';
 
 // Register only what the line chart needs (keeps the bundle small).
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
@@ -49,7 +51,7 @@ const volumeFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumF
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, PagerComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
@@ -77,6 +79,16 @@ export class DashboardComponent {
       ticker: entry.ticker,
       name: entry.instrumentName
     }));
+  });
+  /** Watchlist pages: a few rows at a time, so the card keeps its size */
+  protected readonly watchPageSize = 4;
+  protected readonly watchPage = signal(0);
+  protected readonly pagedWatchlist = computed(() => {
+    const all = this.watchlist();
+    // Removing the last row on a page moves back a page
+    const lastPage = Math.max(0, Math.ceil(all.length / this.watchPageSize) - 1);
+    const page = Math.min(this.watchPage(), lastPage);
+    return all.slice(page * this.watchPageSize, (page + 1) * this.watchPageSize);
   });
   protected readonly watchlistLoaded = this.watchlistApi.loaded;
   protected readonly watchlistError = this.watchlistApi.error;
@@ -139,9 +151,9 @@ export class DashboardComponent {
       requestAnimationFrame(() => this.applyThemeColors());
     });
 
-    // Fetch a price for any watchlist entry that doesn't have one yet
+    // Fetch a price for any watchlist entry on the current page that doesn't have one yet
     effect(() => {
-      for (const item of this.watchlist()) {
+      for (const item of this.pagedWatchlist()) {
         if (item.price !== undefined || this.quoteRequested.has(item.ticker)) continue;
         this.quoteRequested.add(item.ticker);
         this.tradingApi.getQuote(item.ticker).subscribe({
@@ -161,6 +173,12 @@ export class DashboardComponent {
           error: () => undefined
         });
       }
+    });
+
+    // Keep the page in range after removals
+    effect(() => {
+      const lastPage = Math.max(0, Math.ceil(this.watchlist().length / this.watchPageSize) - 1);
+      if (untracked(() => this.watchPage()) > lastPage) this.watchPage.set(lastPage);
     });
 
     // Nothing left to edit: leave edit mode

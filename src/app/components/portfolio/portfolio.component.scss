@@ -1,14 +1,37 @@
+// The whole page scrolls, so every holding shows. The scroll area reaches the window's right and bottom
+// edges (it takes over app-main's padding there), so the scrollbar sits at the edge of the page.
 :host {
+  --edge-x: clamp(2rem, 4vw, 4rem); // app-main's side padding
+  --edge-y: 2.5rem;                 // app-main's bottom padding
+
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
   min-height: 0;
+  margin: 0 calc(-1 * var(--edge-x)) calc(-1 * var(--edge-y)) 0;
+  padding: 0 var(--edge-x) var(--edge-y) 0;
+  overflow-y: auto;
   color: var(--pf-text);
+
+  // See-through scrollbar: no track, a faint thumb that firms up on hover
+  &::-webkit-scrollbar { width: 12px; background: transparent; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--pf-muted) 28%, transparent);
+    background-clip: padding-box;
+  }
+  &::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--pf-muted) 55%, transparent); }
+}
+
+// Firefox doesn't support the ::-webkit-scrollbar styles above
+@supports not selector(::-webkit-scrollbar) {
+  :host { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--pf-muted) 28%, transparent) transparent; }
 }
 
 .page {
-  flex: 1 1 0;
-  min-height: 0;
+  flex: 1 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -174,18 +197,37 @@ h2, h3, p { margin: 0; }
   }
 }
 
+// Same height as the value and cash boxes beside it; the sector list fills the rest
 .alloc {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  height: 18.75rem;
+  box-sizing: border-box;
   padding: 1.2rem 1.5rem;
 
   h3 { font-size: 1.1rem; }
   .sub { font-size: 0.9rem; font-weight: 700; color: var(--pf-muted); margin-bottom: 0.3rem; }
 }
 
+// Three rows fill the space (the largest sectors); the rest scroll
+.alloc-list {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-auto-rows: calc(100% / 3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+}
+
 .alloc-row {
   display: flex;
   gap: 0.85rem;
-  align-items: flex-start;
-  padding: 0.5rem 0;
+  align-items: center;
+  min-height: 0;
+  padding: 0.3rem 0.4rem 0.3rem 0;
   border-top: 1px solid var(--pf-border);
 }
 
@@ -194,20 +236,18 @@ h2, h3, p { margin: 0; }
 .alloc-top {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
   margin-bottom: 0.35rem;
   font-size: 0.95rem;
+
+  .alloc-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .alloc-nums { flex: none; font-variant-numeric: tabular-nums; }
+  .alloc-nums small { margin-left: 0.5rem; color: var(--pf-muted); font-size: 0.85rem; font-weight: 700; }
 
   small { color: var(--pf-muted); font-weight: 700; font-size: 0.88em; margin-left: 0.35rem; }
 }
 
-.alloc-value {
-  display: block;
-  margin-top: 0.15rem;
-  text-align: right;
-  color: var(--pf-muted);
-  font-size: 0.9rem;
-  font-weight: 700;
-}
 
 .track { height: 0.625rem; border-radius: 0; background: var(--pf-inset); overflow: hidden; }
 .fill { height: 100%; border-radius: 0; }
@@ -264,12 +304,11 @@ h2, h3, p { margin: 0; }
 .gain { color: var(--pf-gain); }
 .loss { color: var(--pf-loss); }
 
+// Grows to fit every holding
 .holdings {
-  flex: 1 1 0;
+  flex: none;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .holdings-head {
@@ -302,7 +341,8 @@ h2, h3, p { margin: 0; }
   }
 }
 
-.table-wrap { flex: 1; min-height: 0; overflow: auto; }
+// Sideways scroll only, for narrow windows; up/down is the page's job
+.table-wrap { overflow-x: auto; }
 
 table {
   width: 100%;
