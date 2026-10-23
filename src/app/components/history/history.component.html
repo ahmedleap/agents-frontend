@@ -15,6 +15,10 @@
     </div>
   </div>
 
+  @if (accountsError()) {
+    <p role="alert">{{ accountsError() }}</p>
+  }
+
   <div class="summary-bar">
     <div>
       <span class="summary-label">Showing orders for</span>

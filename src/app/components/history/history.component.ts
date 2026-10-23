@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
-import { DashboardService } from '../../core/services/dashboard.service';
+import { ActivityAccountsService } from '../../core/services/activity-accounts.service';
 import { OrderHistoryService } from '../../core/services/order-history.service';
 import { OrderDetailDto, TradingApiService } from '../../core/services/trading-api.service';
 import { downloadCsv } from '../../core/utils/csv-export';
@@ -20,7 +20,9 @@ type SortKey = 'side' | 'kind' | 'quantity' | 'limitPrice' | 'status' | 'created
 export class HistoryComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly accounts = inject(DashboardService).accounts;
+  private readonly activityAccounts = inject(ActivityAccountsService);
+  protected readonly accounts = this.activityAccounts.accounts;
+  protected readonly accountsError = this.activityAccounts.error;
   private readonly orderHistory = inject(OrderHistoryService);
   private readonly tradingApi = inject(TradingApiService);
   private readonly accountIdParam = toSignal(
@@ -30,7 +32,7 @@ export class HistoryComponent {
 
   protected readonly accountId = computed(() => {
     const accountId = this.accountIdParam();
-    return this.accounts().find(account => account.id === accountId)?.id ?? this.accounts()[0]?.id ?? '';
+    return accountId || this.accounts()[0]?.id || '';
   });
 
   protected readonly account = computed(() =>
