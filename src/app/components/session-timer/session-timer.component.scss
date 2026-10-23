@@ -1,0 +1,121 @@
+:host { display: contents; }
+
+// Same height, border and corners as the header buttons beside it
+.timer {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 3rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--pf-border);
+  border-radius: 8px;
+  background: var(--pf-inset);
+  color: var(--pf-accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+
+  svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .time { min-width: 2.6rem; font-size: 1rem; }
+
+  // Last minute: red and pulsing
+  &.warning {
+    border-color: var(--pf-loss);
+    background: var(--pf-sell-bg);
+    color: var(--pf-loss);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  // Hover label, like the other header buttons
+  &::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 0.45rem);
+    right: 0;
+    z-index: 20;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    background: var(--pf-text);
+    color: var(--pf-card);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  &:hover::after { opacity: 1; }
+}
+
+@keyframes pulse { 50% { opacity: 0.6; } }
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(16, 30, 22, 0.55);
+}
+
+.dialog {
+  width: min(100%, 28rem);
+  padding: 1.6rem;
+  border: 1px solid var(--pf-border);
+  border-top: 4px solid var(--pf-loss);
+  border-radius: 4px;
+  background: var(--pf-card);
+  color: var(--pf-text);
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.25);
+
+  .eyebrow { color: var(--pf-loss); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; }
+  h2 {
+    margin-top: 0.25rem;
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--pf-accent);
+  }
+  p { margin-top: 0.6rem; font-size: 0.95rem; line-height: 1.5; }
+  strong { color: var(--pf-loss); font-variant-numeric: tabular-nums; }
+  .error { color: var(--pf-loss); font-weight: 700; }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+
+  button {
+    padding: 0.65rem 1.1rem;
+    border-radius: 2px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .primary {
+    border: 0;
+    background: var(--pf-green);
+    color: #fff;
+    &:hover { background: var(--pf-green-dark); }
+    &:disabled { cursor: wait; opacity: 0.6; }
+  }
+  .secondary {
+    border: 1px solid var(--pf-border);
+    background: var(--pf-inset);
+    color: var(--pf-text);
+    &:hover { background: var(--pf-active); }
+  }
+}

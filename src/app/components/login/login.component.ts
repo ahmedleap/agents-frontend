@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
+import { EyeIconComponent } from '../eye-icon/eye-icon.component';
 
 export interface LoginRequest {
   email: string;
@@ -12,7 +13,7 @@ export interface LoginRequest {
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, EyeIconComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
@@ -51,7 +52,7 @@ export class LoginComponent {
     this.auth.login(body.email, body.password, this.accountType()).subscribe({
       next: () => {
         const role = this.auth.currentUser()?.role;
-        const destination = role === 'CLIENT' ? '/client'
+        const destination = role === 'CLIENT' ? '/home'
           : role === 'ADMIN' ? '/admin'
           : '/analytics';
         void this.router.navigateByUrl(destination);

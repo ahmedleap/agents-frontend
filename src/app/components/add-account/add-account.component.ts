@@ -2,10 +2,11 @@ import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { AccountApiService } from '../../core/services/account-api.service';
+import { NamedAccount, findAccountWithName, normalizeAccountName } from '../../core/account-names';
 
 // Common account types, offered as tiles; picking one fills in the name, which stays editable
 const ACCOUNT_TYPES: { name: string; label?: string; badge: string; blurb: string }[] = [
@@ -35,8 +36,16 @@ export class AddAccountComponent {
   protected readonly accountTypes = ACCOUNT_TYPES;
   protected readonly quickAmounts = QUICK_AMOUNTS;
 
+  /** The client's current accounts; a new account can't reuse one of their names */
+  private readonly existingAccounts = signal<NamedAccount[]>([]);
+
+  private readonly uniqueName = (control: AbstractControl): ValidationErrors | null => {
+    const match = findAccountWithName(control.value ?? '', this.existingAccounts());
+    return match ? { duplicate: match.name } : null;
+  };
+
   protected readonly form = this.fb.group({
-    name: ['', [Validators.required, Validators.maxLength(100)]],
+    name: ['', [Validators.required, Validators.maxLength(100), this.uniqueName]],
     // Backend requires a positive initial cash balance
     initialCashBalance: [null as number | null, [Validators.required, Validators.min(0.01), Validators.max(1_000_000_000)]]
   });
@@ -44,16 +53,36 @@ export class AddAccountComponent {
   private readonly name = toSignal(this.form.controls.name.valueChanges, { initialValue: '' });
   private readonly amount = toSignal(this.form.controls.initialCashBalance.valueChanges, { initialValue: null });
 
+  /** The existing account the typed name clashes with, if any */
+  protected readonly duplicateOf = computed(() => findAccountWithName(this.name(), this.existingAccounts()));
+  /** Normalized names the client already uses, to mark tiles they already have */
+  private readonly ownedNames = computed(() => new Set(this.existingAccounts().map(a => normalizeAccountName(a.name))));
+
+  protected owns(typeName: string): boolean {
+    return this.ownedNames().has(normalizeAccountName(typeName));
+  }
+
   /** The tile matching the typed name, if any */
   protected readonly selectedType = computed(() => this.name().trim().toLowerCase());
   /** Shown once both fields look valid */
   protected readonly summary = computed(() => {
     const name = this.name().trim();
     const amount = this.amount();
-    return name && amount != null && amount > 0 ? { name, amount } : null;
+    return name && amount != null && amount > 0 && !this.duplicateOf() ? { name, amount } : null;
   });
 
   protected readonly saving = signal(false);
+
+  constructor() {
+    // If this fails the backend still accepts the account; we just can't warn about a duplicate name
+    this.accountApi.listAccounts().subscribe({
+      next: accounts => {
+        this.existingAccounts.set(accounts.map(a => ({ accountId: a.accountId, name: a.name })));
+        this.form.controls.name.updateValueAndValidity();
+      },
+      error: () => this.existingAccounts.set([])
+    });
+  }
   protected readonly error = signal<string | null>(null);
 
   /** True once a field has been touched (or a submit was attempted) and is invalid. */

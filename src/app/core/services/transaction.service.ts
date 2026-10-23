@@ -41,8 +41,8 @@ export class TransactionService {
     return this.transactionsByAccount()[accountId] ?? [];
   }
 
-  balanceForAccount(accountId: string): number {
-    return this.balancesByAccount()[accountId] ?? 0;
+  balanceForAccount(accountId: string, fallback = 0): number {
+    return this.balancesByAccount()[accountId] ?? fallback;
   }
 
   addTransaction(accountId: string, txnType: TransactionType, amount: number): void {

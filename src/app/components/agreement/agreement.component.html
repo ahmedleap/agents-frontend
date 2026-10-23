@@ -1,0 +1,78 @@
+<article class="agreement card">
+  @switch (state().status) {
+    @case ('loading') {
+      <p class="notice" role="status">Loading the agreement…</p>
+    }
+    @case ('error') {
+      <p class="notice error" role="alert">
+        The agreement couldn't be loaded. You can <a [href]="textUrl" target="_blank" rel="noopener">open the text version</a> instead.
+      </p>
+    }
+  }
+
+  @if (doc(); as d) {
+    <header>
+      @for (line of d.titleLines; track $index) {
+        @if ($last) { <h1>{{ line }}</h1> } @else { <p class="eyebrow">{{ line }}</p> }
+      }
+      <p class="meta">
+        @for (m of d.meta; track m.label) {
+          <span>{{ metaLabel(m.label) }}: <strong>{{ m.value }}</strong></span>
+        }
+        <a class="download" [href]="textUrl" download="agents-of-leap-account-agreement.txt">Download (.txt)</a>
+      </p>
+    </header>
+
+    <ng-container *ngTemplateOutlet="blocks; context: { $implicit: d.intro }" />
+
+    <nav class="toc" aria-label="Sections">
+      <ol>
+        @for (s of d.sections; track s.id) {
+          <li><a [href]="'#' + s.id" (click)="scrollTo($event, s.id)">@if (s.number) { <span class="num">{{ s.number }}.</span> }{{ s.title }}</a></li>
+        }
+      </ol>
+    </nav>
+
+    @for (s of d.sections; track s.id) {
+      <section [id]="s.id">
+        <h2>@if (s.number) { <span class="num">Section {{ s.number }}</span> }{{ s.title }}</h2>
+        <ng-container *ngTemplateOutlet="blocks; context: { $implicit: s.blocks }" />
+      </section>
+    }
+
+    <footer>
+      <a class="back" routerLink="/signup">Back to sign up</a>
+    </footer>
+  }
+</article>
+
+<!-- Renders one run of parsed blocks (headings, paragraphs, bullet lists, the certification checklist) -->
+<ng-template #blocks let-blocks>
+  @for (b of blocks; track $index) {
+    @switch (b.kind) {
+      @case ('heading') { <h3 [id]="b.id">{{ b.text }}</h3> }
+      @case ('text') {
+        <div class="text">
+          @for (line of b.lines; track $index) { <p>{{ line }}</p> }
+        </div>
+      }
+      @case ('list') {
+        <ul>
+          @for (item of b.items; track $index) {
+            <li>
+              {{ item.text }}
+              @if (item.children.length) {
+                <ul>@for (child of item.children; track $index) { <li>{{ child }}</li> }</ul>
+              }
+            </li>
+          }
+        </ul>
+      }
+      @case ('checklist') {
+        <ol class="checklist">
+          @for (c of b.items; track c.n) { <li><span class="n">{{ c.n }}</span>{{ c.text }}</li> }
+        </ol>
+      }
+    }
+  }
+</ng-template>

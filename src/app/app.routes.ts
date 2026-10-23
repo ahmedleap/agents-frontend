@@ -1,19 +1,23 @@
-import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
 import { AuthService } from './core/services/auth.service';
-import { analystGuard } from './core/guards/analyst.guard';
-
-/** Analysts land on the analysis page; everyone else on their portfolio. */
-const home = () => (inject(AuthService).isAnalyst() ? 'analytics' : 'portfolio');
+/** Keep legacy dashboard links aligned with the signed-in user's home page. */
+const home = () => {
+  const auth = inject(AuthService);
+  if (!auth.isAuthenticated()) return '/login';
+  const role = auth.currentUser()?.role;
+  return role === 'ANALYST' ? '/analytics' : role === 'CLIENT' ? '/home' : '/admin';
+};
 import { adminRoleGuard, analystRoleGuard, authGuard, clientRoleGuard, guestGuard } from './core/auth/auth.guard';
 
 // Listed in the order a user moves through the app:
 // log in -> sign up (if they don't have an account) -> dashboard -> accounts from the sidebar
 export const routes: Routes = [
   {
-    // The app opens on the login page
+    // Public welcome page; authentication remains on /login.
     path: '',
-    redirectTo: 'login',
+    title: 'S.T.A.S.H. | Stash Your Cash',
+    loadComponent: () => import('./components/landing/landing.component').then(m => m.LandingComponent),
     pathMatch: 'full'
   },
 
@@ -28,27 +32,39 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent)
   },
+  {
+    // Full Client Agreement, linked from the sign-up pop-up; readable without logging in
+    path: 'agreement',
+    loadComponent: () => import('./components/agreement/agreement.component').then(m => m.AgreementComponent)
+  },
 
   // ---------- App (after logging in) ----------
   {
-    path: 'client',
+    // A client's home page (their dashboard)
+    path: 'home',
     canActivate: [authGuard, clientRoleGuard],
     loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
   {
+    // Old address, kept so existing links and bookmarks still work
+    path: 'client',
+    redirectTo: 'home',
+    pathMatch: 'full'
+  },
+  {
     path: 'dashboard',
-    canActivate: [authGuard, analystRoleGuard],
-    loadComponent: () => import('./components/analyst-dashboard/analyst-dashboard.component').then(m => m.AnalystDashboardComponent)
+    redirectTo: home,
+    pathMatch: 'full'
   },
   {
     path: 'admin',
     canActivate: [authGuard, adminRoleGuard],
-    loadComponent: () => import('./components/admin-overview/admin-overview.component').then(m => m.AdminOverviewComponent)
+    loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)
   },
   {
     // There is no combined all-accounts view; pick an account from the sidebar
     path: 'portfolio',
-    redirectTo: 'client',
+    redirectTo: 'home',
     pathMatch: 'full'
   },
   {
@@ -101,7 +117,7 @@ export const routes: Routes = [
   {
     // Only analysts get here; their sidebar shows just this page
     path: 'analytics',
-    canActivate: [analystGuard],
+    canActivate: [authGuard, analystRoleGuard],
     loadComponent: () =>
       import('./components/analytics/analytics.component').then(m => m.AnalyticsComponent)
   },

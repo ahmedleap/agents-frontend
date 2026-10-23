@@ -1,36 +1,32 @@
+// Colours come from the app's light/dark theme tokens (styles.scss); don't redefine them here
 :host {
-  --pf-card: #fff;
-  --pf-border: #dbe5de;
-  --pf-text: #1c2b23;
-  --pf-muted: #5f7267;
-  --pf-inset: #f3f7f4;
-  --pf-gain: #1f7a3a;
-  --pf-loss: #c0392b;
-  --pf-green: #2f6f2a;
-  --pf-green-dark: #245a20;
-
   display: flex;
   flex-direction: column;
-  flex: 1 0 auto;
+  // Fill the main area and scroll inside it (the main area itself doesn't scroll), like the other pages
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
   color: var(--pf-text);
+
+  // Scrolls with the wheel, trackpad, touch and keyboard, just without a visible bar
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 
 .page {
-  flex: 1 0 auto;
+  flex: none;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
   padding-bottom: 1.5rem;
   display: grid;
   align-content: start;
-  gap: 0.9rem;
+  gap: 1.2rem; // same as the other pages
 }
 
 .card {
   background: var(--pf-card);
   border: 1px solid var(--pf-border);
   border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(16, 40, 28, 0.05), 0 6px 20px rgba(16, 40, 28, 0.05);
+  box-shadow: var(--pf-shadow);
 }
 
 h2, h3, p { margin: 0; }
@@ -38,55 +34,65 @@ h2, h3, p { margin: 0; }
 .gain { color: var(--pf-gain); }
 .loss { color: var(--pf-loss); }
 
+// Same header as the other pages: eyebrow, title and intro, with the date bottom-aligned on the right
 .toolbar {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 1rem;
 
+  .eyebrow { color: var(--pf-green); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; }
   h2 {
+    margin-top: 0.25rem;
     font-family: 'Fredoka', 'Baloo 2', sans-serif;
-    font-size: 1.7rem;
+    font-size: 2rem;
     font-weight: 600;
-    line-height: 1.1;
-    color: var(--pf-green-dark);
+    color: var(--pf-accent);
   }
-  p, .asof { font-size: 0.85rem; color: var(--pf-muted); }
-  p { margin-top: 0.2rem; font-size: 1.4rem; font-weight: 700; }
+  .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 0.95rem; }
+  .asof { color: var(--pf-muted); font-size: 0.75rem; }
+}
+
+.alert {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--pf-loss);
+  background: var(--pf-sell-bg);
+  color: var(--pf-loss);
+  font-weight: 700;
 }
 
 /* ---------- Layout: accounts left, everything else right ---------- */
 
 .layout {
   display: grid;
-  gap: 0.9rem;
+  gap: 1.2rem;
   align-items: start;
 }
 
 .main {
   display: grid;
-  gap: 0.9rem;
+  gap: 1.2rem;
   min-width: 0;
 }
 
 .top {
   display: grid;
   grid-template-columns: 1fr 2fr;
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 .lists {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: 0.9rem;
+  gap: 1rem;
   align-items: stretch;
 }
 
 .side-lists {
   display: grid;
   grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
+  gap: 1rem;
   min-width: 0;
 }
 
@@ -112,9 +118,9 @@ h2, h3, p { margin: 0; }
 
   &.down { border-left-color: var(--pf-loss); }
 
-  .acct-name { font-size: 0.85rem; color: var(--pf-muted); }
+  .acct-name { font-size: 0.75rem; color: var(--pf-muted); }
   .acct-value {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
@@ -131,20 +137,20 @@ h2, h3, p { margin: 0; }
 /* ---------- Hero: today's P/L ---------- */
 
 .hero {
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   color: #fff;
   border: 0;
   background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
 
   &.down { background: linear-gradient(135deg, #c0392b 0%, #962d22 100%); }
 
-  .label { font-size: 0.9rem; opacity: 0.85; }
+  .label { font-size: 0.75rem; opacity: 0.78; }
   .value {
-    font-size: clamp(1.8rem, 3vw, 2.3rem);
+    font-size: clamp(1.6rem, 2.4vw, 2.1rem); // same as the account page's headline numbers
     font-weight: 700;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -159,8 +165,8 @@ h2, h3, p { margin: 0; }
   }
   .hero-total {
     margin-top: 0.4rem;
-    font-size: 0.85rem;
-    opacity: 0.85;
+    font-size: 0.8rem;
+    opacity: 0.78;
     font-variant-numeric: tabular-nums;
   }
 }
@@ -173,10 +179,10 @@ h2, h3, p { margin: 0; }
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.8rem 1.1rem;
+  padding: 0.75rem 1.1rem;
 
-  h3 { font-size: 1.1rem; }
-  .sub { font-size: 0.8rem; color: var(--pf-muted); margin-top: 0.1rem; }
+  h3 { font-size: 1.15rem; }
+  .sub { font-size: 0.8rem; color: var(--pf-muted); margin-top: 0.2rem; }
   strong { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
 }
 
@@ -187,8 +193,21 @@ h2, h3, p { margin: 0; }
 .chart-wrap {
   position: relative;
   flex: 1;
-  min-height: 240px;
-  padding: 0 1rem 1rem;
+  min-height: 150px; // the chart sets the height of the whole top row
+  padding: 0 1rem 0.75rem;
+}
+
+// Shown over the chart until there are two days of values to draw a line between
+.chart-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem 2rem;
+  color: var(--pf-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 /* ---------- Tables ---------- */
@@ -210,18 +229,64 @@ h2, h3, p { margin: 0; }
   overflow: hidden;
 }
 
+/* ---------- Watchlist: scrolls when long; Edit shows a remove button per row ---------- */
+
+.watchlist { display: flex; flex-direction: column; min-height: 0; }
+.watchlist .table-wrap { flex: 1 1 auto; overflow-y: auto; }
+
+.edit-btn {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--pf-border);
+  border-radius: 2px;
+  background: var(--pf-inset);
+  color: var(--pf-accent);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover { background: var(--pf-active); }
+  &.on { border-color: var(--pf-green); background: var(--pf-green); color: #fff; }
+}
+
+.watch-note, .watch-error { padding: 0 1.1rem 0.6rem; font-size: 0.8rem; }
+.watch-note { color: var(--pf-muted); }
+.watch-error { color: var(--pf-loss); font-weight: 700; }
+.watchlist a { color: var(--pf-accent); font-weight: 700; }
+
+.remove-cell { width: 1%; padding-left: 0; }
+.remove-btn {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-left: auto;
+  border: 1px solid var(--pf-border);
+  border-radius: 2px;
+  background: var(--pf-card);
+  color: var(--pf-loss);
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover { border-color: var(--pf-loss); background: var(--pf-sell-bg); }
+  &:disabled { cursor: wait; opacity: 0.5; }
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
 th {
-  padding: 0.6rem 1rem;
+  padding: 0.45rem 1rem;
   text-align: right;
-  font-weight: 600;
   font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--pf-muted);
   background: var(--pf-inset);
   border-top: 1px solid var(--pf-border);
@@ -230,7 +295,7 @@ th {
 }
 
 td {
-  padding: 0.7rem 1rem;
+  padding: 0.6rem 1rem;
   text-align: right;
   border-bottom: 1px solid var(--pf-border);
   white-space: nowrap;
@@ -280,11 +345,12 @@ tbody tr:hover { background: var(--pf-inset); }
   font-size: 0.75rem;
   font-weight: 600;
 
-  &.buy { color: var(--pf-gain); background: rgba(31, 122, 58, 0.1); }
-  &.sell { color: var(--pf-loss); background: rgba(192, 57, 43, 0.1); }
+  &.buy { color: var(--pf-gain); background: var(--pf-buy-bg); }
+  &.sell { color: var(--pf-loss); background: var(--pf-sell-bg); }
 }
 
-.empty { text-align: center; color: var(--pf-muted); padding: 2rem; }
+.empty { padding: 3.5rem 1rem; color: var(--pf-muted); text-align: center; }
+td.empty { padding: 1.25rem 1rem; text-align: center; }
 
 /* ---------- Responsive ---------- */
 

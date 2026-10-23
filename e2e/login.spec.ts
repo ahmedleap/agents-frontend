@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+// test/expect from helpers.ts block any middleware/backend call a test hasn't faked
+import { expect, test } from './helpers';
 
 const CLIENT_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
@@ -9,6 +10,12 @@ function tokenFor(role: 'CLIENT' | 'ADMIN' | 'ANALYST', sub: string, email: stri
 
 async function stubLogin(page: import('@playwright/test').Page, role: 'CLIENT' | 'ADMIN' | 'ANALYST', endpoint: 'login' | 'admin/login', sub = CLIENT_ID) {
   const email = 'jane@example.com';
+  if (role === 'CLIENT') {
+    // Loaded after a client logs in (GET /dashboard?clientId=...&period=30D)
+    await page.route(url => url.pathname === '/dashboard' && url.searchParams.has('clientId'), route => route.fulfill({
+      json: { accounts: [], marketMovers: [], watchlist: [], recentTrades: [], portfolioHistory: [], todayProfitLoss: 0, todayProfitLossPercent: 0 }
+    }));
+  }
   await page.route(`**/api/v1/auth/${endpoint}`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -23,8 +30,8 @@ async function stubLogin(page: import('@playwright/test').Page, role: 'CLIENT' |
 
 test.describe('Login', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    // The app opens on the login page
+    await page.goto('/login');
+    // Login is available directly from the public landing page.
     await expect(page).toHaveURL(/\/login$/);
   });
 
@@ -47,11 +54,14 @@ test.describe('Login', () => {
     await page.getByLabel(/^Password/).fill('Secret123!');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    await expect(page).toHaveURL(/\/client$/);
-    await expect(page.getByRole('heading', { name: 'Welcome, Jane' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Primary' })).toBeVisible();
-    // The sidebar is back once the user is past the login page
-    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+    await expect(page).toHaveURL(/\/home$/);
+    // /home is the client's dashboard
+    await expect(page.getByRole('heading', { level: 2, name: 'Dashboard', exact: true })).toBeVisible();
+    // The sidebar is back once the user is past the login page, listing the client's own accounts
+    const sidebar = page.getByRole('navigation', { name: 'Main navigation' });
+    await expect(sidebar).toBeVisible();
+    await sidebar.getByRole('button', { name: 'Account' }).click();
+    await expect(sidebar.getByRole('link', { name: /Primary/ })).toBeVisible();
   });
 
   test('routes staff logins by the role returned by the issuer', async ({ page }) => {
@@ -73,9 +83,13 @@ test.describe('Login', () => {
     await page.getByLabel(/^Password/).fill('Secret123!');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByRole('heading', { name: 'Trading Dashboard' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Analytics dashboard' })).toBeVisible();
+    // Analysts land on the analytics page, and it's the only page in their sidebar
+    await expect(page).toHaveURL(/\/analytics$/);
+    await expect(page.getByRole('heading', { name: 'Analytics Dashboard', exact: true })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Analysis']);
+    // No settings gear for analysts
+    await expect(page.getByRole('link', { name: 'Settings' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Switch to (dark|light) mode/ })).toBeVisible();
   });
 
   test('routes admins to the admin-only overview', async ({ page }) => {
@@ -91,7 +105,12 @@ test.describe('Login', () => {
     await page.getByRole('button', { name: 'Log in' }).click();
 
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole('heading', { name: 'Platform overview' })).toBeVisible();
+    // The admin page from 0.12.0 (it replaced the old "Platform overview" page)
+    await expect(page.getByRole('heading', { name: 'Admin Console' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Admin overview']);
+    // No settings gear for admins
+    await expect(page.getByRole('link', { name: 'Settings' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
   });
 
   test('stays on the login page when the form is empty', async ({ page }) => {
@@ -100,5 +119,30 @@ test.describe('Login', () => {
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByText('Enter a valid email address')).toBeVisible();
     await expect(page.getByText('Enter your password')).toBeVisible();
+  });
+});
+
+test.describe('Login password eye', () => {
+  test('the eye shows the password and closes, then hides it again; hovering says Show or Hide', async ({ page }) => {
+    await page.goto('/login');
+    const password = page.getByLabel(/^Password/);
+    await password.fill('Secret123!');
+    await expect(password).toHaveAttribute('type', 'password');
+
+    const show = page.getByRole('button', { name: 'Show password' });
+    await expect(show.locator('svg.open')).toBeVisible();
+    // Hovering says what a click will do
+    await show.hover();
+    await expect(show.locator('.tip')).toHaveText('Show');
+    await expect(show.locator('.tip')).toHaveCSS('opacity', '1');
+    await show.click();
+    await expect(password).toHaveAttribute('type', 'text');
+    const hide = page.getByRole('button', { name: 'Hide password' });
+    await expect(hide).toHaveAttribute('aria-pressed', 'true');
+    await expect(hide.locator('svg.closed')).toBeVisible();
+    await expect(hide.locator('.tip')).toHaveText('Hide');
+
+    await hide.click();
+    await expect(password).toHaveAttribute('type', 'password');
   });
 });

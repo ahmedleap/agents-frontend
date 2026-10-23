@@ -36,7 +36,7 @@ import { ThemeService } from '../../core/services/theme.service';
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
 
 type Preset = 'today' | 'week' | 'month' | 'custom';
-type InstrumentSort = 'totalValue' | 'totalQuantity' | 'tradeCount' | 'uniqueTraders';
+type InstrumentSort = 'totalValue' | 'totalQuantity' | 'uniqueTraders';
 
 /** How many tickers / segments get their own line. Matches the --pf-series-N tokens. */
 const MAX_SERIES = 5;
@@ -178,11 +178,10 @@ export class AnalyticsComponent {
 
   // ---------- Most active instruments ----------
 
-  protected readonly instrumentSort = signal<InstrumentSort>('tradeCount');
+  protected readonly instrumentSort = signal<InstrumentSort>('uniqueTraders');
   protected readonly sortOptions: { id: InstrumentSort; label: string }[] = [
     { id: 'totalValue', label: 'Value' },
     { id: 'totalQuantity', label: 'Volume' },
-    { id: 'tradeCount', label: 'Trades' },
     { id: 'uniqueTraders', label: 'Traders' }
   ];
 
