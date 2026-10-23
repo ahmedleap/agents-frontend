@@ -4,6 +4,7 @@ import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 
+/** JSON-body request options (keeps HttpClient on its typed-body overload). */
 export interface RequestOptions {
   headers?: HttpHeaders | Record<string, string | string[]>;
   params?: HttpParams | Record<string, string | number | boolean | readonly (string | number | boolean)[]>;

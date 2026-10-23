@@ -102,7 +102,9 @@ test.describe('Login', () => {
     await page.getByRole('button', { name: 'Log in' }).click();
 
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole('heading', { name: 'Platform overview' })).toBeVisible();
+    // The admin page from 0.12.0 (it replaced the old "Platform overview" page)
+    await expect(page.getByRole('heading', { name: 'Admin Console' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Admin overview']);
   });
 
   test('stays on the login page when the form is empty', async ({ page }) => {

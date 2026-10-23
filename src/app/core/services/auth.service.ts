@@ -10,6 +10,7 @@ export interface AuthenticatedUser {
   clientId: string;
   email: string;
   role: UserRole;
+  roles?: string[];
   firstName?: string;
   lastName?: string;
 }
@@ -91,7 +92,6 @@ export class AuthService {
   readonly isAuthenticating = this.isAuthenticatingState.asReadonly();
   readonly clientId = computed(() => this.currentUserState()?.clientId ?? null);
   readonly isAuthenticated = computed(() => !!this.accessToken() && !!this.currentUserState());
-  readonly isAnalyst = computed(() => this.currentUserState()?.role === 'ANALYST' || this.readTokenClaims()?.role === 'ANALYST');
   /** When the current access token expires (ms since epoch), from its exp claim; null when logged out */
   readonly accessTokenExpiresAt = computed(() => {
     const exp = decodeClaims(this.accessToken() ?? undefined)?.exp;
@@ -102,6 +102,24 @@ export class AuthService {
 
   constructor() {
     this.restoreSession();
+  }
+
+  /**
+   * Analysts can see the analytics dashboard. Accepts either `user.role` or a
+   * `user.roles` array from the login response, e.g. 'ANALYST' or 'ROLE_ANALYST'.
+   */
+  readonly isAnalyst = computed(() => {
+    return !environment.features.enableMocking && this.hasRole('ANALYST');
+  });
+
+  /** Development mode opens the admin workspace without requiring backend login. */
+  readonly isAdmin = computed(() => environment.features.enableMocking || this.hasRole('ADMIN'));
+
+  private hasRole(role: 'ANALYST' | 'ADMIN'): boolean {
+    const user = this.currentUser();
+    if (!this.isAuthenticated() || !user) return false;
+    const roles: unknown[] = Array.isArray(user.roles) ? user.roles : [user.role];
+    return roles.some(value => typeof value === 'string' && value.toUpperCase().replace(/^ROLE_/, '') === role);
   }
 
   /**

@@ -1,7 +1,7 @@
 <div class="app-container">
   @if (appInitialized()) {
     <header class="app-header">
-      <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to dashboard">
+  <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to your home page">
       <svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
         <g fill="#fff" stroke="#245a20" stroke-width="5" stroke-linejoin="round">
           <g transform="translate(94 102) rotate(-18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
@@ -42,7 +42,6 @@
           </svg>
         }
       </button>
-
       @if (!isAuthPage()) {
         <a
           class="icon-btn tip"
@@ -74,13 +73,15 @@
         } @else if (role() === 'ADMIN') {
           <a class="nav-link" routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg>Admin overview</a>
         } @else if (role() === 'CLIENT') {
-          <a class="nav-link" [routerLink]="homeRoute()" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg>Dashboard</a>
-          <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Trade
-          </a>
-          <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg>History</a>
-          <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4L3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7"/></svg>Transactions</a>
-          <a class="nav-link" routerLink="/news" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5zM17 9h3v8a2 2 0 0 1-2 2M8 9h5M8 13h5M8 16h3"/></svg>News</a>
+          <div class="client-nav">
+            <a class="nav-link" [routerLink]="homeRoute()" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg>Dashboard</a>
+            <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
+              <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>Trade
+            </a>
+            <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg>History</a>
+            <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4L3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7"/></svg>Transactions</a>
+            <a class="nav-link" routerLink="/news" routerLinkActive="active" ariaCurrentWhenActive="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5zM17 9h3v8a2 2 0 0 1-2 2M8 9h5M8 13h5M8 16h3"/></svg>News</a>
+          </div>
 
         <div class="nav-row">
           <button

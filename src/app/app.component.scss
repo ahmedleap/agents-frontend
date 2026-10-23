@@ -151,7 +151,18 @@
   background: var(--pf-card);
   border-right: 1px solid var(--pf-border);
 
+  .client-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 0.25rem;
+  }
+
   .nav-link {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
     padding: 0.6rem 0.9rem;
     border-radius: 6px;
     font-size: 1.05rem;
@@ -246,6 +257,7 @@
 
   // Top-level items (Dashboard, Account); the account links under them keep their own size
   > .nav-link,
+  > .client-nav > .nav-link,
   > .nav-row > .nav-link {
     display: flex;
     align-items: center;
