@@ -1,5 +1,5 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -48,7 +48,8 @@ const CARD_LOAD_CONCURRENCY = 3;
 export class TradesComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-  private readonly accounts = inject(DashboardService).accounts;
+  private readonly dashboard = inject(DashboardService);
+  private readonly accounts = this.dashboard.accounts;
   private readonly accountApi = inject(AccountApiService);
   private readonly auth = inject(AuthService);
   private readonly tradingApi = inject(TradingApiService);
@@ -115,13 +116,26 @@ export class TradesComponent {
     } : null;
   });
 
-  protected readonly account = computed(() => {
+  private readonly baseAccount = computed(() => {
     const accounts = this.selectableAccounts();
     const routeAccountId = this.accountIdParam();
     return accounts.find(account => account.id === routeAccountId)
       ?? this.routeAccount()
       ?? this.routeAccountFallback()
       ?? (routeAccountId ? undefined : accounts[0]);
+  });
+  private readonly accountId = computed(() => this.baseAccount()?.id);
+
+  /**
+   * Latest balances from GET /api/accounts/{id}/summary. The dashboard's account list is loaded once at
+   * login, so it goes stale after a trade; these are fetched when the account is opened and after every order.
+   */
+  private readonly latestBalances = signal<Record<string, { cashBalance: number; availableBalance: number }>>({});
+
+  protected readonly account = computed(() => {
+    const account = this.baseAccount();
+    const latest = account ? this.latestBalances()[account.id] : undefined;
+    return account && latest ? { ...account, ...latest } : account;
   });
   protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
   protected readonly searchQuery = signal('');
@@ -174,6 +188,25 @@ export class TradesComponent {
 
   constructor() {
     this.loadInstruments();
+
+    // Fresh balance whenever a different account is shown
+    effect(() => {
+      const accountId = this.accountId();
+      if (accountId) untracked(() => this.refreshBalance(accountId));
+    });
+  }
+
+  /** Re-reads the account's cash from the backend and shares it with the dashboard */
+  private refreshBalance(accountId: string): void {
+    this.accountApi.getAccountSummary(accountId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: summary => {
+        const balances = { cashBalance: summary.cashBalance, availableBalance: summary.availableBalance };
+        this.latestBalances.update(all => ({ ...all, [accountId]: balances }));
+        this.dashboard.updateBalances(accountId, balances.cashBalance, balances.availableBalance);
+      },
+      // Keep showing the last known balance
+      error: () => undefined
+    });
   }
 
   protected readonly canSubmit = computed(() => {
@@ -303,6 +336,8 @@ export class TradesComponent {
         this.submitting.set(false);
         this.orderStatus.set((_response.status as 'PENDING' | 'FILLED' | 'CANCELLED' | 'REJECTED') || 'PENDING');
         this.orderHistory.refresh(accountId);
+        // The order changes the cash (or holds it while pending)
+        this.refreshBalance(accountId);
         this.confirmed.set(true);
         if (_response.orderId) this.watchOrder(_response.orderId, accountId);
       },
@@ -505,6 +540,8 @@ export class TradesComponent {
       if (!order || !this.isTerminalOrderStatus(order.status)) return;
       this.orderStatus.set(this.normalizeOrderStatus(order.status));
       this.orderHistory.refresh(accountId);
+      // Filled, cancelled or rejected: the cash has settled
+      this.refreshBalance(accountId);
     });
   }
 

@@ -130,6 +130,13 @@ export class DashboardService {
   readonly tradeData = this.trades.asReadonly();
   readonly moverData = this.movers.asReadonly();
 
+  /** After a trade: the account's cash and available-to-trade amounts from its summary */
+  updateBalances(accountId: string, cashBalance: number, availableBalance: number): void {
+    this.accounts.update(accounts => accounts.map(account => account.id === accountId
+      ? { ...account, cashBalance, availableBalance }
+      : account));
+  }
+
   updateAvailableCash(accountId: string, availableBalance: number): void {
     this.accounts.update(accounts => accounts.map(account => account.id === accountId
       ? { ...account, availableBalance, cashBalance: availableBalance }

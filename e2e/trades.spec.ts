@@ -158,4 +158,37 @@ test.describe('Trades', () => {
     await expect(cards).toHaveCount(0);
     await expect(page.locator('.empty-state')).toContainText('No crypto found');
   });
+
+  test('the available cash updates after placing an order, and again when it fills', async ({ page }) => {
+    await loginAsClient(page, [account]);
+    await fakeMarket(page);
+    // The backend's balance: $5,000 to start, $3,900 once the order holds the cash, $3,890 once it fills
+    let available = 5000;
+    await page.route(`**/api/accounts/${account.accountId}/summary`, route => route.fulfill({
+      json: { cashBalance: available, availableBalance: available, holdingsValue: 0, totalValue: available, summaryDate: '' }
+    }));
+    let orderStatus = 'PENDING';
+    await page.route('**/api/v1/orders', route => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      available = 3900;
+      return route.fulfill({ status: 201, json: { orderId: 'order-1', status: 'PENDING' } });
+    });
+    await page.route('**/api/v1/orders/order-1', route => route.fulfill({ json: { orderId: 'order-1', status: orderStatus } }));
+    await page.goto(`/trades/${account.accountId}`);
+
+    const cash = page.locator('.cash-card strong');
+    await expect(cash).toHaveText('$5,000.00');
+
+    await page.locator('.instrument-card').first().getByRole('button', { name: /Trade/ }).click();
+    await page.getByRole('button', { name: 'Review and place order' }).click();
+    await expect(page.getByRole('dialog')).toContainText('Order received');
+    // Re-read from the backend straight after the order
+    await expect(cash).toHaveText('$3,900.00');
+
+    // The order fills: re-read again
+    available = 3890;
+    orderStatus = 'FILLED';
+    await expect(page.getByRole('dialog')).toContainText('Trade filled');
+    await expect(cash).toHaveText('$3,890.00');
+  });
 });
