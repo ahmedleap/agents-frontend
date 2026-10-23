@@ -481,7 +481,8 @@ export class TradesComponent {
             open: this.numberValue(bar.open),
             high: this.numberValue(bar.high),
             low: this.numberValue(bar.low),
-            close: this.numberValue(bar.close)
+            close: this.numberValue(bar.close),
+            volume: this.numberValue(bar.volume)
           }))
           .filter(bar => bar.close > 0);
         if (bars.length > 1) this.chartBarsForOrder.set(bars);

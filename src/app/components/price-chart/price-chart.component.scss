@@ -75,7 +75,10 @@ line { stroke: currentColor; stroke-width: 1; }
 .body { fill: currentColor; }
 .slot { fill: transparent; }
 .slot.hover { fill: var(--pf-inset); }
-// The line and candles let the mouse through to the full-height hover strips underneath
-.line, .candle { pointer-events: none; }
+// The line, candles and volume let the mouse through to the full-height hover strips underneath
+.line, .candle, .vol { pointer-events: none; }
+
+// Volume bars: soft shading in the up/down colour, so they sit behind the price
+.vol { fill: currentColor; opacity: 0.28; }
 // With candles over it, the line steps back so the candles read clearly
 .line.under { stroke-opacity: 0.45; }

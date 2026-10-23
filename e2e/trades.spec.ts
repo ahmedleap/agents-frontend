@@ -4,13 +4,13 @@ import { test, expect, loginAsClient } from './helpers';
 const account = { accountId: '11111111-1111-4111-8111-111111111111', name: 'Brokerage' };
 const tickers = ['AAA', 'BBB', 'CCC', 'DDD', 'EEE', 'FFF', 'GGG', 'HHH'];
 
-/** Five daily bars with full open/high/low/close: up, down, up, down, up */
+/** Five daily bars with full open/high/low/close and volume: up, down, up, down, up */
 const bars = [
-  { timestamp: '2026-10-19T00:00:00Z', open: 100, high: 104, low: 99, close: 103 },
-  { timestamp: '2026-10-20T00:00:00Z', open: 103, high: 105, low: 98, close: 99 },
-  { timestamp: '2026-10-21T00:00:00Z', open: 99, high: 108, low: 98, close: 107 },
-  { timestamp: '2026-10-22T00:00:00Z', open: 107, high: 109, low: 101, close: 102 },
-  { timestamp: '2026-10-23T00:00:00Z', open: 102, high: 112, low: 101, close: 110 }
+  { timestamp: '2026-10-19T00:00:00Z', open: 100, high: 104, low: 99, close: 103, volume: 1_000_000 },
+  { timestamp: '2026-10-20T00:00:00Z', open: 103, high: 105, low: 98, close: 99, volume: 2_500_000 },
+  { timestamp: '2026-10-21T00:00:00Z', open: 99, high: 108, low: 98, close: 107, volume: 4_000_000 },
+  { timestamp: '2026-10-22T00:00:00Z', open: 107, high: 109, low: 101, close: 102, volume: 1_500_000 },
+  { timestamp: '2026-10-23T00:00:00Z', open: 102, high: 112, low: 101, close: 110, volume: 3_200_000 }
 ];
 
 /**
@@ -96,6 +96,17 @@ test.describe('Trades', () => {
     await expect(dialog.locator('.readout')).toContainText('Oct 20, 2026');
     await expect(dialog.locator('.readout')).toContainText('H$105.00');
     await expect(dialog.locator('.readout')).toContainText('L$98.00');
+    await expect(dialog.locator('.readout')).toContainText('V2.5M');
+
+    // Shaded volume bars along the bottom, one per day; the busiest day (Oct 21) is the tallest
+    const volume = dialog.locator('rect.vol');
+    await expect(volume).toHaveCount(5);
+    const heights = await volume.evaluateAll(rects => rects.map(r => Number(r.getAttribute('height'))));
+    expect(Math.max(...heights)).toBe(heights[2]);
+    await expect(dialog.locator('rect.vol.up')).toHaveCount(3);
+    // The hover highlight is drawn behind the volume bars, so it never covers them
+    const order = await candles.evaluate(svg => [...svg.querySelectorAll('rect')].map(r => r.getAttribute('class') ?? ''));
+    expect(order.findLastIndex(c => c.includes('slot'))).toBeLessThan(order.findIndex(c => c.includes('vol')));
 
     // The choice is remembered for the next instrument
     await dialog.getByRole('button', { name: 'Close order' }).click();
