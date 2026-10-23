@@ -28,15 +28,20 @@
           <div class="card-head">
             <div>
               <h3>Total Value, All Accounts</h3>
-              <p class="sub">Last {{ period().days }} days</p>
+              <p class="sub">Last {{ historyDays }} days</p>
             </div>
-            <strong [class.gain]="period().change >= 0" [class.loss]="period().change < 0">
-              {{ period().change >= 0 ? '+' : '' }}{{ period().change | currency }}
-              ({{ period().pct >= 0 ? '+' : '' }}{{ period().pct | number: '1.2-2' }}%)
-            </strong>
+            @if (period(); as p) {
+              <strong [class.gain]="p.change >= 0" [class.loss]="p.change < 0">
+                {{ p.change >= 0 ? '+' : '' }}{{ p.change | currency }}
+                ({{ p.pct >= 0 ? '+' : '' }}{{ p.pct | number: '1.2-2' }}%)
+              </strong>
+            }
           </div>
           <div class="chart-wrap">
             <canvas #valueChart role="img" aria-label="Line chart of combined account value by day"></canvas>
+            @if (!loading() && !period()) {
+              <p class="chart-empty">No value history yet. Your daily totals will show here as they're recorded.</p>
+            }
           </div>
         </div>
       </div>

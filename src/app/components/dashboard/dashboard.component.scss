@@ -197,6 +197,19 @@ h2, h3, p { margin: 0; }
   padding: 0 1rem 0.75rem;
 }
 
+// Shown over the chart until there are two days of values to draw a line between
+.chart-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem 2rem;
+  color: var(--pf-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* ---------- Tables ---------- */
 
 .table-wrap {
