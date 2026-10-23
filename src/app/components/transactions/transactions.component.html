@@ -15,6 +15,10 @@
     </div>
   </div>
 
+  @if (accountsError()) {
+    <p role="alert">{{ accountsError() }}</p>
+  }
+
   <div class="summary-grid">
     <div class="summary-card balance-card">
       <span class="summary-label">Available cash balance</span>
@@ -23,13 +27,13 @@
     </div>
     <div class="summary-card">
       <span class="summary-label">Total deposits</span>
-      <strong>{{ transactions().filter(t => t.txnType === 'DEPOSIT').length }}</strong>
-      <span class="summary-caption">{{ transactions().filter(t => t.txnType === 'DEPOSIT').length === 1 ? 'deposit' : 'deposits' }} recorded</span>
+      <strong>{{ depositCount() }}</strong>
+      <span class="summary-caption">{{ depositCount() === 1 ? 'deposit' : 'deposits' }} recorded</span>
     </div>
     <div class="summary-card">
       <span class="summary-label">Total withdrawals</span>
-      <strong>{{ transactions().filter(t => t.txnType === 'WITHDRAWAL').length }}</strong>
-      <span class="summary-caption">{{ transactions().filter(t => t.txnType === 'WITHDRAWAL').length === 1 ? 'withdrawal' : 'withdrawals' }} recorded</span>
+      <strong>{{ withdrawalCount() }}</strong>
+      <span class="summary-caption">{{ withdrawalCount() === 1 ? 'withdrawal' : 'withdrawals' }} recorded</span>
     </div>
   </div>
 

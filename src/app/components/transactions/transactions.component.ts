@@ -1,9 +1,10 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
-import { DashboardService } from '../../core/services/dashboard.service';
+import { catchError, map, of, switchMap } from 'rxjs';
+import { AccountApiService } from '../../core/services/account-api.service';
+import { ActivityAccountsService } from '../../core/services/activity-accounts.service';
 import { TransactionService } from '../../core/services/transaction.service';
 import { downloadCsv } from '../../core/utils/csv-export';
 
@@ -20,7 +21,10 @@ type TransactionAction = 'DEPOSIT' | 'WITHDRAWAL';
 export class TransactionsComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly accounts = inject(DashboardService).accounts;
+  private readonly activityAccounts = inject(ActivityAccountsService);
+  protected readonly accounts = this.activityAccounts.accounts;
+  protected readonly accountsError = this.activityAccounts.error;
+  private readonly accountApi = inject(AccountApiService);
   private readonly transactionService = inject(TransactionService);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
@@ -29,11 +33,25 @@ export class TransactionsComponent {
 
   protected readonly accountId = computed(() => {
     const accountId = this.accountIdParam();
-    return this.accounts().find(account => account.id === accountId)?.id ?? this.accounts()[0]?.id ?? '';
+    return accountId || this.accounts()[0]?.id || '';
   });
   protected readonly account = computed(() => this.accounts().find(account => account.id === this.accountId()));
   protected readonly transactions = computed(() => this.transactionService.transactionsForAccount(this.accountId()));
-  protected readonly cashBalance = computed(() => this.account()?.availableBalance ?? 0);
+  private readonly accountSummary = toSignal(toObservable(this.accountId).pipe(
+    switchMap(accountId => accountId
+      ? this.accountApi.getAccountSummary(accountId).pipe(
+          catchError(() => of(null)),
+          map(summary => ({ accountId, summary }))
+        )
+      : of(null))
+  ), { initialValue: null });
+  protected readonly cashBalance = computed(() => {
+    const summary = this.accountSummary();
+    return this.transactionService.balanceForAccount(this.accountId(),
+      summary?.accountId === this.accountId() ? summary.summary?.availableBalance ?? 0 : 0);
+  });
+  protected readonly depositCount = computed(() => this.transactions().filter(transaction => transaction.txnType === 'DEPOSIT').length);
+  protected readonly withdrawalCount = computed(() => this.transactions().filter(transaction => transaction.txnType === 'WITHDRAWAL').length);
   protected readonly query = signal('');
   protected readonly sortBy = signal<SortKey>('createdAt');
   protected readonly sortDescending = signal(true);
@@ -42,7 +60,7 @@ export class TransactionsComponent {
   protected readonly transactionAction = signal<TransactionAction>('DEPOSIT');
   protected readonly depositAmount = signal(0);
   protected readonly canSubmitTransaction = computed(() =>
-    this.depositAmount() > 0 && (this.transactionAction() === 'DEPOSIT' || this.depositAmount() <= this.cashBalance())
+    !!this.accountId() && this.depositAmount() > 0 && (this.transactionAction() === 'DEPOSIT' || this.depositAmount() <= this.cashBalance())
   );
 
   protected readonly visibleTransactions = computed(() => {
