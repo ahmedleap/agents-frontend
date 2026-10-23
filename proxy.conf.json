@@ -1,12 +1,12 @@
 {
-  "/dashboard": {
-    "target": "http://localhost:8081",
+  "/api": {
+    "target": "http://10.14.131.55:8081",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
   },
-  "/api": {
-    "target": "http://localhost:8081",
+  "/dashboard": {
+    "target": "http://10.14.131.55:8081",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

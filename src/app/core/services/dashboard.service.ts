@@ -34,16 +34,15 @@ export interface Trade {
 
 export interface Mover {
   ticker: string;
-  name: string;
+  name?: string;
   price: number;
-  change: number;
+  change?: number;
   changePct: number;
   volume?: number;
 }
 
 interface DashboardResponse {
   accounts: AccountListItemDto[];
-  marketMovers: MarketMoverDto[];
   watchlist: WatchlistDto[];
   recentTrades: RecentTradeDto[];
   portfolioHistory: PortfolioHistoryPointDto[];
@@ -62,10 +61,15 @@ interface AccountListItemDto {
 
 interface MarketMoverDto {
   ticker: string;
-  instrumentName: string;
-  currentPrice: number;
-  priceChange: number;
-  priceChangePercent: number;
+  price: number;
+  changePercent: number;
+}
+
+interface MarketMoversResponse {
+  marketMovers: MarketMoverDto[];
+  asOf: string;
+  refreshedAt: string;
+  isStale: boolean;
 }
 
 interface WatchlistDto {
@@ -101,6 +105,8 @@ export class DashboardService {
   readonly watchlist = signal<WatchItem[]>([]);
   readonly trades = signal<Trade[]>([]);
   readonly movers = signal<Mover[]>([]);
+  readonly moversLoading = signal(false);
+  readonly moversError = signal<string | null>(null);
   readonly todayProfitLoss = signal(0);
   readonly todayProfitLossPercent = signal(0);
   readonly portfolioHistory = signal<number[]>([]);
@@ -112,6 +118,22 @@ export class DashboardService {
       this.error.set('Your session is no longer available. Please sign in again.');
       return;
     }
+
+    this.moversLoading.set(true);
+    this.api.get<MarketMoversResponse>('instruments/market-movers').subscribe({
+      next: response => {
+        this.movers.set((response.marketMovers ?? []).map(mover => ({
+          ticker: mover.ticker,
+          price: mover.price,
+          changePct: mover.changePercent
+        })));
+        this.moversLoading.set(false);
+      },
+      error: () => {
+        this.moversLoading.set(false);
+        this.moversError.set('Market movers are temporarily unavailable.');
+      }
+    });
 
     this.api.getRoot<DashboardResponse>('dashboard', {
       params: { clientId, period: '30D' }
@@ -168,14 +190,6 @@ export class DashboardService {
       price: trade.filledPrice ?? trade.limitPrice,
       account: trade.accountName
     })));
-    this.movers.set((response.marketMovers ?? []).map(mover => ({
-      ticker: mover.ticker,
-      name: mover.instrumentName,
-      price: mover.currentPrice,
-      change: mover.priceChange,
-      changePct: mover.priceChangePercent
-    })));
-
     const history = (response.portfolioHistory ?? []).slice().sort((a, b) => a.date.localeCompare(b.date));
     this.labels.set(history.map(point => point.date));
     this.portfolioHistory.set(history.map(point => point.totalValue));
