@@ -1,7 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, forkJoin, map, of } from 'rxjs';
+import { catchError, from, map, mergeMap, of, toArray } from 'rxjs';
 import { InstrumentSearchResult, NewsItemDto, TradingApiService } from '../../core/services/trading-api.service';
 
 const POPULAR_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA', 'AMD', 'SPY', 'NFLX'];
@@ -29,11 +29,8 @@ export class NewsComponent {
       next: response => {
         const instruments = response.results ?? [];
         this.instruments.set(instruments);
-        const firstTicker = 'ALL';
-        if (firstTicker) {
-          this.ticker.set(firstTicker);
-          this.loadNews(firstTicker);
-        }
+        this.ticker.set('ALL');
+        this.loadNews('ALL');
       },
       error: () => this.error.set('Instrument list is unavailable.')
     });
@@ -55,10 +52,7 @@ export class NewsComponent {
     this.loading.set(true);
     this.error.set(null);
     const request = ticker === 'ALL'
-      ? forkJoin(POPULAR_TICKERS.map(symbol => this.tradingApi.getNews(symbol, 5, this.sort()).pipe(catchError(() => of([])))))
-          .pipe(map(groups => [...new Map(groups.flat().map(article => [article.guid || article.link, article])).values()]
-            .sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt))
-            .slice(0, 30)))
+      ? this.loadPopularNews()
       : this.tradingApi.getNews(ticker, 10, this.sort());
 
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -72,5 +66,35 @@ export class NewsComponent {
         this.error.set('News is temporarily unavailable.');
       }
     });
+  }
+
+  private loadPopularNews() {
+    const availableTickers = this.instruments().map(instrument => instrument.ticker).filter(Boolean);
+    const symbols = [...new Set([...POPULAR_TICKERS, ...availableTickers])].slice(0, 15);
+
+    return from(symbols).pipe(
+      mergeMap(symbol => this.tradingApi.getNews(symbol, 5, this.sort()).pipe(
+        map(articles => ({ articles, failed: false })),
+        catchError(() => of({ articles: [] as NewsItemDto[], failed: true }))
+      ), 3),
+      toArray(),
+      map(results => {
+        if (results.length && results.every(result => result.failed)) {
+          throw new Error('News service unavailable');
+        }
+        const articles = [...new Map(results.flatMap(result => result.articles)
+          .map(article => [article.guid || article.link, article])).values()];
+        return articles.sort((left, right) => this.sort() === 'popular'
+          ? (right.relevanceScore ?? 0) - (left.relevanceScore ?? 0)
+            || this.publishedTime(right.publishedAt) - this.publishedTime(left.publishedAt)
+          : this.publishedTime(right.publishedAt) - this.publishedTime(left.publishedAt)
+        ).slice(0, 30);
+      })
+    );
+  }
+
+  private publishedTime(value: string): number {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 }

@@ -1,5 +1,5 @@
-import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
 import { AuthService } from './core/services/auth.service';
 /** Keep legacy dashboard links aligned with the signed-in user's home page. */
 const home = () => {
@@ -58,7 +58,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     canActivate: [authGuard, adminRoleGuard],
-    loadComponent: () => import('./components/admin-overview/admin-overview.component').then(m => m.AdminOverviewComponent)
+    loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)
   },
   {
     // There is no combined all-accounts view; pick an account from the sidebar
