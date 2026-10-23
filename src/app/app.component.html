@@ -1,7 +1,7 @@
 <div class="app-container">
   @if (appInitialized()) {
-    <header class="app-header">
-  <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to your home page">
+    <header class="app-header" [class.landing-header]="isLandingPage()">
+  <a class="logo-link" [routerLink]="isAuthPage() ? '/' : homeRoute()" aria-label="Go to your home page">
       <svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
         <g fill="#fff" stroke="#245a20" stroke-width="5" stroke-linejoin="round">
           <g transform="translate(94 102) rotate(-18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
@@ -43,6 +43,13 @@
       </button>
       @if (role()) {
         <button type="button" class="sign-out" (click)="signOut()">Sign out</button>
+      }
+      @if (isLandingPage()) {
+        <a class="icon-btn tip login-link" routerLink="/login" aria-label="Log in" data-tip="Log in">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5M3 12h12m-4-4 4 4-4 4"/>
+          </svg>
+        </a>
       }
 
       @if (!isAuthPage()) {
@@ -131,7 +138,7 @@
       </nav>
       }
 
-      <main class="app-main">
+      <main class="app-main" [class.landing-main]="isLandingPage()">
         <router-outlet></router-outlet>
       </main>
     </div>

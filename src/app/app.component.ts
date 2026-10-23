@@ -8,7 +8,8 @@ import { PortfolioApiService } from './core/services/portfolio-api.service';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
 
-const isAuthUrl = (url: string) => /^\/(login|signup|agreement)(\/|\?|#|$)/.test(url);
+const isLandingUrl = (url: string) => url.split(/[?#]/)[0].replace(/\/$/, '') === '';
+const isAuthUrl = (url: string) => isLandingUrl(url) || /^\/(login|signup|agreement)(\/|\?|#|$)/.test(url);
 
 @Component({
   selector: 'app-root',
@@ -60,11 +61,12 @@ export class AppComponent {
   protected readonly accountsOpen = signal(false);
   protected readonly role = computed(() => this.auth.currentUser()?.role ?? null);
   protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/home'
-    : this.role() === 'ADMIN' ? '/admin' : '/analytics');
+    : this.role() === 'ADMIN' ? '/admin' : this.role() === 'ANALYST' ? '/analytics' : '/');
   protected readonly theme = inject(ThemeService);
   // Full-width pages with no sidebar (log in, sign up). Seeded from the URL so the
   // sidebar doesn't flash on a direct load before the first navigation finishes.
   protected readonly isAuthPage = signal(isAuthUrl(inject(Location).path()));
+  protected readonly isLandingPage = signal(isLandingUrl(inject(Location).path()));
 
   private readonly router = inject(Router);
 
@@ -76,6 +78,7 @@ export class AppComponent {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => {
         this.isAuthPage.set(isAuthUrl(e.urlAfterRedirects));
+        this.isLandingPage.set(isLandingUrl(e.urlAfterRedirects));
         if (e.urlAfterRedirects.startsWith('/portfolio')) {
           this.accountsOpen.set(true);
         }

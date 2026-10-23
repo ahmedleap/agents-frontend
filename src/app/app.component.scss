@@ -323,6 +323,27 @@
   color: var(--pf-text);
 }
 
+.app-main.landing-main {
+  padding: 0;
+  overflow: auto;
+  scroll-behavior: smooth;
+}
+
+.landing-header {
+  flex-shrink: 0;
+
+  .login-link {
+    background: var(--pf-green-dark);
+    border-color: var(--pf-green-dark);
+    color: #fff;
+    &:hover { background: var(--pf-green); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-main.landing-main { scroll-behavior: auto; }
+}
+
 @media (max-width: 800px) {
   .app-header {
     flex-direction: column;
@@ -354,4 +375,20 @@
 
   // Too narrow to fit everything on one screen, so let the page scroll
   .app-main { padding: 1rem; overflow: auto; }
+
+  .app-header.landing-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 0.5rem;
+    padding: 1rem;
+
+    .logo { width: 3rem; height: 3rem; }
+    h1 { font-size: clamp(1.5rem, 5vw, 2.2rem); }
+    > p { grid-column: 1 / 3; font-size: 0.9rem; }
+    .header-actions { grid-column: 3; grid-row: 1; }
+    .icon-btn { width: 2.75rem; height: 2.75rem; }
+    .role-badge { display: none; }
+    .sign-out { padding: 0 0.5rem; }
+  }
 }
