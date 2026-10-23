@@ -84,7 +84,7 @@
               <table>
                 <thead><tr><th>Ticker</th><th>Price</th><th>Change</th>@if (editingWatchlist()) { <th><span class="sr-only">Remove</span></th> }</tr></thead>
                 <tbody>
-                  @for (w of watchlist(); track w.instrumentId) {
+                  @for (w of pagedWatchlist(); track w.instrumentId) {
                     <tr>
                       <td><span class="ticker"><span class="badge small">{{ w.ticker[0] }}</span><span class="ticker-text">{{ w.ticker }}<small>{{ w.name }}</small></span></span></td>
                       <td>{{ w.price !== undefined ? (w.price | currency) : '—' }}</td>
@@ -110,6 +110,8 @@
                 </tbody>
               </table>
             </div>
+            <app-pager class="watch-pager" compact [page]="watchPage()" (pageChange)="watchPage.set($event)"
+                       [total]="watchlist().length" [pageSize]="watchPageSize" label="Watchlist pages" />
           </div>
 
           <div class="card movers">

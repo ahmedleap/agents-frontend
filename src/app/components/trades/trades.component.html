@@ -47,8 +47,8 @@
     <p class="error-banner" role="alert">{{ message }}</p>
   }
 
-  <div class="instrument-grid">
-    @for (instrument of visibleInstruments(); track instrument.symbol) {
+  <div class="instrument-grid" #grid>
+    @for (instrument of pagedInstruments(); track instrument.symbol) {
       <article class="instrument-card">
         <div class="instrument-top">
           <div class="instrument-name">
@@ -105,6 +105,8 @@
       </div>
     }
   </div>
+
+  <app-pager [page]="page()" (pageChange)="goToPage($event)" [total]="visibleInstruments().length" [pageSize]="pageSize" label="Stock list pages" />
 
   <section class="order-note">
     <div class="note-icon" aria-hidden="true">i</div>

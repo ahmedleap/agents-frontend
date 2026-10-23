@@ -249,6 +249,8 @@ h2, h3, p { margin: 0; }
   &.on { border-color: var(--pf-green); background: var(--pf-green); color: #fff; }
 }
 
+.watch-pager { display: block; padding: 0.55rem 1rem; border-top: 1px solid var(--pf-border); }
+
 .watch-note, .watch-error { padding: 0 1.1rem 0.6rem; font-size: 0.8rem; }
 .watch-note { color: var(--pf-muted); }
 .watch-error { color: var(--pf-loss); font-weight: 700; }
