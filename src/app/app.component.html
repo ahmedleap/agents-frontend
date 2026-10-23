@@ -1,7 +1,7 @@
 <div class="app-container">
   @if (appInitialized()) {
     <header class="app-header">
-      <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to your home page">
+      <a class="logo-link" [routerLink]="homeRoute()" aria-label="Go to dashboard">
       <svg class="logo" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
         <g fill="#fff" stroke="#245a20" stroke-width="5" stroke-linejoin="round">
           <g transform="translate(94 102) rotate(-18)"><rect x="-28" y="-22" width="56" height="44"/><circle r="8" fill="none" stroke-width="3.5"/></g>
@@ -21,13 +21,12 @@
       @if (role()) { <span class="role-badge">{{ role() }}</span> }
 
       <div class="header-actions">
-      <!-- Hover label names the mode it switches to -->
-      <button
-        type="button"
-        class="icon-btn tip"
-        (click)="theme.toggle()"
-        [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-        [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+        <button
+          type="button"
+          class="icon-btn tip"
+          (click)="theme.toggle()"
+          [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+          [attr.data-tip]="theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
         @if (theme.theme() === 'dark') {
           <!-- Sun -->
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -67,20 +66,20 @@
     <div class="app-body">
       @if (!isAuthPage()) {
       <nav class="app-sidebar" aria-label="Main navigation">
-        @if (role() === 'CLIENT') {
-          <a class="nav-link" routerLink="/home" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
+        @if (role() === 'ANALYST') {
+          <!-- Analysts only get the analytics page -->
+          <a class="nav-link" routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">Analysis</a>
+        } @else if (role() === 'ADMIN') {
+          <a class="nav-link" routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin overview</a>
+        } @else if (role() === 'CLIENT') {
+          <a class="nav-link" [routerLink]="homeRoute()" routerLinkActive="active" ariaCurrentWhenActive="page">Dashboard</a>
           <a class="nav-link trade-link" [routerLink]="['/trades', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">
             <span class="trade-icon" aria-hidden="true">↗</span>Trade
           </a>
           <a class="nav-link" [routerLink]="['/history', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">History</a>
           <a class="nav-link" [routerLink]="['/transactions', accounts().list[0]?.id]" routerLinkActive="active" ariaCurrentWhenActive="page">Transactions</a>
-        } @else if (role() === 'ADMIN') {
-          <a class="nav-link" routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin overview</a>
-        } @else if (role() === 'ANALYST') {
-          <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" ariaCurrentWhenActive="page">Analytics dashboard</a>
-        }
+          <a class="nav-link" routerLink="/news" routerLinkActive="active" ariaCurrentWhenActive="page">News</a>
 
-        @if (role() === 'CLIENT') {
         <div class="nav-row">
           <button
             type="button"

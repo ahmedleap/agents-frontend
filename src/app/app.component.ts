@@ -60,8 +60,9 @@ export class AppComponent {
   protected readonly accountsOpen = signal(false);
   protected readonly role = computed(() => this.auth.currentUser()?.role ?? null);
   protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/home'
-    : this.role() === 'ADMIN' ? '/admin' : '/dashboard');
+    : this.role() === 'ADMIN' ? '/admin' : '/analytics');
   protected readonly theme = inject(ThemeService);
+  protected readonly isAnalyst = inject(AuthService).isAnalyst;
   // Full-width pages with no sidebar (log in, sign up). Seeded from the URL so the
   // sidebar doesn't flash on a direct load before the first navigation finishes.
   protected readonly isAuthPage = signal(isAuthUrl(inject(Location).path()));

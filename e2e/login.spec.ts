@@ -83,9 +83,10 @@ test.describe('Login', () => {
     await page.getByLabel(/^Password/).fill('Secret123!');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByRole('heading', { name: 'Trading Dashboard' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Analytics dashboard' })).toBeVisible();
+    // Analysts land on the analytics page, and it's the only page in their sidebar
+    await expect(page).toHaveURL(/\/analytics$/);
+    await expect(page.getByRole('heading', { name: 'Analytics Dashboard', exact: true })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Analysis']);
   });
 
   test('routes admins to the admin-only overview', async ({ page }) => {

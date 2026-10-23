@@ -33,6 +33,13 @@ export class OrderHistoryService {
     this.load(accountId);
   }
 
+  cancel(orderId: string, accountId: string): void {
+    this.api.cancelOrder(orderId).subscribe({
+      next: () => this.refresh(accountId),
+      error: error => console.error('Order cancellation failed', error)
+    });
+  }
+
   private load(accountId: string): void {
       this.loadedAccounts.add(accountId);
       this.api.getOrderHistory(accountId).subscribe({
