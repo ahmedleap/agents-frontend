@@ -42,7 +42,8 @@
           </svg>
         }
       </button>
-      @if (!isAuthPage()) {
+      <!-- Settings is for clients' own details; analysts and admins don't get it -->
+      @if (!isAuthPage() && role() === 'CLIENT') {
         <a
           class="icon-btn tip"
           routerLink="/settings"

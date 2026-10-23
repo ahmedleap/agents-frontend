@@ -2,12 +2,11 @@
 .page { display: flex; flex-direction: column; gap: 1rem; padding-bottom: 1rem; }
 h2, h3, p { margin: 0; }
 .toolbar { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: .75rem; h2 { font: 600 1.9rem/1.1 'Fredoka', 'Baloo 2', sans-serif; color: var(--pf-green-dark); } p { margin-top: .2rem; font-size: 1.05rem; font-weight: 600; color: var(--pf-muted); } }
-.toolbar-actions, .filters, .tabs { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.filters, .tabs { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
-.refresh, .view-button, .state button { border: 1px solid var(--pf-border); border-radius: 4px; background: var(--pf-card); color: var(--pf-accent); padding: .45rem .75rem; }
-.refresh:hover, .view-button:hover { background: var(--pf-active); }
-.health { display: inline-flex; align-items: center; gap: .4rem; color: var(--pf-muted); font-size: .82rem; text-transform: capitalize; i { width: .5rem; height: .5rem; border-radius: 50%; background: var(--pf-gain); } &.down i { background: var(--pf-loss); } }
+.view-button, .state button { border: 1px solid var(--pf-border); border-radius: 4px; background: var(--pf-card); color: var(--pf-accent); padding: .45rem .75rem; }
+.view-button:hover { background: var(--pf-active); }
 .tabs { border-bottom: 1px solid var(--pf-border); gap: 0; button { border: 0; border-bottom: 2px solid transparent; padding: .65rem 1rem; background: transparent; color: var(--pf-muted); &.active { border-color: var(--pf-green); color: var(--pf-accent); font-weight: 700; } &:hover { color: var(--pf-accent); } } }
 .card { background: var(--pf-card); border: 1px solid var(--pf-border); border-radius: 2px; box-shadow: var(--pf-shadow); }
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
