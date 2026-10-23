@@ -6,7 +6,7 @@ const home = () => {
   const auth = inject(AuthService);
   if (!auth.isAuthenticated()) return '/login';
   const role = auth.currentUser()?.role;
-  return role === 'ANALYST' ? '/analytics' : role === 'CLIENT' ? '/client' : '/admin';
+  return role === 'ANALYST' ? '/analytics' : role === 'CLIENT' ? '/home' : '/admin';
 };
 import { adminRoleGuard, analystRoleGuard, authGuard, clientRoleGuard, guestGuard } from './core/auth/auth.guard';
 
@@ -31,12 +31,24 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./components/signup/signup.component').then(m => m.SignupComponent)
   },
+  {
+    // Full Client Agreement, linked from the sign-up pop-up; readable without logging in
+    path: 'agreement',
+    loadComponent: () => import('./components/agreement/agreement.component').then(m => m.AgreementComponent)
+  },
 
   // ---------- App (after logging in) ----------
   {
-    path: 'client',
+    // A client's home page (their dashboard)
+    path: 'home',
     canActivate: [authGuard, clientRoleGuard],
     loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
+  },
+  {
+    // Old address, kept so existing links and bookmarks still work
+    path: 'client',
+    redirectTo: 'home',
+    pathMatch: 'full'
   },
   {
     path: 'dashboard',
@@ -51,7 +63,7 @@ export const routes: Routes = [
   {
     // There is no combined all-accounts view; pick an account from the sidebar
     path: 'portfolio',
-    redirectTo: 'client',
+    redirectTo: 'home',
     pathMatch: 'full'
   },
   {

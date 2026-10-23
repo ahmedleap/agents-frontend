@@ -21,13 +21,17 @@ import {
 } from 'chart.js';
 
 import { DashboardService } from '../../core/services/dashboard.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 // Register only what the line chart needs (keeps the bundle small).
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
 
-const GREEN = '#2f6f2a';
-const MUTED = '#5f7267';
-const BORDER = '#dbe5de';
+/** Chart colours from the current theme's CSS tokens (styles.scss), so the chart follows light/dark mode */
+function themeColors() {
+  const css = getComputedStyle(document.documentElement);
+  const token = (name: string) => css.getPropertyValue(name).trim();
+  return { line: token('--pf-chart'), fill: token('--pf-chart-fill'), muted: token('--pf-muted'), border: token('--pf-border') };
+}
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const usdCompact = new Intl.NumberFormat('en-US', {
@@ -47,6 +51,7 @@ const volumeFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumF
 })
 export class DashboardComponent {
   private readonly data = inject(DashboardService);
+  private readonly theme = inject(ThemeService);
 
   protected readonly asOf = new Date();
 
@@ -101,7 +106,30 @@ export class DashboardComponent {
       this.chart.update();
     });
 
+    // ...and recolour it when switching between light and dark mode
+    effect(() => {
+      this.theme.theme();
+      if (!this.chart) return;
+      // Wait a frame so the new theme's CSS variables are in place
+      requestAnimationFrame(() => this.applyThemeColors());
+    });
+
     inject(DestroyRef).onDestroy(() => this.chart?.destroy());
+  }
+
+  private applyThemeColors(): void {
+    const chart = this.chart;
+    if (!chart) return;
+    const c = themeColors();
+    const dataset = chart.data.datasets[0];
+    dataset.borderColor = c.line;
+    dataset.backgroundColor = c.fill;
+    (dataset as { pointBackgroundColor?: string }).pointBackgroundColor = c.line;
+    const scales = chart.options.scales as Record<string, { grid?: { color?: string }; ticks?: { color?: string } }>;
+    if (scales['x']?.ticks) scales['x'].ticks.color = c.muted;
+    if (scales['y']?.ticks) scales['y'].ticks.color = c.muted;
+    if (scales['y']?.grid) scales['y'].grid.color = c.border;
+    chart.update('none');
   }
 
   protected volume(v: number): string {
@@ -109,6 +137,7 @@ export class DashboardComponent {
   }
 
   private createChart(el: HTMLCanvasElement): Chart<'line'> {
+    const c = themeColors();
     return new Chart(el, {
       type: 'line',
       data: {
@@ -117,15 +146,15 @@ export class DashboardComponent {
           {
             label: 'Total value',
             data: this.series(),
-            borderColor: GREEN,
-            backgroundColor: 'rgba(47, 111, 42, 0.12)',
+            borderColor: c.line,
+            backgroundColor: c.fill,
             borderWidth: 2,
             fill: false,
             tension: 0.25,
             pointRadius: 0,
             pointHoverRadius: 5,
             pointHitRadius: 12,
-            pointBackgroundColor: GREEN
+            pointBackgroundColor: c.line
           }
         ]
       },
@@ -141,10 +170,10 @@ export class DashboardComponent {
           }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: MUTED, maxTicksLimit: 7 } },
+          x: { grid: { display: false }, ticks: { color: c.muted, maxTicksLimit: 7 } },
           y: {
-            grid: { color: BORDER },
-            ticks: { color: MUTED, maxTicksLimit: 3, callback: v => usdCompact.format(Number(v)) }
+            grid: { color: c.border },
+            ticks: { color: c.muted, maxTicksLimit: 3, callback: v => usdCompact.format(Number(v)) }
           }
         }
       }

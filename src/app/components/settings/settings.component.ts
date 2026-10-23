@@ -10,26 +10,13 @@ import {
   RiskTolerance,
   UpdateClientRequest
 } from '../../core/services/client-api.service';
+import { RISK_OPTIONS, SIZE_OPTIONS } from '../../core/client-profile-options';
 import { Theme, ThemeService } from '../../core/services/theme.service';
 
 type LoadState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
   | { status: 'ready'; client: ClientDto };
-
-const RISK_OPTIONS: { value: RiskTolerance; label: string; blurb: string }[] = [
-  { value: 'CONSERVATIVE', label: 'Conservative', blurb: 'Protect what I have' },
-  { value: 'MODERATE', label: 'Moderate', blurb: 'Balance growth and risk' },
-  { value: 'AGGRESSIVE', label: 'Aggressive', blurb: 'Maximize growth' }
-];
-
-const SIZE_OPTIONS: { value: PortfolioSizeRange; label: string }[] = [
-  { value: 'UNDER_50K', label: 'Under $50K' },
-  { value: 'BETWEEN_50K_100K', label: '$50K – $100K' },
-  { value: 'BETWEEN_100K_200K', label: '$100K – $200K' },
-  { value: 'BETWEEN_200K_500K', label: '$200K – $500K' },
-  { value: 'OVER_500K', label: 'Over $500K' }
-];
 
 type EditableField = 'firstName' | 'middleName' | 'lastName' | 'riskTolerance' | 'portfolioSizeRange';
 

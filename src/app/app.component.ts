@@ -8,7 +8,7 @@ import { PortfolioApiService } from './core/services/portfolio-api.service';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
 
-const isAuthUrl = (url: string) => /^\/(login|signup)(\/|\?|#|$)/.test(url);
+const isAuthUrl = (url: string) => /^\/(login|signup|agreement)(\/|\?|#|$)/.test(url);
 
 @Component({
   selector: 'app-root',
@@ -59,7 +59,7 @@ export class AppComponent {
 
   protected readonly accountsOpen = signal(false);
   protected readonly role = computed(() => this.auth.currentUser()?.role ?? null);
-  protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/client'
+  protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/home'
     : this.role() === 'ADMIN' ? '/admin' : '/analytics');
   protected readonly theme = inject(ThemeService);
   protected readonly isAnalyst = inject(AuthService).isAnalyst;
