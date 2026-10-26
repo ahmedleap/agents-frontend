@@ -9,7 +9,7 @@
       <label class="account-label" for="history-account">Account</label>
       <select id="history-account" class="account-select" [value]="accountId()" (change)="switchAccount($event)" aria-label="Select account history">
         @for (availableAccount of accounts(); track availableAccount.id) {
-          <option [value]="availableAccount.id">{{ availableAccount.name }}</option>
+          <option [value]="availableAccount.id" [selected]="availableAccount.id === accountId()">{{ availableAccount.name }}</option>
         }
       </select>
     </div>

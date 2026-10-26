@@ -9,7 +9,7 @@
       <label class="account-label" for="trade-account">Trading from</label>
       <select id="trade-account" class="account-select" [value]="account()?.id ?? ''" (change)="switchAccount($event)" aria-label="Select trading account">
         @for (availableAccount of selectableAccounts(); track availableAccount.id) {
-          <option [value]="availableAccount.id">{{ availableAccount.name }}</option>
+          <option [value]="availableAccount.id" [selected]="availableAccount.id === account()?.id">{{ availableAccount.name }}</option>
         }
       </select>
       <div class="cash-card">
