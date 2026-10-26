@@ -36,3 +36,6 @@ button { cursor: pointer; }
 @media (max-width: 1000px) { .kpis { grid-template-columns: repeat(2, 1fr); } .dashboard-grid { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .card-head { align-items: flex-start; } .card-head > .filters { width: 100%; } .client-search { flex: 1 1 100%; } .client-search input { flex: 1; width: auto; } .filters select { flex: 1 1 10rem; } }
 @media (max-width: 700px) { :host { overflow: visible; margin: 0; padding: 0; } .kpis { grid-template-columns: 1fr 1fr; } .toolbar { align-items: flex-start; } .filters { width: 100%; input, select { flex: 1; width: auto; min-width: 8rem; } } .client-search { flex: 1 1 100%; input { min-width: 0; } } .clients-table { font-size: .66rem; } .clients-table th, .clients-table td { padding: .4rem .2rem; } .clients-table th:nth-child(2) { width: 16%; } .clients-table th:nth-child(3) { width: 16%; } .clients-table th:nth-child(8) { width: 8%; } .clients-table .tag { min-width: 0; padding: .15rem .2rem; font-size: .62rem; } .clients-table .view-button { min-width: 0; padding: .25rem .35rem; } .tabs { overflow-x: auto; flex-wrap: nowrap; } .tabs button { flex: none; } }
+
+// Page buttons under each table
+.table-pager { display: block; padding: .85rem 1.25rem; border-top: 1px solid var(--pf-border); }
