@@ -184,17 +184,35 @@
           </button>
         </div>
 
+        <!-- Selling: how many shares you own, right above where you enter how many to sell -->
+        @if (side() === 'sell') {
+          @if (availableToSell(); as owned) {
+            <div class="owned" [class.over]="quantity() > owned" aria-live="polite">
+              <div class="owned-text">
+                <span class="owned-label">{{ quantity() > owned ? 'You only have' : 'You own' }}</span>
+                <strong>{{ owned | number: '1.0-0' }} {{ owned === 1 ? 'share' : 'shares' }}</strong>
+                @if (instrument.price > 0) {
+                  <small>Worth {{ owned * instrument.price | currency }} at the current price</small>
+                }
+              </div>
+              <button type="button" class="sell-all" [disabled]="quantity() === owned" (click)="sellAll()">Sell all</button>
+            </div>
+          } @else if (availableToSell() === 0) {
+            <div class="owned none" role="status">
+              <div class="owned-text">
+                <span class="owned-label">You don't own any</span>
+                <strong>{{ instrument.symbol }}</strong>
+                <small>Switch to Buy, or pick a stock you hold.</small>
+              </div>
+            </div>
+          } @else {
+            <p class="cash-hint">Checking how many shares you own...</p>
+          }
+        }
+
         <label class="quantity-field">Shares
           <input type="number" min="1" step="1" [max]="side() === 'sell' ? availableToSell() : null" [value]="quantity()" (input)="setQuantity($event)">
         </label>
-
-        @if (side() === 'sell') {
-          @if (availableToSell() === null) {
-            <p class="cash-hint">Checking your available shares...</p>
-          } @else {
-            <p class="cash-hint">Available to sell: {{ availableToSell() | number: '1.0-0' }} shares</p>
-          }
-        }
 
         @if (orderType() === 'limit') {
           <label class="quantity-field">Limit price

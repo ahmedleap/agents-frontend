@@ -146,10 +146,13 @@
           @for (r of visibleRows(); track r.ticker) {
             <tr>
               <td>
-                <span class="ticker">
+                <!-- Opens the Trade page with this holding ready to sell -->
+                <a class="ticker ticker-link" [routerLink]="['/trades', accountId()]"
+                   [queryParams]="{ accountName: account(), ticker: r.ticker, side: 'sell' }"
+                   [attr.aria-label]="'Sell ' + r.ticker" [attr.data-tip]="'Sell ' + r.ticker">
                   <span class="badge small" [style.background]="r.color">{{ r.ticker[0] }}</span>
                   {{ r.ticker }}
-                </span>
+                </a>
               </td>
               <td>{{ r.name }}</td>
               <td>{{ r.shares | number: '1.0-0' }}</td>

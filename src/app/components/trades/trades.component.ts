@@ -64,6 +64,15 @@ export class TradesComponent {
   /** US market open/closed, shared with the header badge */
   protected readonly market = inject(MarketHoursService);
   private readonly route = inject(ActivatedRoute);
+  /**
+   * Holdings on the account page link here with ?ticker=AAPL&side=sell: once the stock list and the account
+   * are ready, that stock's order pop-up opens with Sell selected. Handled once, then taken off the URL.
+   */
+  private pendingOrderLink: { ticker: string; side: Side } | null = (() => {
+    const params = this.route.snapshot.queryParamMap;
+    const ticker = params.get('ticker')?.trim().toUpperCase();
+    return ticker ? { ticker, side: params.get('side') === 'sell' ? 'sell' : 'buy' } : null;
+  })();
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
     { initialValue: this.route.snapshot.paramMap.get('accountId') }
@@ -209,6 +218,14 @@ export class TradesComponent {
   constructor() {
     this.loadInstruments();
 
+    // Open the linked stock's order once the list has loaded and we know which account is trading
+    effect(() => {
+      const link = this.pendingOrderLink;
+      if (!link || this.loading() || !this.account()) return;
+      const instruments = this.instruments();
+      untracked(() => this.openLinkedOrder(link, instruments));
+    });
+
     // Load market data for the cards on the current page, top to bottom (each card once per list)
     effect(() => {
       for (const instrument of this.pagedInstruments()) {
@@ -312,6 +329,33 @@ export class TradesComponent {
     if (accountId) this.router.navigate(['/trades', accountId]);
   }
 
+  private openLinkedOrder(link: { ticker: string; side: Side }, instruments: Instrument[]): void {
+    this.pendingOrderLink = null;
+    // Take ticker/side off the address so a reload doesn't open the order again
+    void this.router.navigate([], {
+      relativeTo: this.route, queryParams: { ticker: null, side: null }, queryParamsHandling: 'merge', replaceUrl: true
+    });
+
+    const open = (instrument: Instrument) => {
+      this.openOrder(instrument);
+      this.setSide(link.side);
+    };
+    const listed = instruments.find(item => item.symbol.toUpperCase() === link.ticker);
+    if (listed) {
+      open(listed);
+      return;
+    }
+    // Not in the list (e.g. the list failed to load): look the ticker up directly
+    this.tradingApi.searchInstruments(link.ticker).subscribe({
+      next: response => {
+        const match = (response.results ?? []).find(result => result.ticker.toUpperCase() === link.ticker);
+        if (match) open(this.toInstrument(match, 0));
+        else this.error.set(`${link.ticker} couldn't be found to trade.`);
+      },
+      error: () => this.error.set(`${link.ticker} couldn't be loaded to trade. Search for it below.`)
+    });
+  }
+
   protected closeOrder(): void {
     this.selected.set(null);
     this.confirmed.set(false);
@@ -348,6 +392,14 @@ export class TradesComponent {
         input.setSelectionRange(selectionStart, selectionEnd);
       }
     });
+  }
+
+  /** Selling: fill in every share owned */
+  protected sellAll(): void {
+    const owned = this.availableToSell();
+    if (!owned) return;
+    this.quantity.set(owned);
+    this.confirmed.set(false);
   }
 
   protected setQuantity(event: Event): void {

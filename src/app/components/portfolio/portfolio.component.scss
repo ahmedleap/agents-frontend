@@ -387,6 +387,39 @@ tbody tr { transition: background 0.12s; }
 tbody tr:hover { background: var(--pf-hover); }
 
 .ticker { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; }
+
+// Holding ticker: links to the Trade page, ready to sell; "Sell AAPL" shows on hover
+.ticker-link {
+  position: relative;
+  padding: 0.2rem 0.45rem 0.2rem 0.2rem;
+  margin-left: -0.2rem;
+  border-radius: 999px;
+  color: var(--pf-text);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover, &:focus-visible { background: var(--pf-sell-bg); color: var(--pf-loss); }
+  &:focus-visible { outline: none; box-shadow: var(--ring); }
+
+  &::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: calc(100% + 0.4rem);
+    top: 50%;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    background: var(--pf-text);
+    color: var(--pf-card);
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-0.25rem, -50%);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  &:hover::after, &:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+}
 .empty { padding: 3.5rem 1rem; color: var(--pf-muted); text-align: center; }
 
 @media (max-width: 800px) {
