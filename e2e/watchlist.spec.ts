@@ -39,7 +39,9 @@ async function fakeMarket(page: Page) {
   await page.route('**/api/instruments', route => route.fulfill({ json: { results: instruments } }));
   await page.route(/\/api\/instruments\/[^/?]+$/, route => {
     const ticker = new URL(route.request().url()).pathname.split('/').pop()!;
-    const i = instruments.find(x => x.ticker === ticker)!;
+    const i = instruments.find(x => x.ticker === ticker);
+    // Not one of ours (e.g. /instruments/market-movers): leave it to the other fakes
+    if (!i) return route.fallback();
     return route.fulfill({ json: { ticker, name: i.name, assetClass: i.assetClass } });
   });
   await page.route(/\/api\/instruments\/[^/]+\/quote$/, route => route.fulfill({

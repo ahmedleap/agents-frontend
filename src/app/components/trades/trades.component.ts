@@ -16,6 +16,7 @@ import { AssetFilter, AssetFilterComponent, matchesAssetFilter } from '../asset-
 import { WatchButtonComponent } from '../watch-button/watch-button.component';
 import { PagerComponent } from '../pager/pager.component';
 import { WatchlistService } from '../../core/services/watchlist.service';
+import { MarketHoursService } from '../../core/services/market-hours.service';
 
 interface Instrument {
   instrumentId: string;
@@ -60,6 +61,8 @@ export class TradesComponent {
   private readonly orderHistory = inject(OrderHistoryService);
   /** Star buttons on the cards; failures show as a message on this page */
   protected readonly watchlistError = inject(WatchlistService).error;
+  /** US market open/closed, shared with the header badge */
+  protected readonly market = inject(MarketHoursService);
   private readonly route = inject(ActivatedRoute);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),

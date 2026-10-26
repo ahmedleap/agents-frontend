@@ -21,8 +21,8 @@
       @if (role()) { <span class="role-badge">{{ role() }}</span> }
 
       <div class="header-actions">
-        <!-- Access-token countdown, only once logged in -->
-        @if (role()) { <app-session-timer /> }
+        <!-- Once logged in: market open/closed, then the access-token countdown -->
+        @if (role()) { <app-market-status /> <app-session-timer /> }
         <button
           type="button"
           class="icon-btn tip"

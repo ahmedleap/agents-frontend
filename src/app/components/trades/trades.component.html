@@ -21,8 +21,8 @@
 
   <div class="market-bar">
     <div>
-      <span class="market-dot"></span>
-      <strong>Markets open</strong>
+      <span class="market-dot" [style.background]="market.isOpen() ? null : 'var(--pf-loss)'" [style.box-shadow]="market.isOpen() ? null : '0 0 0 3px var(--pf-sell-bg)'"></span>
+      <strong>{{ market.isOpen() ? 'Markets open' : 'Markets closed' }}</strong>
       <span class="muted">Prices delayed by 15 minutes</span>
     </div>
     <span class="updated">Updated just now</span>
