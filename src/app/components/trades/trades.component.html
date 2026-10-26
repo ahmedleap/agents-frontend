@@ -21,8 +21,8 @@
 
   <div class="market-bar">
     <div>
-      <span class="market-dot"></span>
-      <strong>Markets open</strong>
+      <span class="market-dot" [style.background]="market.isOpen() ? null : 'var(--pf-loss)'" [style.box-shadow]="market.isOpen() ? null : '0 0 0 3px var(--pf-sell-bg)'"></span>
+      <strong>{{ market.isOpen() ? 'Markets open' : 'Markets closed' }}</strong>
       <span class="muted">Prices delayed by 15 minutes</span>
     </div>
     <span class="updated">Updated just now</span>
@@ -47,8 +47,8 @@
     <p class="error-banner" role="alert">{{ message }}</p>
   }
 
-  <div class="instrument-grid">
-    @for (instrument of visibleInstruments(); track instrument.symbol) {
+  <div class="instrument-grid" #grid>
+    @for (instrument of pagedInstruments(); track instrument.symbol) {
       <article class="instrument-card">
         <div class="instrument-top">
           <div class="instrument-name">
@@ -105,6 +105,8 @@
       </div>
     }
   </div>
+
+  <app-pager [page]="page()" (pageChange)="goToPage($event)" [total]="visibleInstruments().length" [pageSize]="pageSize" label="Stock list pages" />
 
   <section class="order-note">
     <div class="note-icon" aria-hidden="true">i</div>

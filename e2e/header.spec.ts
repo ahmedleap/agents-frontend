@@ -1,15 +1,16 @@
 import { expect, test, loginAsClient } from './helpers';
 
 test.describe('Header', () => {
-  test('session timer, light/dark, then settings, then Logout on the far right', async ({ page }) => {
+  test('market status, session timer, light/dark, then settings, then Logout on the far right', async ({ page }) => {
     await loginAsClient(page, []);
 
-    const actions = page.locator('.header-actions > :not(app-session-timer), .header-actions > app-session-timer > .timer');
-    await expect(actions).toHaveCount(4);
-    await expect(actions.nth(0)).toHaveAttribute('role', 'timer');
-    await expect(actions.nth(1)).toHaveAttribute('aria-label', /Switch to (light|dark) mode/);
-    await expect(actions.nth(2)).toHaveAttribute('aria-label', 'Settings');
-    await expect(actions.nth(3)).toHaveText('Logout');
+    const actions = page.locator('.header-actions > :not(app-session-timer, app-market-status), .header-actions > app-session-timer > .timer, .header-actions > app-market-status > .market');
+    await expect(actions).toHaveCount(5);
+    await expect(actions.nth(0)).toHaveText(/^Market (open|closed)$/);
+    await expect(actions.nth(1)).toHaveAttribute('role', 'timer');
+    await expect(actions.nth(2)).toHaveAttribute('aria-label', /Switch to (light|dark) mode/);
+    await expect(actions.nth(3)).toHaveAttribute('aria-label', 'Settings');
+    await expect(actions.nth(4)).toHaveText('Logout');
   });
 
   test('Logout ends the session and returns to the login page', async ({ page }) => {

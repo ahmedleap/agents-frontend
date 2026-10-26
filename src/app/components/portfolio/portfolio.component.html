@@ -76,20 +76,22 @@
 
     <div class="card alloc">
       <h3>Asset Allocation</h3>
-      <p class="sub">By sector</p>
-      @for (a of allocation(); track a.sector) {
-        <div class="alloc-row">
-          <span class="badge" [style.background]="a.color">{{ a.sector[0] }}</span>
-          <div class="alloc-info">
-            <div class="alloc-top">
-              <span><strong>{{ a.sector }}</strong></span>
-              <strong>{{ a.weight | number: '1.1-1' }}%</strong>
+      <p class="sub">By sector{{ allocation().length > 3 ? ' · scroll for ' + (allocation().length - 3) + ' more' : '' }}</p>
+      <!-- Largest three show; the rest scroll -->
+      <div class="alloc-list" tabindex="0" aria-label="Sectors in this account">
+        @for (a of allocation(); track a.sector) {
+          <div class="alloc-row">
+            <span class="badge" [style.background]="a.color">{{ a.sector[0] }}</span>
+            <div class="alloc-info">
+              <div class="alloc-top">
+                <strong class="alloc-name" [title]="a.sector">{{ a.sector }}</strong>
+                <span class="alloc-nums"><strong>{{ a.weight | number: '1.1-1' }}%</strong><small>{{ a.value | currency }}</small></span>
+              </div>
+              <div class="track"><div class="fill" [style.width.%]="a.weight" [style.background]="a.color"></div></div>
             </div>
-            <div class="track"><div class="fill" [style.width.%]="a.weight" [style.background]="a.color"></div></div>
-            <small class="alloc-value">{{ a.value | currency }}</small>
           </div>
-        </div>
-      }
+        }
+      </div>
     </div>
   </div>
 

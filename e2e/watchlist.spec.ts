@@ -39,7 +39,9 @@ async function fakeMarket(page: Page) {
   await page.route('**/api/instruments', route => route.fulfill({ json: { results: instruments } }));
   await page.route(/\/api\/instruments\/[^/?]+$/, route => {
     const ticker = new URL(route.request().url()).pathname.split('/').pop()!;
-    const i = instruments.find(x => x.ticker === ticker)!;
+    const i = instruments.find(x => x.ticker === ticker);
+    // Not one of ours (e.g. /instruments/market-movers): leave it to the other fakes
+    if (!i) return route.fallback();
     return route.fulfill({ json: { ticker, name: i.name, assetClass: i.assetClass } });
   });
   await page.route(/\/api\/instruments\/[^/]+\/quote$/, route => route.fulfill({
@@ -127,5 +129,54 @@ test.describe('Watchlist', () => {
     await card.getByRole('button', { name: 'Remove AAPL from watchlist' }).click();
     await expect(card.getByRole('alert')).toContainText("AAPL couldn't be removed");
     await expect(card.locator('tbody tr')).toHaveCount(1);
+  });
+
+  test('the dashboard watchlist shows 4 at a time, with pages', async ({ page }) => {
+    await loginAsClient(page, [account]);
+    await fakeMarket(page);
+    // 9 entries: W1..W9
+    const saved = Array.from({ length: 9 }, (_, i) => ({
+      watchlistId: `w${i + 1}`, clientId: CLIENT_ID, instrumentId: `bbbb0000-0000-4000-8000-00000000000${i + 1}`,
+      ticker: `W${i + 1}`, instrumentName: `Watched ${i + 1}`, addedAt: '2026-10-23T12:00:00Z'
+    }));
+    await page.route(`**/api/watchlists/${CLIENT_ID}`, route => route.fulfill({ json: saved }));
+    await page.route(`**/api/watchlists/${CLIENT_ID}/*`, route => {
+      const id = new URL(route.request().url()).pathname.split('/').pop()!;
+      saved.splice(saved.findIndex(e => e.instrumentId === id), 1);
+      return route.fulfill({ status: 204 });
+    });
+    const quoted: string[] = [];
+    page.on('request', request => {
+      const match = new URL(request.url()).pathname.match(/\/api\/instruments\/([^/]+)\/quote$/);
+      if (match) quoted.push(match[1]);
+    });
+    await page.goto('/home');
+
+    const card = page.locator('.card.watchlist');
+    const rows = card.locator('tbody tr');
+    const pager = card.getByRole('navigation', { name: 'Watchlist pages' });
+    await expect(rows).toHaveCount(4);
+    await expect(rows.first()).toContainText('W1');
+    await expect(pager).toContainText('1–4 of 9');
+    await expect(pager.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+    // Prices only for the page shown
+    await expect(rows.nth(3)).toContainText('$150.00');
+    expect(new Set(quoted)).toEqual(new Set(['W1', 'W2', 'W3', 'W4']));
+
+    await pager.getByRole('button', { name: 'Next page' }).click();
+    await expect(rows.first()).toContainText('W5');
+    await expect(pager).toContainText('5–8 of 9');
+    await pager.getByRole('button', { name: 'Next page' }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(pager).toContainText('9–9 of 9');
+    await expect(pager.getByRole('button', { name: 'Next page' })).toBeDisabled();
+
+    // Removing the only row on the last page goes back a page
+    await card.getByRole('button', { name: 'Edit' }).click();
+    await card.getByRole('button', { name: 'Remove W9 from watchlist' }).click();
+    await expect(rows).toHaveCount(4);
+    await expect(rows.first()).toContainText('W5');
+    // 8 left: two full pages
+    await expect(pager).toContainText('5–8 of 8');
   });
 });

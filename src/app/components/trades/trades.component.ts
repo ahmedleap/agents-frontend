@@ -1,9 +1,9 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription, catchError, concat, forkJoin, from, interval, map, mergeMap, of, switchMap, takeWhile } from 'rxjs';
+import { Observable, Subject, Subscription, catchError, concat, forkJoin, interval, map, mergeMap, of, switchMap, takeWhile } from 'rxjs';
 import { DestroyRef } from '@angular/core';
 import { AccountApiService } from '../../core/services/account-api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -14,7 +14,9 @@ import { CreateOrderResponse, HistoryResponseDto, InstrumentSearchResult, QuoteD
 import { ChartBar, ChartMode, PriceChartComponent } from '../price-chart/price-chart.component';
 import { AssetFilter, AssetFilterComponent, matchesAssetFilter } from '../asset-filter/asset-filter.component';
 import { WatchButtonComponent } from '../watch-button/watch-button.component';
+import { PagerComponent } from '../pager/pager.component';
 import { WatchlistService } from '../../core/services/watchlist.service';
+import { MarketHoursService } from '../../core/services/market-hours.service';
 
 interface Instrument {
   instrumentId: string;
@@ -37,11 +39,13 @@ type ChartRange = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL';
 
 /** How many cards load their market data at the same time; the rest wait their turn, top to bottom */
 const CARD_LOAD_CONCURRENCY = 3;
+/** Cards per page: three rows of four */
+const PAGE_SIZE = 12;
 
 @Component({
   selector: 'app-trades',
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, PriceChartComponent, AssetFilterComponent, WatchButtonComponent],
+  imports: [CurrencyPipe, DecimalPipe, PriceChartComponent, AssetFilterComponent, WatchButtonComponent, PagerComponent],
   templateUrl: './trades.component.html',
   styleUrls: ['./trades.component.scss']
 })
@@ -57,6 +61,8 @@ export class TradesComponent {
   private readonly orderHistory = inject(OrderHistoryService);
   /** Star buttons on the cards; failures show as a message on this page */
   protected readonly watchlistError = inject(WatchlistService).error;
+  /** US market open/closed, shared with the header badge */
+  protected readonly market = inject(MarketHoursService);
   private readonly route = inject(ActivatedRoute);
   private readonly accountIdParam = toSignal(
     this.route.paramMap.pipe(map(params => params.get('accountId'))),
@@ -159,6 +165,9 @@ export class TradesComponent {
   /** The current instrument list or search request, and the card data being loaded for it */
   private listRequest?: Subscription;
   private cardRequests?: Subscription;
+  /** Cards waiting for their market data, and the ones already asked for (per list) */
+  private cardQueue = new Subject<Instrument>();
+  private requestedCards = new Set<string>();
 
   protected readonly instruments = signal<Instrument[]>([]);
 
@@ -183,11 +192,37 @@ export class TradesComponent {
   });
   protected readonly visibleInstruments = computed(() =>
     this.instruments().filter(instrument => matchesAssetFilter(instrument.type, this.assetFilter())));
+
+  /** Pagination: only this page's cards are shown, and only they load market data */
+  protected readonly pageSize = PAGE_SIZE;
+  protected readonly page = signal(0);
+  protected readonly pagedInstruments = computed(() => {
+    const all = this.visibleInstruments();
+    const lastPage = Math.max(0, Math.ceil(all.length / PAGE_SIZE) - 1);
+    const page = Math.min(this.page(), lastPage);
+    return all.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  });
+  private readonly grid = viewChild<ElementRef<HTMLElement>>('grid');
   protected readonly assetFilterLabel = computed(() =>
     ({ ALL: 'instruments', STOCK: 'stocks', CRYPTO: 'crypto', FOREX: 'forex pairs' })[this.assetFilter()]);
 
   constructor() {
     this.loadInstruments();
+
+    // Load market data for the cards on the current page, top to bottom (each card once per list)
+    effect(() => {
+      for (const instrument of this.pagedInstruments()) {
+        if (this.requestedCards.has(instrument.symbol)) continue;
+        this.requestedCards.add(instrument.symbol);
+        untracked(() => this.cardQueue.next(instrument));
+      }
+    });
+
+    // A different filter shows a different list: back to page 1
+    effect(() => {
+      this.assetFilter();
+      untracked(() => this.page.set(0));
+    });
 
     // Fresh balance whenever a different account is shown
     effect(() => {
@@ -264,6 +299,12 @@ export class TradesComponent {
         this.error.set('Instrument search is unavailable. Check your session and try again.');
       }
     });
+  }
+
+  /** Pager click: show that page and bring the top of the cards into view */
+  protected goToPage(page: number): void {
+    this.page.set(page);
+    this.grid()?.nativeElement.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
   protected switchAccount(event: Event): void {
@@ -411,12 +452,11 @@ export class TradesComponent {
       return;
     }
 
-    this.instruments.set(instruments);
-    this.loading.set(false);
-
-    // Show every card straight away, then fill them in a few at a time from the top, so the first
-    // cards are ready quickly instead of every card waiting on every other card's requests
-    this.cardRequests = from(instruments).pipe(
+    // Cards are filled in a few at a time, as their page is shown (see the constructor), so the
+    // visible cards are ready quickly and cards on other pages don't load until they're needed
+    this.cardQueue = new Subject<Instrument>();
+    this.requestedCards = new Set<string>();
+    this.cardRequests = this.cardQueue.pipe(
       mergeMap(instrument => this.isTicker(instrument.symbol)
         ? this.loadCard(instrument)
         : of({ ...instrument, priceState: 'unavailable' as const }), CARD_LOAD_CONCURRENCY),
@@ -424,6 +464,10 @@ export class TradesComponent {
     ).subscribe(updated => {
       this.instruments.update(current => current.map(item => item.symbol === updated.symbol ? updated : item));
     });
+
+    this.page.set(0);
+    this.instruments.set(instruments);
+    this.loading.set(false);
   }
 
   /** One card's data: emits once with the name and price, then again with the 1M chart and 1D change */
