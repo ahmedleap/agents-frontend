@@ -112,7 +112,7 @@
 .pill, .change {
   align-self: flex-start;
   padding: 0.15rem 0.65rem;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   font-size: 0.88rem;
   font-weight: 600;
 }
@@ -136,7 +136,7 @@
   height: 0.5rem;
   margin-top: auto;
 
-  span { border-radius: 2px; }
+  span { border-radius: var(--radius-sm); }
 }
 
 .split-bar {
@@ -155,7 +155,7 @@
 }
 
 .meter {
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--pf-active);
 
   span { background: var(--pf-chart); }
@@ -212,7 +212,7 @@
   flex: none;
   width: 0.75rem;
   height: 0.75rem;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .segment-list {

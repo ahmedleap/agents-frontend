@@ -16,13 +16,14 @@
 .mode-toggle {
   display: inline-flex;
   gap: 0.2rem;
-  padding: 0.2rem;
+  padding: 0.25rem;
+  border-radius: 999px;
   background: var(--pf-inset);
 
   button {
     padding: 0.3rem 0.7rem;
     border: 0;
-    border-radius: 2px;
+    border-radius: 999px;
     background: transparent;
     color: var(--pf-muted);
     font: inherit;
@@ -33,7 +34,7 @@
   button.active {
     background: var(--pf-card);
     color: var(--pf-accent);
-    box-shadow: var(--pf-shadow);
+    box-shadow: var(--elev-1);
   }
 }
 

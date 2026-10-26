@@ -39,6 +39,15 @@
   --pf-sell-bg: rgba(192, 57, 43, 0.1);
   --pf-shadow: 0 1px 2px rgba(16, 40, 28, 0.05), 0 6px 20px rgba(16, 40, 28, 0.05);
 
+  /* App design system (the signed-in pages; the landing page keeps its own look).
+     Rounded corners, soft layered elevation and one focus ring, shared by every page. */
+  --radius-sm: 8px;    // inputs, buttons, chips inside cards
+  --radius: 12px;      // buttons, controls, small cards
+  --radius-lg: 16px;   // cards and panels
+  --elev-1: 0 1px 2px rgba(16, 40, 28, 0.04), 0 4px 16px -8px rgba(16, 40, 28, 0.10);
+  --elev-2: 0 2px 4px rgba(16, 40, 28, 0.05), 0 16px 40px -12px rgba(16, 40, 28, 0.22);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--pf-green) 28%, transparent);
+
   /* Categorical chart series, always assigned in this order (CVD-validated against the card surface) */
   --pf-series-1: #2a78d6;
   --pf-series-2: #eb6834;
@@ -69,6 +78,9 @@
   --pf-buy-bg: rgba(76, 192, 114, 0.15);
   --pf-sell-bg: rgba(255, 107, 91, 0.15);
   --pf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 16px -8px rgba(0, 0, 0, 0.5);
+  --elev-2: 0 2px 4px rgba(0, 0, 0, 0.4), 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 30%, transparent);
   --pf-series-1: #3987e5;
   --pf-series-2: #d95926;
   --pf-series-3: #199e70;

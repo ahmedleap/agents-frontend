@@ -33,7 +33,7 @@ button {
   height: 2.25rem;
   padding: 0 0.7rem;
   border: 1px solid var(--pf-border);
-  border-radius: 2px;
+  border-radius: var(--radius);
   background: var(--pf-card);
   color: var(--pf-text);
   font: inherit;

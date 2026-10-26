@@ -25,8 +25,9 @@
 .card {
   background: var(--pf-card);
   border: 1px solid var(--pf-border);
-  border-radius: 2px;
-  box-shadow: var(--pf-shadow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-1);
+  overflow: hidden; // keeps table rows inside the rounded corners
 }
 
 h2, h3, p { margin: 0; }
@@ -48,7 +49,8 @@ h2, h3, p { margin: 0; }
     font-family: 'Fredoka', 'Baloo 2', sans-serif;
     font-size: 2rem;
     font-weight: 600;
-    color: var(--pf-accent);
+    letter-spacing: -0.01em;
+    color: var(--pf-text);
   }
   .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 0.95rem; }
   .asof { color: var(--pf-muted); font-size: 0.75rem; }
@@ -56,6 +58,7 @@ h2, h3, p { margin: 0; }
 
 .alert {
   padding: 0.8rem 1rem;
+  border-radius: var(--radius);
   border: 1px solid var(--pf-loss);
   background: var(--pf-sell-bg);
   color: var(--pf-loss);
@@ -137,16 +140,24 @@ h2, h3, p { margin: 0; }
 /* ---------- Hero: today's P/L ---------- */
 
 .hero {
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   color: #fff;
   border: 0;
-  background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
+  // Soft light in the top-right corner over the brand gradient
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.16) 0%, transparent 55%),
+    linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
+  box-shadow: var(--elev-2);
 
-  &.down { background: linear-gradient(135deg, #c0392b 0%, #962d22 100%); }
+  &.down {
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 55%),
+      linear-gradient(135deg, #c0392b 0%, #962d22 100%);
+  }
 
   .label { font-size: 0.75rem; opacity: 0.78; }
   .value {
@@ -158,8 +169,8 @@ h2, h3, p { margin: 0; }
   .change {
     align-self: flex-start;
     padding: 0.3rem 0.8rem;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
     font-weight: 600;
     font-size: 0.95rem;
   }
@@ -179,9 +190,9 @@ h2, h3, p { margin: 0; }
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.75rem 1.1rem;
+  padding: 1rem 1.25rem 0.85rem;
 
-  h3 { font-size: 1.15rem; }
+  h3 { font-size: 1.08rem; font-weight: 700; letter-spacing: -0.005em; }
   .sub { font-size: 0.8rem; color: var(--pf-muted); margin-top: 0.2rem; }
   strong { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
 }
@@ -237,7 +248,7 @@ h2, h3, p { margin: 0; }
 .edit-btn {
   padding: 0.3rem 0.8rem;
   border: 1px solid var(--pf-border);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--pf-inset);
   color: var(--pf-accent);
   font: inherit;
@@ -264,7 +275,7 @@ h2, h3, p { margin: 0; }
   height: 1.75rem;
   margin-left: auto;
   border: 1px solid var(--pf-border);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--pf-card);
   color: var(--pf-loss);
   font-size: 0.8rem;
@@ -283,21 +294,21 @@ table {
   font-variant-numeric: tabular-nums;
 }
 
+// Quiet column headings: no band, just small caps over a hairline
 th {
-  padding: 0.45rem 1rem;
+  padding: 0.5rem 1rem;
   text-align: right;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--pf-muted);
-  background: var(--pf-inset);
-  border-top: 1px solid var(--pf-border);
   border-bottom: 1px solid var(--pf-border);
   white-space: nowrap;
 }
 
 td {
-  padding: 0.6rem 1rem;
+  padding: 0.7rem 1rem;
   text-align: right;
   border-bottom: 1px solid var(--pf-border);
   white-space: nowrap;
@@ -305,7 +316,8 @@ td {
 
 th:first-child, td:first-child { text-align: left; padding-left: 1.25rem; }
 tbody tr:last-child td { border-bottom: 0; }
-tbody tr:hover { background: var(--pf-inset); }
+tbody tr { transition: background 0.12s; }
+tbody tr:hover { background: var(--pf-hover); }
 
 .trades { table-layout: fixed; }
 
@@ -315,7 +327,7 @@ tbody tr:hover { background: var(--pf-inset); }
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 2px;
+  border-radius: 50%;
   color: #fff;
   background: var(--pf-green);
   font-weight: 700;
@@ -342,10 +354,10 @@ tbody tr:hover { background: var(--pf-inset); }
 .side {
   display: inline-block;
   margin-right: 0.5rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 2px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
 
   &.buy { color: var(--pf-gain); background: var(--pf-buy-bg); }
   &.sell { color: var(--pf-loss); background: var(--pf-sell-bg); }

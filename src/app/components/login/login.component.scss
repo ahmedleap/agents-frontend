@@ -15,10 +15,11 @@
 }
 
 .card {
+  overflow: hidden; // the green brand panel follows the rounded corners
   background: var(--pf-card);
   border: 1px solid var(--pf-border);
-  border-radius: 2px;
-  box-shadow: var(--pf-shadow);
+  border-radius: 20px;
+  box-shadow: var(--elev-2);
 }
 
 .shell {
@@ -78,10 +79,12 @@ h2, p { margin: 0; }
     gap: 0.5rem;
     padding: 0.7rem 0.8rem;
     border: 1px solid var(--pf-border);
+    border-radius: var(--radius);
     color: var(--pf-muted);
     cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
 
-    &.selected { border-color: var(--pf-green); color: var(--pf-accent); background: var(--pf-active); }
+    &.selected { border-color: var(--pf-green); color: var(--pf-accent); background: var(--pf-buy-bg); box-shadow: var(--ring); }
     input { accent-color: var(--pf-green); }
   }
 }
@@ -93,7 +96,8 @@ h2, p { margin: 0; }
     font-family: 'Fredoka', 'Baloo 2', sans-serif;
     font-size: 2rem;
     font-weight: 600;
-    color: var(--pf-accent);
+    letter-spacing: -0.01em;
+    color: var(--pf-text);
     margin-bottom: 0.25rem;
   }
 }
@@ -118,10 +122,10 @@ fieldset {
 
   input {
     width: 100%;
-    padding: 0.7rem 0.95rem;
+    padding: 0.75rem 0.95rem;
     border: 1px solid var(--pf-border);
-    border-radius: 2px;
-    background: var(--pf-inset);
+    border-radius: var(--radius);
+    background: var(--pf-card);
     color: var(--pf-text);
     font: inherit;
     font-weight: 400;
@@ -129,7 +133,7 @@ fieldset {
     transition: border-color 0.15s, box-shadow 0.15s;
 
     &::placeholder { color: var(--pf-muted); opacity: 0.7; }
-    &:focus { outline: none; border-color: var(--pf-green); box-shadow: 0 0 0 3px var(--pf-buy-bg); }
+    &:focus { outline: none; border-color: var(--pf-green); box-shadow: var(--ring); }
   }
 
   &.has-error input {
@@ -167,7 +171,7 @@ fieldset {
   width: 2.2rem;
   height: 2.2rem;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: none;
   color: var(--pf-muted);
   cursor: pointer;
@@ -202,7 +206,7 @@ fieldset {
   gap: 0.5rem;
   padding: 0.9rem 1.6rem;
   border: 0;
-  border-radius: 2px;
+  border-radius: var(--radius);
   font: inherit;
   font-weight: 600;
   font-size: 1.1rem;

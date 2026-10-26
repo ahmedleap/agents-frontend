@@ -23,8 +23,8 @@ h2, h3, p { margin: 0; }
 .card {
   background: var(--pf-card);
   border: 1px solid var(--pf-border);
-  border-radius: 10px;
-  box-shadow: var(--pf-shadow);
+  border-radius: 20px;
+  box-shadow: var(--elev-2);
   overflow: hidden;
 }
 
@@ -189,7 +189,7 @@ fieldset {
     transition: border-color 0.15s, box-shadow 0.15s;
 
     &::placeholder { color: var(--pf-muted); opacity: 0.7; }
-    &:focus { outline: none; border-color: var(--pf-green); box-shadow: 0 0 0 3px var(--pf-buy-bg); }
+    &:focus { outline: none; border-color: var(--pf-green); box-shadow: var(--ring); }
   }
 
   &.has-error input {
