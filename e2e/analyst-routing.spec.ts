@@ -13,7 +13,8 @@ test('analyst dashboard URL and header resolve to analytics, including reload', 
   await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/analytics$/);
   await expect(page.getByRole('heading', { name: 'Analytics Dashboard', exact: true })).toBeVisible();
-  await expect(page.getByRole('navigation').getByRole('link')).toHaveText(['Analysis']);
+  // Analysts have one page, so there's no sidebar
+  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
   await expect(page.locator('.logo-link')).toHaveAttribute('href', '/analytics');
 
   await page.reload();

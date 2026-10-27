@@ -49,3 +49,59 @@ test.describe('Dashboard value chart', () => {
     await expect(card.locator('.chart-empty')).toContainText('No value history yet');
   });
 });
+
+test.describe('Dashboard after switching clients', () => {
+  test('shows only the signed-in client\'s trades, without a reload', async ({ page }) => {
+    // Two clients log in one after the other in the same tab
+    const clients = {
+      'old@example.com': { clientId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', accountName: 'Old brokerage', ticker: 'TSLA' },
+      'new@example.com': { clientId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', accountName: 'New brokerage', ticker: null }
+    };
+    const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    await page.route('**/api/v1/auth/login', route => {
+      const email = route.request().postDataJSON().email as keyof typeof clients;
+      const { clientId } = clients[email];
+      const accessToken = `${encode({ alg: 'RS256', typ: 'JWT' })}.${encode({ sub: clientId, email, role: 'CLIENT', exp: Math.floor(Date.now() / 1000) + 900 })}.test-signature`;
+      return route.fulfill({ json: { accessToken, refreshToken: 'r', expiresIn: 900, user: { clientId, email, firstName: 'Test', lastName: 'Client', role: 'CLIENT' } } });
+    });
+    await page.route('**/api/v1/auth/logout', route => route.fulfill({ json: {} }));
+    await page.route(url => url.pathname === '/dashboard' && url.searchParams.has('clientId'), route => {
+      const client = Object.values(clients).find(c => c.clientId === new URL(route.request().url()).searchParams.get('clientId'))!;
+      return route.fulfill({ json: {
+        accounts: [{ accountId: `${client.clientId.slice(0, 8)}-acct`, name: client.accountName, status: 'ACTIVE', cashBalance: 100, availableBalance: 100, totalValue: 100 }],
+        watchlist: [], portfolioHistory: [], todayProfitLoss: 0, todayProfitLossPercent: 0,
+        recentTrades: client.ticker ? [{ orderId: 'o1', createdAt: '2026-10-27T12:28:23Z', orderType: 'BUY', ticker: client.ticker, quantity: 5, filledPrice: 250, accountName: client.accountName }] : []
+      } });
+    });
+    await page.route('**/api/v1/instruments/market-movers', route => route.fulfill({ json: {
+      marketMovers: [{ ticker: 'AAPL', price: 200, changePercent: 1.5 }], asOf: '', refreshedAt: '', isStale: false
+    } }));
+
+    const logIn = async (email: string) => {
+      await page.goto('/login');
+      await page.getByLabel('Email').fill(email);
+      await page.getByLabel(/^Password/).fill('Secret123!');
+      await page.getByRole('button', { name: 'Log in' }).click();
+      await expect(page).toHaveURL(/\/home$/);
+    };
+    const recentTrades = page.locator('.recent-trades');
+
+    await logIn('old@example.com');
+    await expect(recentTrades).toContainText('TSLA');
+
+    // Log out and straight back in as someone else (page.goto('/login') would reload, so use the app's own button)
+    await page.getByRole('button', { name: 'Logout' }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await page.getByLabel('Email').fill('new@example.com');
+    await page.getByLabel(/^Password/).fill('Secret123!');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/home$/);
+
+    await expect(recentTrades).toContainText('No trades yet.');
+    await expect(recentTrades).not.toContainText('TSLA');
+    await expect(page.getByText('Old brokerage')).toHaveCount(0);
+
+    // Market movers have no Volume column
+    await expect(page.locator('.movers thead th')).toHaveText(['Stock', 'Price', 'Change']);
+  });
+});

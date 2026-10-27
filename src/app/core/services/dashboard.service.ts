@@ -1,4 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { EMPTY, catchError, switchMap, tap } from 'rxjs';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
 
@@ -38,7 +40,6 @@ export interface Mover {
   price: number;
   change?: number;
   changePct: number;
-  volume?: number;
 }
 
 interface DashboardResponse {
@@ -111,14 +112,37 @@ export class DashboardService {
   readonly todayProfitLossPercent = signal(0);
   readonly portfolioHistory = signal<number[]>([]);
 
-  constructor() {
-    const clientId = this.auth.clientId();
-    if (!clientId) {
-      this.loading.set(false);
-      this.error.set('Your session is no longer available. Please sign in again.');
-      return;
-    }
+  /** The signed-in client; null when logged out or signed in as staff */
+  private readonly clientId = computed(() => this.auth.currentUser()?.role === 'CLIENT' ? this.auth.clientId() : null);
 
+  constructor() {
+    this.loadMovers();
+
+    // This service lives for the whole browser tab, so start again whenever a different client signs in:
+    // clear the last client's accounts, trades and watchlist, then load the new client's. switchMap drops a
+    // response still on its way for the previous client.
+    toObservable(this.clientId).pipe(
+      tap(() => this.clear()),
+      switchMap(clientId => {
+        if (!clientId) {
+          this.loading.set(false);
+          this.error.set('Your session is no longer available. Please sign in again.');
+          return EMPTY;
+        }
+        return this.api.getRoot<DashboardResponse>('dashboard', { params: { clientId, period: '30D' } }).pipe(
+          catchError(error => {
+            console.error('Dashboard request failed', error);
+            this.loading.set(false);
+            this.error.set('Dashboard data is temporarily unavailable. Please try again later.');
+            return EMPTY;
+          })
+        );
+      })
+    ).subscribe(response => this.applyDashboard(response));
+  }
+
+  /** Market movers are the same for everyone, so they're loaded once */
+  private loadMovers(): void {
     this.moversLoading.set(true);
     this.api.get<MarketMoversResponse>('instruments/market-movers').subscribe({
       next: response => {
@@ -134,17 +158,18 @@ export class DashboardService {
         this.moversError.set('Market movers are temporarily unavailable.');
       }
     });
+  }
 
-    this.api.getRoot<DashboardResponse>('dashboard', {
-      params: { clientId, period: '30D' }
-    }).subscribe({
-      next: response => this.applyDashboard(response),
-      error: error => {
-        console.error('Dashboard request failed', error);
-        this.loading.set(false);
-        this.error.set('Dashboard data is temporarily unavailable. Please try again later.');
-      }
-    });
+  private clear(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.labels.set([]);
+    this.accounts.set([]);
+    this.watchlist.set([]);
+    this.trades.set([]);
+    this.todayProfitLoss.set(0);
+    this.todayProfitLossPercent.set(0);
+    this.portfolioHistory.set([]);
   }
 
   readonly accountData = this.accounts.asReadonly();

@@ -83,10 +83,11 @@ test.describe('Login', () => {
     await page.getByLabel(/^Password/).fill('Secret123!');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    // Analysts land on the analytics page, and it's the only page in their sidebar
+    // Analysts land on the analytics page, with no sidebar and big bold text for presenting
     await expect(page).toHaveURL(/\/analytics$/);
     await expect(page.getByRole('heading', { name: 'Analytics Dashboard', exact: true })).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Analysis']);
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
+    await expect(page.locator('html')).toHaveClass(/present-mode/);
     // No settings gear for analysts
     await expect(page.getByRole('link', { name: 'Settings' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Switch to (dark|light) mode/ })).toBeVisible();
@@ -107,7 +108,9 @@ test.describe('Login', () => {
     await expect(page).toHaveURL(/\/admin$/);
     // The admin page from 0.12.0 (it replaced the old "Platform overview" page)
     await expect(page.getByRole('heading', { name: 'Admin Console' })).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Admin overview']);
+    // No sidebar, and big bold text for presenting
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
+    await expect(page.locator('html')).toHaveClass(/present-mode/);
     // No settings gear for admins
     await expect(page.getByRole('link', { name: 'Settings' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();

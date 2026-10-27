@@ -71,7 +71,8 @@
     </header>
 
     <div class="app-body">
-      @if (!isAuthPage()) {
+      <!-- Admins and analysts have a single page each, so they get no sidebar -->
+      @if (!isAuthPage() && !isStaff()) {
       <nav class="app-sidebar" aria-label="Main navigation">
         @if (role() === 'ANALYST') {
           <!-- Analysts only get the analytics page -->

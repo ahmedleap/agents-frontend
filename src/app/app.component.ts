@@ -1,7 +1,7 @@
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule, DOCUMENT, Location } from '@angular/common';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
 import { AccountApiService } from './core/services/account-api.service';
 import { PortfolioApiService } from './core/services/portfolio-api.service';
@@ -64,6 +64,7 @@ export class AppComponent {
   protected readonly role = computed(() => this.auth.currentUser()?.role ?? null);
   protected readonly homeRoute = computed(() => this.role() === 'CLIENT' ? '/home'
     : this.role() === 'ADMIN' ? '/admin' : this.role() === 'ANALYST' ? '/analytics' : '/');
+  protected readonly isStaff = computed(() => this.role() === 'ADMIN' || this.role() === 'ANALYST');
   protected readonly theme = inject(ThemeService);
   // Full-width pages with no sidebar (log in, sign up). Seeded from the URL so the
   // sidebar doesn't flash on a direct load before the first navigation finishes.
@@ -74,6 +75,10 @@ export class AppComponent {
 
   constructor() {
     this.initializeApp();
+
+    // Admin and analyst screens get presented to a room: bigger, bold text (styles.scss .present-mode)
+    const root = inject(DOCUMENT).documentElement;
+    effect(() => root.classList.toggle('present-mode', this.isStaff()));
 
     // Keep the account list open while an account page is showing
     const sub = this.router.events
