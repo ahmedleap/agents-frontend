@@ -1,4 +1,5 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, effect, inject, signal } from '@angular/core';
+import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
 import { DashboardService } from './dashboard.service';
 
@@ -35,6 +36,20 @@ export class TransactionService {
   private readonly balancesByAccount = signal<Record<string, number>>({});
 
   private readonly loadedAccounts = new Set<string>();
+
+  constructor() {
+    // Forget the last client's transactions when someone else signs in (this service lives for the whole tab)
+    const auth = inject(AuthService);
+    let lastClientId = auth.clientId();
+    effect(() => {
+      const clientId = auth.clientId();
+      if (clientId === lastClientId) return;
+      lastClientId = clientId;
+      this.transactionsByAccount.set({});
+      this.balancesByAccount.set({});
+      this.loadedAccounts.clear();
+    });
+  }
 
   transactionsForAccount(accountId: string): Transaction[] {
     this.loadTransactions(accountId);

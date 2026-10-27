@@ -118,16 +118,15 @@
             <div class="card-head"><h3>Market Movers</h3></div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Stock</th><th>Price</th><th>Change</th><th class="mover-volume">Volume</th></tr></thead>
+                <thead><tr><th>Stock</th><th>Price</th><th>Change</th></tr></thead>
                 <tbody>
                   @for (m of visibleMovers(); track m.ticker) {
                     <tr>
                       <td><span class="ticker"><span class="badge small">{{ m.ticker[0] }}<img appTickerLogo [ticker]="m.ticker"></span><span class="ticker-text">{{ m.ticker }}<small>{{ m.name }}</small></span></span></td>
                       <td>{{ m.price | currency }}</td>
                       <td [class.gain]="m.changePct >= 0" [class.loss]="m.changePct < 0">{{ m.changePct >= 0 ? '+' : '' }}{{ m.changePct | number: '1.2-2' }}%</td>
-                      <td class="mover-volume">{{ m.volume !== undefined ? volume(m.volume) : '—' }}</td>
                     </tr>
-                  } @empty { <tr><td colspan="4" class="empty">{{ moversLoading() ? 'Loading market movers...' : (moversError() ?? 'No market data available.') }}</td></tr> }
+                  } @empty { <tr><td colspan="3" class="empty">{{ moversLoading() ? 'Loading market movers...' : (moversError() ?? 'No market data available.') }}</td></tr> }
                 </tbody>
               </table>
             </div>

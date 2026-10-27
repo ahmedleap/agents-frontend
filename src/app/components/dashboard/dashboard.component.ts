@@ -60,7 +60,6 @@ const usdCompact = new Intl.NumberFormat('en-US', {
   notation: 'compact',
   maximumFractionDigits: 1
 });
-const volumeFmt = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
 const shortDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 /** The dashboard asks the backend for this many days of history (DashboardService: period=30D) */
@@ -265,10 +264,6 @@ export class DashboardComponent {
     if (scales['y']?.ticks) scales['y'].ticks.color = c.muted;
     if (scales['y']?.grid) scales['y'].grid.color = c.border;
     chart.update('none');
-  }
-
-  protected volume(v: number): string {
-    return volumeFmt.format(v);
   }
 
   private createChart(el: HTMLCanvasElement): Chart<'line'> {
