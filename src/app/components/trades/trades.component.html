@@ -52,7 +52,7 @@
       <article class="instrument-card">
         <div class="instrument-top">
           <div class="instrument-name">
-            <span class="symbol-badge" [style.background-color]="instrument.color">{{ instrument.symbol[0] }}</span>
+            <span class="symbol-badge" [style.background-color]="instrument.color">{{ instrument.symbol[0] }}<img appTickerLogo [ticker]="instrument.symbol"></span>
             <div>
               <strong>{{ instrument.symbol }}</strong>
               <span>{{ instrument.name }}</span>
@@ -146,7 +146,7 @@
 
         <div class="selected-instrument">
           <div class="instrument-name">
-            <span class="symbol-badge" [style.background-color]="instrument.color">{{ instrument.symbol[0] }}</span>
+            <span class="symbol-badge" [style.background-color]="instrument.color">{{ instrument.symbol[0] }}<img appTickerLogo [ticker]="instrument.symbol"></span>
             <div><strong>{{ instrument.name }}</strong><span>{{ instrument.type }}</span></div>
           </div>
           @if (instrument.priceState === 'ready' && instrument.price > 0) {

@@ -13,6 +13,7 @@ import {
   HoldingDto,
   PortfolioApiService
 } from '../../core/services/portfolio-api.service';
+import { TickerLogoDirective } from '../../core/ticker-logo.directive';
 
 type SortKey = 'value' | 'ticker' | 'return';
 
@@ -47,7 +48,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 @Component({
   selector: 'app-portfolio',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, TickerLogoDirective],
   templateUrl: './portfolio.component.html',
   styleUrls: ['./portfolio.component.scss']
 })

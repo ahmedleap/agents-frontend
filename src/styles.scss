@@ -225,6 +225,36 @@ input::-ms-clear {
   font-size: 0.78rem;
 }
 
+// Ticker logo laid over a letter badge (TickerLogoDirective); hidden until it loads, so a missing
+// logo leaves the letter showing. Once it loads, the badge's circle and letter go (!important beats
+// the inline badge colours) and the logo sits straight on the page.
+img.ticker-logo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 4%;
+  box-sizing: border-box;
+  object-fit: contain;
+  background: transparent;
+  opacity: 0;
+  transition: opacity .2s;
+
+  &.loaded { opacity: 1; }
+  // All-white logos (e.g. ABBV) need a dark circle on the light theme...
+  &.light { padding: 14%; background: #1f2a24; }
+}
+// ...and all-black logos (e.g. AAPL) a light circle on the dark theme
+:root[data-theme="dark"] img.ticker-logo {
+  &.light { padding: 4%; background: transparent; }
+  &.dark { padding: 14%; background: #f4f6f4; }
+}
+.has-logo {
+  background: transparent !important;
+  color: transparent !important;
+  box-shadow: none !important;
+}
+
 .ticker {
   display: inline-flex;
   align-items: center;

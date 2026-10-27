@@ -28,6 +28,7 @@ import { ThemeService } from '../../core/services/theme.service';
 import { TradingApiService } from '../../core/services/trading-api.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
 import { PagerComponent } from '../pager/pager.component';
+import { TickerLogoDirective } from '../../core/ticker-logo.directive';
 
 // Register only what the line chart needs (keeps the bundle small).
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
@@ -60,7 +61,7 @@ function todayIso(): string {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, PagerComponent],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, RouterLink, PagerComponent, TickerLogoDirective],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })

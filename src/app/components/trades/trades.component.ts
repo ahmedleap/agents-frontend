@@ -17,6 +17,7 @@ import { WatchButtonComponent } from '../watch-button/watch-button.component';
 import { PagerComponent } from '../pager/pager.component';
 import { WatchlistService } from '../../core/services/watchlist.service';
 import { MarketHoursService } from '../../core/services/market-hours.service';
+import { TickerLogoDirective } from '../../core/ticker-logo.directive';
 
 interface Instrument {
   instrumentId: string;
@@ -45,7 +46,7 @@ const PAGE_SIZE = 12;
 @Component({
   selector: 'app-trades',
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, PriceChartComponent, AssetFilterComponent, WatchButtonComponent, PagerComponent],
+  imports: [CurrencyPipe, DecimalPipe, PriceChartComponent, AssetFilterComponent, WatchButtonComponent, PagerComponent, TickerLogoDirective],
   templateUrl: './trades.component.html',
   styleUrls: ['./trades.component.scss']
 })

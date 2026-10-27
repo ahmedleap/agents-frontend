@@ -86,7 +86,7 @@
                 <tbody>
                   @for (w of pagedWatchlist(); track w.instrumentId) {
                     <tr>
-                      <td><span class="ticker"><span class="badge small">{{ w.ticker[0] }}</span><span class="ticker-text">{{ w.ticker }}<small>{{ w.name }}</small></span></span></td>
+                      <td><span class="ticker"><span class="badge small">{{ w.ticker[0] }}<img appTickerLogo [ticker]="w.ticker"></span><span class="ticker-text">{{ w.ticker }}<small>{{ w.name }}</small></span></span></td>
                       <td>{{ w.price !== undefined ? (w.price | currency) : '—' }}</td>
                       <td [class.gain]="w.change !== undefined && w.change >= 0" [class.loss]="w.change !== undefined && w.change < 0">
                         {{ w.changePct !== undefined ? ((w.changePct >= 0 ? '+' : '') + (w.changePct | number: '1.2-2') + '%') : '—' }}
@@ -122,7 +122,7 @@
                 <tbody>
                   @for (m of visibleMovers(); track m.ticker) {
                     <tr>
-                      <td><span class="ticker"><span class="badge small">{{ m.ticker[0] }}</span><span class="ticker-text">{{ m.ticker }}<small>{{ m.name }}</small></span></span></td>
+                      <td><span class="ticker"><span class="badge small">{{ m.ticker[0] }}<img appTickerLogo [ticker]="m.ticker"></span><span class="ticker-text">{{ m.ticker }}<small>{{ m.name }}</small></span></span></td>
                       <td>{{ m.price | currency }}</td>
                       <td [class.gain]="m.changePct >= 0" [class.loss]="m.changePct < 0">{{ m.changePct >= 0 ? '+' : '' }}{{ m.changePct | number: '1.2-2' }}%</td>
                       <td class="mover-volume">{{ m.volume !== undefined ? volume(m.volume) : '—' }}</td>

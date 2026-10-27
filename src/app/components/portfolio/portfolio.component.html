@@ -150,7 +150,7 @@
                 <a class="ticker ticker-link" [routerLink]="['/trades', accountId()]"
                    [queryParams]="{ accountName: account(), ticker: r.ticker, side: 'sell' }"
                    [attr.aria-label]="'Sell ' + r.ticker" [attr.data-tip]="'Sell ' + r.ticker">
-                  <span class="badge small" [style.background]="r.color">{{ r.ticker[0] }}</span>
+                  <span class="badge small" [style.background]="r.color">{{ r.ticker[0] }}<img appTickerLogo [ticker]="r.ticker"></span>
                   {{ r.ticker }}
                 </a>
               </td>
