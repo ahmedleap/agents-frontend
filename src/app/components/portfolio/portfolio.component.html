@@ -72,6 +72,10 @@
       } @else {
         <strong>—</strong>
       }
+      <!-- Opens this account's Transactions page with the deposit form open -->
+      <a class="add-cash" [routerLink]="['/transactions', accountId()]" [queryParams]="{ deposit: 1 }">
+        <span aria-hidden="true">+</span> Add cash
+      </a>
     </div>
 
     <div class="card alloc">

@@ -35,6 +35,29 @@ test.describe('Account cash balance', () => {
     await expect(card).toContainText('$2,000.00 available to trade');
   });
 
+  test('Add cash opens this account\'s Transactions page with the deposit form open', async ({ page }) => {
+    await loginAsClient(page, [ACCOUNT]);
+    await mockAccount(page, {
+      status: 200,
+      json: { cashBalance: 2500.5, availableBalance: 2000, holdingsValue: 0, totalValue: 2500.5, summaryDate: new Date().toISOString() }
+    });
+    await page.route(`**/api/accounts/${ACCOUNT_ID}/transactions`, route => route.fulfill({ json: [] }));
+
+    await page.goto(`/portfolio/${ACCOUNT_ID}`);
+    await page.locator('.cash').getByRole('link', { name: 'Add cash' }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/transactions/${ACCOUNT_ID}$`));
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('heading', { name: 'Add cash' })).toBeVisible();
+    await expect(dialog.getByLabel('Deposit amount')).toBeVisible();
+
+    // The address no longer asks for the form, so a reload doesn't reopen it
+    await dialog.getByRole('button', { name: 'Close cash movement dialog' }).click();
+    await page.reload();
+    await expect(page.getByRole('combobox', { name: 'Select account transactions' })).toHaveValue(ACCOUNT_ID);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
   test('still shows the portfolio if the cash balance fails to load', async ({ page }) => {
     await loginAsClient(page, [ACCOUNT]);
     await mockAccount(page, { status: 500 });

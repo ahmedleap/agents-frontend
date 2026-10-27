@@ -1,6 +1,6 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { AccountApiService } from '../../core/services/account-api.service';
@@ -59,6 +59,14 @@ export class TransactionsComponent {
   protected readonly showConfirmation = signal(false);
   protected readonly transactionAction = signal<TransactionAction>('DEPOSIT');
   protected readonly depositAmount = signal(0);
+  /** Arriving from an account's "Add cash" button (?deposit=1): open the deposit form, then take the
+   * flag off the address so reloading or going back doesn't open it again */
+  private readonly openDepositFromLink = this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => {
+    if (!params.has('deposit')) return;
+    this.setTransactionAction('DEPOSIT');
+    this.showDepositForm.set(true);
+    this.router.navigate([], { relativeTo: this.route, queryParams: { deposit: null }, queryParamsHandling: 'merge', replaceUrl: true });
+  });
   protected readonly canSubmitTransaction = computed(() =>
     !!this.accountId() && this.depositAmount() > 0 && (this.transactionAction() === 'DEPOSIT' || this.depositAmount() <= this.cashBalance())
   );

@@ -162,6 +162,25 @@ h2, h3, p { margin: 0; }
     font-variant-numeric: tabular-nums;
   }
   small { font-size: 0.88rem; font-weight: 700; color: var(--pf-muted); font-variant-numeric: tabular-nums; }
+
+  .add-cash {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 1rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    background: var(--pf-green);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: filter .15s, transform .15s;
+
+    span { font-size: 1.05rem; line-height: 1; }
+    &:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    &:focus-visible { outline: none; box-shadow: var(--ring); }
+  }
 }
 
 .summary {
