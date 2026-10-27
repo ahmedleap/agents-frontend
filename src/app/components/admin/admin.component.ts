@@ -1,16 +1,21 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, map, of } from 'rxjs';
 import { AdminAccount, AdminClient, AdminOrder, AdminService, TradeAuditEvent } from '../../core/services/admin.service';
+import { PagerComponent } from '../pager/pager.component';
+import { SIZE_OPTIONS } from '../../core/client-profile-options';
 
 type View = 'clients' | 'accounts' | 'orders';
+
+/** Rows per page in the Clients, Accounts and Orders tables */
+const PAGE_SIZE = 15;
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule, PagerComponent],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss']
 })
@@ -67,6 +72,25 @@ export class AdminComponent {
       && (this.orderFilter() === 'ALL' || order.status === this.orderFilter() || order.side === this.orderFilter()));
   });
 
+  /** Pagination: one page of the current tab's table; back to page 1 when the tab, search or filters change */
+  protected readonly pageSize = PAGE_SIZE;
+  protected readonly page = signal(0);
+  protected readonly pagedClients = computed(() => this.pageOf(this.clients()));
+  protected readonly pagedAccounts = computed(() => this.pageOf(this.accounts()));
+  protected readonly pagedOrders = computed(() => this.pageOf(this.orders()));
+
+  private readonly resetPage = effect(() => {
+    this.view(); this.search(); this.risk(); this.portfolio(); this.accountStatus(); this.orderFilter();
+    untracked(() => this.page.set(0));
+  });
+
+  private pageOf<T>(rows: T[]): T[] {
+    // Stay in range if the list shrinks (e.g. after a refresh)
+    const lastPage = Math.max(0, Math.ceil(rows.length / PAGE_SIZE) - 1);
+    const page = Math.min(this.page(), lastPage);
+    return rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  }
+
   protected readonly selectedClientAccounts = computed(() => {
     const client = this.selectedClient();
     if (!client) return [];
@@ -121,6 +145,12 @@ export class AdminComponent {
 
   protected auditDetails(event: TradeAuditEvent): string[] {
     return Object.entries(event.details ?? {}).map(([key, value]) => `${this.label(key)}: ${String(value)}`);
+  }
+
+  /** Turns a portfolio size enum such as BETWEEN_100K_200K into its display label */
+  protected portfolioLabel(value: string | null | undefined): string | undefined {
+    if (!value) return undefined;
+    return SIZE_OPTIONS.find(option => option.value === value)?.label ?? value;
   }
 
   protected label(value: string): string {

@@ -9,7 +9,7 @@
       <label class="account-label" for="transaction-account">Account</label>
       <select id="transaction-account" class="account-select" [value]="accountId()" (change)="switchAccount($event)" aria-label="Select account transactions">
         @for (availableAccount of accounts(); track availableAccount.id) {
-          <option [value]="availableAccount.id">{{ availableAccount.name }}</option>
+          <option [value]="availableAccount.id" [selected]="availableAccount.id === accountId()">{{ availableAccount.name }}</option>
         }
       </select>
     </div>
@@ -93,6 +93,8 @@
         <div>
           <p class="eyebrow">CASH MOVEMENT</p>
           <h2 id="cash-modal-title">{{ transactionAction() === 'DEPOSIT' ? 'Add cash' : 'Withdraw cash' }}</h2>
+          <!-- Which account the money goes into / comes out of -->
+          <p class="modal-account">{{ account()?.name }}</p>
         </div>
         <button type="button" class="close-button" aria-label="Close cash movement dialog" (click)="showDepositForm.set(false)">&#10005;</button>
       </div>

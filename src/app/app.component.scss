@@ -145,9 +145,9 @@
   display: flex;
   flex-direction: column;
   flex: none;
-  gap: 0.25rem;
+  gap: 0.2rem;
   width: 15rem;
-  padding: 1rem 0.75rem;
+  padding: 1.25rem 0.85rem;
   background: var(--pf-card);
   border-right: 1px solid var(--pf-border);
 
@@ -160,11 +160,12 @@
   }
 
   .nav-link {
+    position: relative;
     display: block;
     box-sizing: border-box;
     width: 100%;
-    padding: 0.6rem 0.9rem;
-    border-radius: 6px;
+    padding: 0.65rem 0.85rem;
+    border-radius: var(--radius);
     font-size: 1.05rem;
     font-weight: 700;
     color: var(--pf-muted);
@@ -173,14 +174,28 @@
 
     &:hover {
       background: var(--pf-hover);
-      color: var(--pf-accent);
+      color: var(--pf-text);
     }
 
+    // Current page: tinted pill with a short accent bar on the sidebar's edge
     &.active {
-      background: var(--pf-active);
+      background: color-mix(in srgb, var(--pf-green) 11%, transparent);
       color: var(--pf-accent);
       font-weight: 800;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: -0.85rem;
+        top: 0.6rem;
+        bottom: 0.6rem;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: var(--pf-green);
+      }
     }
+
+    &:focus-visible { outline: none; box-shadow: var(--ring); }
   }
 
   .nav-toggle {
@@ -281,10 +296,13 @@
   .sub-nav {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    margin-left: 0.9rem;
-    padding-left: 0.5rem;
-    border-left: 2px solid var(--pf-active);
+    gap: 0.2rem;
+    margin: 0.2rem 0 0.4rem 1.4rem;
+    padding-left: 0.6rem;
+    border-left: 1px solid var(--pf-border);
+
+    // Account entries: no edge bar (that's for the main pages)
+    .nav-link.active::before { content: none; }
   }
 
   .sub-note {
@@ -300,7 +318,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
-    padding: 0.5rem 0.7rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-sm);
     font-variant-numeric: tabular-nums;
 
     .acct-name { font-size: 0.92rem; }

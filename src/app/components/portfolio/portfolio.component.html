@@ -72,6 +72,10 @@
       } @else {
         <strong>—</strong>
       }
+      <!-- Opens this account's Transactions page with the deposit form open -->
+      <a class="add-cash" [routerLink]="['/transactions', accountId()]" [queryParams]="{ deposit: 1 }">
+        <span aria-hidden="true">+</span> Add cash
+      </a>
     </div>
 
     <div class="card alloc">
@@ -146,10 +150,13 @@
           @for (r of visibleRows(); track r.ticker) {
             <tr>
               <td>
-                <span class="ticker">
-                  <span class="badge small" [style.background]="r.color">{{ r.ticker[0] }}</span>
+                <!-- Opens the Trade page with this holding ready to sell -->
+                <a class="ticker ticker-link" [routerLink]="['/trades', accountId()]"
+                   [queryParams]="{ accountName: account(), ticker: r.ticker, side: 'sell' }"
+                   [attr.aria-label]="'Sell ' + r.ticker" [attr.data-tip]="'Sell ' + r.ticker">
+                  <span class="badge small" [style.background]="r.color">{{ r.ticker[0] }}<img appTickerLogo [ticker]="r.ticker"></span>
                   {{ r.ticker }}
-                </span>
+                </a>
               </td>
               <td>{{ r.name }}</td>
               <td>{{ r.shares | number: '1.0-0' }}</td>

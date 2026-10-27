@@ -25,7 +25,7 @@ h2, h3, p { margin: 0; }
     font-weight: 600;
     line-height: 1.1;
     // Accent adapts to the theme; green-dark is unreadable in dark mode
-    color: var(--pf-accent);
+    color: var(--pf-text);
   }
 }
 
@@ -35,9 +35,8 @@ h2, h3, p { margin: 0; }
   padding: 1.75rem 2rem;
   background: var(--pf-card);
   border: 1px solid var(--pf-border);
-  border-top: 4px solid var(--pf-green);
-  border-radius: 12px;
-  box-shadow: var(--pf-shadow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-1);
 }
 
 .card-head {
@@ -47,7 +46,7 @@ h2, h3, p { margin: 0; }
   gap: 0.85rem;
 
   .head-text { flex: 1; min-width: 12rem; }
-  h3 { font-size: 1.25rem; font-weight: 700; color: var(--pf-accent); }
+  h3 { font-size: 1.2rem; font-weight: 700; color: var(--pf-text); }
   p { margin-top: 0.1rem; color: var(--pf-muted); font-size: 1rem; font-weight: 700; }
 
   &.centered {
@@ -188,7 +187,7 @@ fieldset {
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   input:hover { border-color: var(--pf-green); }
-  input:focus { outline: none; border-color: var(--pf-green); box-shadow: 0 0 0 3px var(--pf-buy-bg); }
+  input:focus { outline: none; border-color: var(--pf-green); box-shadow: var(--ring); }
   &.has-error input { border-color: var(--pf-loss); }
 }
 
@@ -322,8 +321,8 @@ fieldset {
   background: #f4f7f3;
   border: 1px solid #d9e2d6;
 
-  .bar { height: 0.7rem; border-radius: 3px; background: #2f6f2a; }
-  .line { height: 0.5rem; border-radius: 3px; background: #c9d6c5; }
+  .bar { height: 0.7rem; border-radius: var(--radius-sm); background: #2f6f2a; }
+  .line { height: 0.5rem; border-radius: var(--radius-sm); background: #c9d6c5; }
   .short { width: 60%; }
 
   &[data-preview='dark'] {

@@ -32,6 +32,7 @@ import {
   isoDate
 } from '../../core/services/analytics.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { TickerLogoDirective } from '../../core/ticker-logo.directive';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
 
@@ -108,7 +109,7 @@ function token(name: string): string {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, TickerLogoDirective],
   templateUrl: './analytics.component.html',
   styleUrls: ['./analytics.component.scss']
 })

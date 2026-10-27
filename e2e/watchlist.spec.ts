@@ -117,6 +117,29 @@ test.describe('Watchlist', () => {
     await expect(card.getByRole('link', { name: 'Trade' })).toHaveAttribute('href', '/trades');
   });
 
+  test('the dashboard watchlist shows the day change from 1D history when the quote says 0', async ({ page }) => {
+    await loginAsClient(page, [account]);
+    await fakeMarket(page);
+    await fakeWatchlist(page, [instruments[0], instruments[1]]);
+    // Like the real backend: quotes always report no change
+    await page.route(/\/api\/instruments\/[^/]+\/quote$/, route => route.fulfill({
+      json: { lastPrice: 150, priceChange: 0, priceChangePercent: 0 }
+    }));
+    await page.route(/\/api\/instruments\/[^/]+\/history/, route => {
+      const url = new URL(route.request().url());
+      const ticker = url.pathname.split('/')[3];
+      if (url.searchParams.get('period') !== '1D') return route.fulfill({ json: { bars: [] } });
+      // AAPL: 100 -> 104 (+4%); MSFT: 200 -> 190 (-5%)
+      const [open, close] = ticker === 'AAPL' ? [100, 104] : [200, 190];
+      return route.fulfill({ json: { bars: [{ close: open }, { close: (open + close) / 2 }, { close }] } });
+    });
+    await page.goto('/home');
+
+    const card = page.locator('.card.watchlist');
+    await expect(card.getByRole('row').filter({ hasText: 'AAPL' })).toContainText('+4.00%');
+    await expect(card.getByRole('row').filter({ hasText: 'MSFT' })).toContainText('-5.00%');
+  });
+
   test('a failed change shows a message and leaves the list as it was', async ({ page }) => {
     await loginAsClient(page, [account]);
     await fakeMarket(page);
@@ -157,7 +180,7 @@ test.describe('Watchlist', () => {
     const pager = card.getByRole('navigation', { name: 'Watchlist pages' });
     await expect(rows).toHaveCount(4);
     await expect(rows.first()).toContainText('W1');
-    await expect(pager).toContainText('1–4 of 9');
+    await expect(pager).toContainText('1 of 3');
     await expect(pager.getByRole('button', { name: 'Previous page' })).toBeDisabled();
     // Prices only for the page shown
     await expect(rows.nth(3)).toContainText('$150.00');
@@ -165,10 +188,10 @@ test.describe('Watchlist', () => {
 
     await pager.getByRole('button', { name: 'Next page' }).click();
     await expect(rows.first()).toContainText('W5');
-    await expect(pager).toContainText('5–8 of 9');
+    await expect(pager).toContainText('2 of 3');
     await pager.getByRole('button', { name: 'Next page' }).click();
     await expect(rows).toHaveCount(1);
-    await expect(pager).toContainText('9–9 of 9');
+    await expect(pager).toContainText('3 of 3');
     await expect(pager.getByRole('button', { name: 'Next page' })).toBeDisabled();
 
     // Removing the only row on the last page goes back a page
@@ -177,6 +200,6 @@ test.describe('Watchlist', () => {
     await expect(rows).toHaveCount(4);
     await expect(rows.first()).toContainText('W5');
     // 8 left: two full pages
-    await expect(pager).toContainText('5–8 of 8');
+    await expect(pager).toContainText('2 of 2');
   });
 });

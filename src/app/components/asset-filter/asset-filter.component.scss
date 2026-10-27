@@ -6,7 +6,7 @@
   padding: 0.2rem;
   background: var(--pf-inset);
   border: 1px solid var(--pf-border);
-  border-radius: 2px;
+  border-radius: 999px;
 }
 
 button {
@@ -15,7 +15,7 @@ button {
   gap: 0.4rem;
   padding: 0.45rem 0.85rem;
   border: 0;
-  border-radius: 2px;
+  border-radius: 999px;
   background: transparent;
   color: var(--pf-muted);
   font: inherit;

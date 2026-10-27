@@ -99,7 +99,7 @@
                 <td class="rank">{{ r.rank }}</td>
                 <td>
                   <span class="ticker">
-                    <span class="badge small">{{ r.ticker[0] }}</span>
+                    <span class="badge small">{{ r.ticker[0] }}<img appTickerLogo [ticker]="r.ticker"></span>
                     <span class="ticker-text">
                       {{ r.ticker }}
                       <small>{{ r.instrumentName }}</small>

@@ -41,8 +41,8 @@
 .card {
   background: var(--pf-card);
   border: 1px solid var(--pf-border);
-  border-radius: 2px;
-  box-shadow: var(--pf-shadow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-1);
   min-width: 0;
 }
 
@@ -63,7 +63,8 @@ h2, h3, p { margin: 0; }
     font-size: 2rem;
     font-weight: 600;
     line-height: 1.5; // Fredoka's natural line height, as on Transactions; fixed so the rename row can match
-    color: var(--pf-accent);
+    letter-spacing: -0.01em;
+    color: var(--pf-text);
   }
   .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 0.95rem; }
   .asof { color: var(--pf-muted); font-size: 0.75rem; }
@@ -80,8 +81,8 @@ h2, h3, p { margin: 0; }
   height: 2rem;
   padding: 0;
   border: 1px solid var(--pf-border);
-  border-radius: 6px;
-  background: var(--pf-inset);
+  border-radius: var(--radius-sm);
+  background: var(--pf-card);
   color: var(--pf-accent);
   cursor: pointer;
 
@@ -143,10 +144,12 @@ h2, h3, p { margin: 0; }
   gap: 0.1rem;
   height: 18.75rem;
   padding: 1.5rem;
-  border-left: 4px solid var(--pf-green);
-  border-radius: 2px;
-  background: linear-gradient(225deg, var(--pf-buy-bg) 0%, var(--pf-card) 100%);
-  box-shadow: var(--pf-shadow);
+  border: 1px solid var(--pf-border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(110% 80% at 100% 0%, var(--pf-buy-bg) 0%, transparent 60%),
+    var(--pf-card);
+  box-shadow: var(--elev-1);
   text-align: left;
   font-weight: 700;
 
@@ -159,6 +162,25 @@ h2, h3, p { margin: 0; }
     font-variant-numeric: tabular-nums;
   }
   small { font-size: 0.88rem; font-weight: 700; color: var(--pf-muted); font-variant-numeric: tabular-nums; }
+
+  .add-cash {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 1rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    background: var(--pf-green);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: filter .15s, transform .15s;
+
+    span { font-size: 1.05rem; line-height: 1; }
+    &:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    &:focus-visible { outline: none; box-shadow: var(--ring); }
+  }
 }
 
 .summary {
@@ -178,7 +200,10 @@ h2, h3, p { margin: 0; }
   gap: 0.5rem;
   color: #fff;
   border: 0;
-  background: linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.16) 0%, transparent 55%),
+    linear-gradient(135deg, var(--pf-green) 0%, var(--pf-green-dark) 100%);
+  box-shadow: var(--elev-2);
 
   .label { font-size: 0.75rem; opacity: 0.78; }
   .value {
@@ -190,8 +215,8 @@ h2, h3, p { margin: 0; }
   .change {
     align-self: flex-start;
     padding: 0.3rem 0.85rem;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
     font-weight: 600;
     font-size: 0.95rem;
   }
@@ -249,8 +274,8 @@ h2, h3, p { margin: 0; }
 }
 
 
-.track { height: 0.625rem; border-radius: 0; background: var(--pf-inset); overflow: hidden; }
-.fill { height: 100%; border-radius: 0; }
+.track { height: 0.5rem; border-radius: 999px; background: var(--pf-inset); overflow: hidden; }
+.fill { height: 100%; border-radius: 999px; }
 
 .badge {
   flex: none;
@@ -258,7 +283,7 @@ h2, h3, p { margin: 0; }
   place-items: center;
   width: 2.125rem;
   height: 2.125rem;
-  border-radius: 2px;
+  border-radius: 50%;
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
@@ -276,11 +301,10 @@ h2, h3, p { margin: 0; }
   padding: 1.1rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  border-left: 4px solid var(--pf-green);
+  gap: 0.3rem;
 
-  .stat-label { font-size: 0.75rem; color: var(--pf-muted); }
-  strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--pf-muted); }
+  strong { font-size: 1.5rem; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
 }
 
 .notice {
@@ -291,11 +315,13 @@ h2, h3, p { margin: 0; }
   color: var(--pf-muted);
   font-weight: 700;
   font-size: 1.05em;
-  border-left: 5px solid var(--pf-green);
+  border-color: color-mix(in srgb, var(--pf-green) 35%, var(--pf-border));
+  background: color-mix(in srgb, var(--pf-green) 6%, var(--pf-card));
 
   &.error {
     color: var(--pf-text);
-    border-left-color: var(--pf-loss);
+    border-color: color-mix(in srgb, var(--pf-loss) 40%, var(--pf-border));
+    background: color-mix(in srgb, var(--pf-loss) 6%, var(--pf-card));
 
     strong { color: var(--pf-loss); }
   }
@@ -318,9 +344,8 @@ h2, h3, p { margin: 0; }
   flex-wrap: wrap;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--pf-border);
 
-  h3 { font-size: 1.15rem; }
+  h3 { font-size: 1.08rem; font-weight: 700; }
   .caption { margin-top: 0.2rem; color: var(--pf-muted); font-size: 0.8rem; }
 }
 
@@ -329,15 +354,18 @@ h2, h3, p { margin: 0; }
   gap: 0.6rem;
 
   input, select {
-    padding: 0.55rem 0.7rem;
+    height: 2.4rem;
+    padding: 0 0.8rem;
     border: 1px solid var(--pf-border);
-    border-radius: 2px;
-    background: var(--pf-inset);
+    border-radius: var(--radius-sm);
+    background: var(--pf-card);
     color: var(--pf-text);
     font: inherit;
     font-size: 0.85rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
 
-    &:focus-visible { outline: 2px solid var(--pf-green); outline-offset: 1px; }
+    &:hover { border-color: color-mix(in srgb, var(--pf-green) 40%, var(--pf-border)); }
+    &:focus-visible { outline: none; border-color: var(--pf-green); box-shadow: var(--ring); }
   }
 }
 
@@ -352,23 +380,21 @@ table {
   font-variant-numeric: tabular-nums;
 }
 
+// Quiet column headings: no band, just small caps over a hairline
 th {
-  padding: 0.7rem 1rem;
+  padding: 0.6rem 1rem;
   text-align: right;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: var(--pf-muted);
-  background: var(--pf-inset);
-  position: sticky;
-  top: 0;
-  z-index: 1;
   border-top: 1px solid var(--pf-border);
   border-bottom: 1px solid var(--pf-border);
 }
 
 td {
-  padding: 0.9rem 1rem;
+  padding: 0.85rem 1rem;
   text-align: right;
   border-bottom: 1px solid var(--pf-border);
 }
@@ -376,9 +402,43 @@ td {
 th:first-child, td:first-child { text-align: left; padding-left: 1.25rem; }
 th:nth-child(2), td:nth-child(2) { text-align: left; }
 tbody tr:last-child td { border-bottom: 0; }
-tbody tr:hover { background: var(--pf-inset); }
+tbody tr { transition: background 0.12s; }
+tbody tr:hover { background: var(--pf-hover); }
 
 .ticker { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; }
+
+// Holding ticker: links to the Trade page, ready to sell; "Sell AAPL" shows on hover
+.ticker-link {
+  position: relative;
+  padding: 0.2rem 0.45rem 0.2rem 0.2rem;
+  margin-left: -0.2rem;
+  border-radius: 999px;
+  color: var(--pf-text);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover, &:focus-visible { background: var(--pf-sell-bg); color: var(--pf-loss); }
+  &:focus-visible { outline: none; box-shadow: var(--ring); }
+
+  &::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: calc(100% + 0.4rem);
+    top: 50%;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    background: var(--pf-text);
+    color: var(--pf-card);
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-0.25rem, -50%);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  &:hover::after, &:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+}
 .empty { padding: 3.5rem 1rem; color: var(--pf-muted); text-align: center; }
 
 @media (max-width: 800px) {
@@ -395,14 +455,16 @@ tbody tr:hover { background: var(--pf-inset); }
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.55rem 0.85rem;
-  border-radius: 2px;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border-radius: var(--radius);
   background: var(--pf-green);
   color: #fff;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
-  transition: background 0.15s;
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--pf-green) 70%, transparent);
+  transition: background 0.15s, transform 0.15s;
 
-  &:hover { background: var(--pf-green-dark); }
+  &:hover { background: var(--pf-green-dark); transform: translateY(-1px); }
 }
