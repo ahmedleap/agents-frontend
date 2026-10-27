@@ -43,7 +43,11 @@ h2, h3, p { margin: 0; }
 .secondary-button { height: 2.5rem; padding: 0 1rem; border: 1px solid var(--pf-border); border-radius: var(--radius); background: var(--pf-card); color: var(--pf-text); font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
 .modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .modal-header h2 { margin-top: 0.25rem; color: var(--pf-text); font-family: 'Fredoka', 'Baloo 2', sans-serif; font-size: 1.65rem; font-weight: 600; }
-.close-button { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border: 0; border-radius: 50%; background: var(--pf-inset); color: var(--pf-muted); font-size: .9rem; cursor: pointer; }
+/* Cash dialog header: title | account name (centred) | close */
+/* Cash dialog: the account name sits right under the "Add cash" / "Withdraw cash" title, as part of it */
+.cash-modal .modal-header > div { min-width: 0; }
+.modal-account { margin-top: 0.15rem; overflow: hidden; color: var(--pf-accent); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.005em; text-overflow: ellipsis; white-space: nowrap; }
+.close-button { flex: none; display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border: 0; border-radius: 50%; background: var(--pf-inset); color: var(--pf-muted); font-size: .9rem; cursor: pointer; }
 .table-tools { display: flex; justify-content: flex-end; gap: 0.6rem; padding: 0 1.25rem 0.9rem; }
 .search-field { height: 2.4rem; border: 1px solid var(--pf-border); border-radius: var(--radius); background: var(--pf-card); transition: border-color .15s, box-shadow .15s; }
 .search-field input { width: 15rem; height: 100%; padding: 0 0.8rem; border: 0; outline: 0; background: transparent; color: var(--pf-text); font: inherit; font-size: 0.85rem; }

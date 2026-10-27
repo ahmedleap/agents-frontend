@@ -50,6 +50,8 @@ test.describe('Account cash balance', () => {
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByRole('heading', { name: 'Add cash' })).toBeVisible();
     await expect(dialog.getByLabel('Deposit amount')).toBeVisible();
+    // The account the cash goes into is named in the dialog's header
+    await expect(dialog.locator('.modal-account')).toHaveText('Roth IRA');
 
     // The address no longer asks for the form, so a reload doesn't reopen it
     await dialog.getByRole('button', { name: 'Close cash movement dialog' }).click();

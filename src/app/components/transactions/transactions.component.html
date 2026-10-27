@@ -93,6 +93,8 @@
         <div>
           <p class="eyebrow">CASH MOVEMENT</p>
           <h2 id="cash-modal-title">{{ transactionAction() === 'DEPOSIT' ? 'Add cash' : 'Withdraw cash' }}</h2>
+          <!-- Which account the money goes into / comes out of -->
+          <p class="modal-account">{{ account()?.name }}</p>
         </div>
         <button type="button" class="close-button" aria-label="Close cash movement dialog" (click)="showDepositForm.set(false)">&#10005;</button>
       </div>
