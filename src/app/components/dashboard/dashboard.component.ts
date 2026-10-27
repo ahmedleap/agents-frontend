@@ -23,15 +23,28 @@ import {
   Tooltip
 } from 'chart.js';
 
+import { catchError, forkJoin, of } from 'rxjs';
+
 import { DashboardService, WatchItem } from '../../core/services/dashboard.service';
 import { ThemeService } from '../../core/services/theme.service';
-import { TradingApiService } from '../../core/services/trading-api.service';
+import { HistoryResponseDto, TradingApiService } from '../../core/services/trading-api.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
 import { PagerComponent } from '../pager/pager.component';
 import { TickerLogoDirective } from '../../core/ticker-logo.directive';
 
 // Register only what the line chart needs (keeps the bundle small).
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
+
+/** The day's change from 1D history (first close to last close, or the summary when given); null without enough data */
+function dailyChange(history: HistoryResponseDto): { change: number; changePct: number } | null {
+  const prices = (history.bars ?? []).map(bar => Number(bar.close)).filter(price => Number.isFinite(price) && price > 0);
+  const startPrice = Number(history.summary?.startPrice ?? prices[0]);
+  const endPrice = Number(history.summary?.endPrice ?? prices[prices.length - 1]);
+  const change = history.summary?.change ?? (startPrice > 0 && endPrice > 0 ? endPrice - startPrice : undefined);
+  const changePct = history.summary?.changePercent ?? (change !== undefined && startPrice > 0 ? (change / startPrice) * 100 : undefined);
+  if (change === undefined || changePct === undefined || !Number.isFinite(Number(change)) || !Number.isFinite(Number(changePct))) return null;
+  return { change: Number(change), changePct: Number(changePct) };
+}
 
 /** Chart colours from the current theme's CSS tokens (styles.scss), so the chart follows light/dark mode */
 function themeColors() {
@@ -187,11 +200,17 @@ export class DashboardComponent {
       for (const item of this.pagedWatchlist()) {
         if (item.price !== undefined || this.quoteRequested.has(item.ticker)) continue;
         this.quoteRequested.add(item.ticker);
-        this.tradingApi.getQuote(item.ticker).subscribe({
-          next: quote => {
+        // The quote's change is always 0 (the backend doesn't compute it), so the day's change comes from
+        // the 1D history, as on the Trades cards
+        forkJoin({
+          quote: this.tradingApi.getQuote(item.ticker),
+          day: this.tradingApi.getHistory(item.ticker, '1D').pipe(catchError(() => of(null as HistoryResponseDto | null)))
+        }).subscribe({
+          next: ({ quote, day }) => {
             const price = Number(quote.lastPrice ?? quote.currentPrice ?? quote.midPrice);
-            const change = quote.priceChange ?? quote.dayChange;
-            const changePct = quote.priceChangePercent ?? quote.dayChangePercent;
+            const daily = day ? dailyChange(day) : null;
+            const change = daily?.change ?? quote.priceChange ?? quote.dayChange;
+            const changePct = daily?.changePct ?? quote.priceChangePercent ?? quote.dayChangePercent;
             this.quotes.update(all => ({
               ...all,
               [item.ticker]: {

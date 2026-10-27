@@ -241,11 +241,14 @@ img.ticker-logo {
   transition: opacity .2s;
 
   &.loaded { opacity: 1; }
-  // All-white logos (e.g. ABBV) need a dark circle on the light theme...
+  // Single-colour logos (e.g. AAPL, ADI, ABBV) are drawn in black on the light theme...
+  &.mono { filter: brightness(0); }
+  // Mostly-white coloured logos (e.g. AMZN) need a dark circle on the light theme...
   &.light { padding: 14%; background: #1f2a24; }
 }
-// ...and all-black logos (e.g. AAPL) a light circle on the dark theme
+// ...and on the dark theme single-colour logos are white, and mostly-black ones get a light circle
 :root[data-theme="dark"] img.ticker-logo {
+  &.mono { filter: brightness(0) invert(1); }
   &.light { padding: 4%; background: transparent; }
   &.dark { padding: 14%; background: #f4f6f4; }
 }

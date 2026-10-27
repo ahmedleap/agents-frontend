@@ -2,7 +2,7 @@ import { Component, booleanAttribute, computed, input, model } from '@angular/co
 
 /**
  * Page number buttons with Previous / Next and a "Showing 1–12 of 40" line. `page` is zero-based.
- * `compact` is for narrow cards: just ‹ 1–4 of 9 ›.
+ * `compact` is for narrow cards: just ‹ 1 of 3 › (page 1 of 3 pages).
  */
 @Component({
   selector: 'app-pager',
@@ -11,7 +11,7 @@ import { Component, booleanAttribute, computed, input, model } from '@angular/co
     @if (pageCount() > 1 && compact()) {
       <nav class="pager compact" [attr.aria-label]="label()">
         <button type="button" class="step" [disabled]="page() === 0" (click)="go(page() - 1)" aria-label="Previous page">&#8249;</button>
-        <span class="range">{{ first() }}–{{ last() }} of {{ total() }}</span>
+        <span class="range" [attr.aria-label]="'Page ' + (page() + 1) + ' of ' + pageCount()">{{ page() + 1 }} of {{ pageCount() }}</span>
         <button type="button" class="step" [disabled]="page() >= pageCount() - 1" (click)="go(page() + 1)" aria-label="Next page">&#8250;</button>
       </nav>
     } @else if (pageCount() > 1) {
