@@ -139,6 +139,16 @@ html {
   font-size: clamp(12px, 0.25vw + 0.45vh + 6.3px, 20px);
 }
 
+/* Admins and analysts present their screens, so everything is 25% bigger and bold
+   (the class is set in app.component.ts) */
+html.present-mode {
+  font-size: clamp(15px, 1.25 * (0.25vw + 0.45vh + 6.3px), 25px);
+}
+html.present-mode body,
+html.present-mode body * {
+  font-weight: 700 !important;
+}
+
 body {
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, Tahoma, sans-serif;
   font-size: 0.875rem;

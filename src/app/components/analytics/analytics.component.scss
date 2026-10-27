@@ -270,6 +270,13 @@ td.rank { color: var(--pf-muted); font-weight: 600; }
 tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: var(--pf-inset); }
 
+// Presenting (analysts get bigger text app-wide): the table's small print grows too
+:host-context(html.present-mode) {
+  table { font-size: 1rem; }
+  th { font-size: .9rem; }
+  .ticker-text small { font-size: .9rem; }
+}
+
 /* ---------- Fulfillment stats ---------- */
 
 .stats {
