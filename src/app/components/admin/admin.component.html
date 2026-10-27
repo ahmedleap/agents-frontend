@@ -25,7 +25,7 @@
               <td><span class="id">{{ client.clientId }}</span></td>
               <td>{{ client.email || '—' }}</td>
               <td>{{ client.joinDate ? (client.joinDate | date:'MMM d, y') : '—' }}</td>
-              <td>{{ client.portfolioSizeRange ?? client.portfolioSize ?? '—' }}</td>
+              <td>{{ portfolioLabel(client.portfolioSizeRange ?? client.portfolioSize) ?? '—' }}</td>
               <td>{{ client.portfolioValue != null ? (client.portfolioValue | currency:'USD':'symbol':'1.0-0') : '—' }}</td>
               <td><span class="tag" [class.risk-conservative]="client.riskTolerance === 'CONSERVATIVE'" [class.risk-moderate]="client.riskTolerance === 'MODERATE'" [class.risk-aggressive]="client.riskTolerance === 'AGGRESSIVE'">{{ client.riskTolerance ?? 'Not set' }}</span></td>
               <td><button class="view-button" (click)="selectClient(client)">View</button></td>
@@ -52,7 +52,7 @@
       @if (client.dateOfBirth) {<div><dt>Date of birth</dt><dd>{{ client.dateOfBirth | date:'MMM d, y' }}</dd></div>}
       <div><dt>Joined</dt><dd>{{ client.joinDate ? (client.joinDate | date:'MMM d, y') : '—' }}</dd></div>
       <div><dt>Risk profile</dt><dd>{{ client.riskTolerance ?? 'Not set' }}</dd></div>
-      <div><dt>Portfolio size</dt><dd>{{ client.portfolioSizeRange ?? client.portfolioSize ?? 'Not set' }}</dd></div>
+      <div><dt>Portfolio size</dt><dd>{{ portfolioLabel(client.portfolioSizeRange ?? client.portfolioSize) ?? 'Not set' }}</dd></div>
       @if (client.portfolioValue != null) {<div><dt>Portfolio value</dt><dd>{{ client.portfolioValue | currency:'USD' }}</dd></div>}
       @if (client.ssnLastFour) {<div><dt>SSN</dt><dd>•••• {{ client.ssnLastFour }}</dd></div>}
       @if (client.phoneNumber) {<div><dt>Phone</dt><dd>{{ client.phoneNumber }}</dd></div>}

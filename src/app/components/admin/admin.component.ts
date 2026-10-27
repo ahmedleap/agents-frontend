@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, map, of } from 'rxjs';
 import { AdminAccount, AdminClient, AdminOrder, AdminService, TradeAuditEvent } from '../../core/services/admin.service';
 import { PagerComponent } from '../pager/pager.component';
+import { SIZE_OPTIONS } from '../../core/client-profile-options';
 
 type View = 'clients' | 'accounts' | 'orders';
 
@@ -144,6 +145,12 @@ export class AdminComponent {
 
   protected auditDetails(event: TradeAuditEvent): string[] {
     return Object.entries(event.details ?? {}).map(([key, value]) => `${this.label(key)}: ${String(value)}`);
+  }
+
+  /** Turns a portfolio size enum such as BETWEEN_100K_200K into its display label */
+  protected portfolioLabel(value: string | null | undefined): string | undefined {
+    if (!value) return undefined;
+    return SIZE_OPTIONS.find(option => option.value === value)?.label ?? value;
   }
 
   protected label(value: string): string {
