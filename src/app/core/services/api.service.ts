@@ -25,9 +25,6 @@ export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly baseUrl = environment.backendUrl;
-  private readonly serverUrl = environment.production
-    ? environment.backendUrl.replace(/\/api\/?$/, '')
-    : '';
 
   private withAuth(options?: RequestOptions): RequestOptions | undefined {
     const token = this.auth.getToken();
@@ -48,10 +45,6 @@ export class ApiService {
    */
   get<T>(endpoint: string, options?: RequestOptions): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}/${endpoint}`, this.withAuth(options));
-  }
-
-  getRoot<T>(endpoint: string, options?: RequestOptions): Observable<T> {
-    return this.http.get<T>(`${this.serverUrl}/${endpoint}`, this.withAuth(options));
   }
 
   /**

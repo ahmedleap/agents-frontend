@@ -129,7 +129,7 @@ export class DashboardService {
           this.error.set('Your session is no longer available. Please sign in again.');
           return EMPTY;
         }
-        return this.api.getRoot<DashboardResponse>('dashboard', { params: { clientId, period: '30D' } }).pipe(
+        return this.api.get<DashboardResponse>('dashboard', { params: { clientId, period: '30D' } }).pipe(
           catchError(error => {
             console.error('Dashboard request failed', error);
             this.loading.set(false);
