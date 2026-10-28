@@ -100,3 +100,68 @@ test.describe('Admin console', () => {
     });
   }
 });
+
+test.describe('Admin order times', () => {
+  // A computer on Pacific time (UTC-7 in late October)
+  test.use({ timezoneId: 'America/Los_Angeles' });
+
+  test("are shown in the computer's time zone, including backend times sent without a zone", async ({ page }) => {
+    await page.route('**/api/v1/admin/clients', route => route.fulfill({ json: [] }));
+    await page.route('**/api/v1/admin/accounts', route => route.fulfill({ json: [] }));
+    await page.route('**/api/v1/admin/orders', route => route.fulfill({ json: [
+      // created_at without a zone (UTC), filled_at with one
+      { orderId: 'o1', accountId: 'a1', clientId: 'c1', clientName: 'Ava Nguyen', ticker: 'AAPL', instrumentName: 'Apple Inc.', side: 'BUY', quantity: 5, limitPrice: 100, filledPrice: 100.12, status: 'FILLED', createdAt: '2026-10-27T17:28:20', filledAt: '2026-10-27T17:28:23Z' }
+    ] }));
+    await page.route('**/api/v1/admin/trades/o1/audit', route => route.fulfill({ json: [
+      // The backend's own field names. created_at here is New York wall-clock time read as UTC (4 hours off), as in
+      // databases where audit_logs.created_at has no zone; eventTime is the real time
+      { auditLogId: 'e2', orderId: 'o1', eventType: 'FILLED', eventTime: '2026-10-27T17:28:23Z', createdAt: '2026-10-27T13:28:23Z', reason: 'Order filled at price: 100.1200' },
+      { auditLogId: 'e1', orderId: 'o1', eventType: 'PENDING', eventTime: '2026-10-27T17:28:20', createdAt: '2026-10-27T13:28:20Z', reason: 'Order created and queued for fulfillment' }
+    ] }));
+    await loginAsAdmin(page);
+    await page.getByRole('navigation', { name: 'Admin views' }).getByRole('button', { name: 'Orders' }).click();
+
+    // 17:28 UTC is 10:28 AM in Los Angeles
+    await expect(page.locator('table tbody tr').first()).toContainText('Oct 27, 10:28 AM');
+    await page.locator('table tbody').getByRole('button', { name: 'View' }).click();
+    const drawer = page.locator('.order-drawer');
+    await expect(drawer).toContainText('Oct 27, 2026, 10:28 AM');
+    await expect(drawer).toContainText('Oct 27, 2026, 10:28:23 AM');
+    await expect(drawer.locator('.audit-event time')).toHaveText(['Oct 27, 2026, 10:28:23 AM', 'Oct 27, 2026, 10:28:20 AM']);
+  });
+});
+
+test.describe('Admin audit times saved in New York time', () => {
+  // This computer's clock is UTC
+  test.use({ timezoneId: 'UTC' });
+
+  test('are corrected to match the order, and correct ones are left alone', async ({ page }) => {
+    const order = (id: string, at: string) => ({ orderId: id, accountId: 'a1', clientId: 'c1', clientName: 'Ava Nguyen', ticker: 'AAPL', instrumentName: 'Apple Inc.', side: 'BUY', quantity: 5, limitPrice: 0, filledPrice: 182.35, status: 'FILLED', createdAt: at, filledAt: at });
+    await page.route('**/api/v1/admin/clients', route => route.fulfill({ json: [] }));
+    await page.route('**/api/v1/admin/accounts', route => route.fulfill({ json: [] }));
+    await page.route('**/api/v1/admin/orders', route => route.fulfill({ json: [
+      order('shifted', '2026-10-28T14:59:23Z'),
+      order('fine', '2026-10-23T19:12:33Z')
+    ] }));
+    // Like the real data: these audit rows hold New York clock time (10:59) labelled as UTC
+    await page.route('**/api/v1/admin/trades/shifted/audit', route => route.fulfill({ json: [
+      { auditLogId: 'e2', orderId: 'shifted', eventType: 'FILLED', eventTime: '2026-10-28T10:59:23Z', createdAt: '2026-10-28T10:59:23Z', reason: 'Order filled at price: 182.3500' },
+      { auditLogId: 'e1', orderId: 'shifted', eventType: 'PENDING', eventTime: '2026-10-28T10:59:23', createdAt: '2026-10-28T10:59:23', reason: 'Order created and queued for fulfillment' }
+    ] }));
+    // ...and these were saved correctly
+    await page.route('**/api/v1/admin/trades/fine/audit', route => route.fulfill({ json: [
+      { auditLogId: 'e3', orderId: 'fine', eventType: 'PENDING', eventTime: '2026-10-23T19:12:33Z', createdAt: '2026-10-23T19:12:33Z', reason: 'Order created and queued for fulfillment' }
+    ] }));
+    await loginAsAdmin(page);
+    await page.getByRole('navigation', { name: 'Admin views' }).getByRole('button', { name: 'Orders' }).click();
+    const drawer = page.locator('.order-drawer');
+
+    await page.locator('table tbody tr').nth(0).getByRole('button', { name: 'View' }).click();
+    await expect(drawer).toContainText('Oct 28, 2026, 2:59:23 PM');
+    await expect(drawer.locator('.audit-event time')).toHaveText(['Oct 28, 2026, 2:59:23 PM', 'Oct 28, 2026, 2:59:23 PM']);
+
+    await drawer.getByRole('button', { name: 'Close order details' }).click();
+    await page.locator('table tbody tr').nth(1).getByRole('button', { name: 'View' }).click();
+    await expect(drawer.locator('.audit-event time')).toHaveText(['Oct 23, 2026, 7:12:33 PM']);
+  });
+});

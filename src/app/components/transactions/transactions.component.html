@@ -75,7 +75,7 @@
               <td class="amount" [class.withdrawal-amount]="transaction.txnType === 'WITHDRAWAL'">
                 {{ transaction.txnType === 'DEPOSIT' ? '+' : '-' }}{{ transaction.amount | currency }}
               </td>
-              <td>{{ centralTime(transaction.createdAt) }}</td>
+              <td>{{ localTime(transaction.createdAt) }}</td>
             </tr>
           } @empty {
             <tr><td colspan="3" class="empty"><strong>{{ transactions().length ? 'No matching transactions' : 'No transactions yet' }}</strong><span>{{ transactions().length ? 'Try a different search.' : 'Add cash to create the first deposit.' }}</span></td></tr>

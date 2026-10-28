@@ -3,6 +3,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { EMPTY, catchError, switchMap, tap } from 'rxjs';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
+import { serverDate } from '../server-time';
 
 export interface AccountSummary {
   id: string;
@@ -208,7 +209,7 @@ export class DashboardService {
     })));
     this.trades.set((response.recentTrades ?? []).map(trade => ({
       id: trade.orderId,
-      time: new Date(trade.createdAt),
+      time: serverDate(trade.createdAt),
       side: trade.orderType === 'BUY' ? 'Buy' : 'Sell',
       ticker: trade.ticker,
       shares: trade.quantity,

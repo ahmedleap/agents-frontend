@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { map, Observable, of } from 'rxjs';
 import { ApiService } from './api.service';
+import { utcIso } from '../server-time';
 import { environment } from '../../../environments/environment';
 
 export interface AdminInsights {
@@ -199,7 +200,7 @@ function normalizeAdminClient(value: unknown): AdminClient {
     clientName: clientName || [firstName, middleName, lastName].filter(Boolean).join(' '),
     email: String(row['email'] ?? ''),
     dateOfBirth: nullableString(row['dateOfBirth']),
-    joinDate: nullableString(row['joinDate']),
+    joinDate: utcIso(nullableString(row['joinDate'])),
     ssnLastFour: nullableString(row['ssnLastFour']),
     portfolioSize: nullableString(row['portfolioSize'] ?? row['portfolioSizeRange']),
     portfolioSizeRange: nullableString(row['portfolioSizeRange'] ?? row['portfolioSize']),
@@ -230,7 +231,7 @@ function normalizeAdminAccount(value: unknown): AdminAccount {
     name: String(row['name'] ?? row['accountName'] ?? 'Account'),
     cashBalance: typeof row['cashBalance'] === 'number' ? row['cashBalance'] : 0,
     status: String(row['status'] ?? 'UNKNOWN'),
-    openDate: String(row['openDate'] ?? '')
+    openDate: utcIso(String(row['openDate'] ?? ''))
   };
 }
 
@@ -249,9 +250,9 @@ function normalizeAdminOrder(value: unknown): AdminOrder {
     limitPrice: typeof row['limitPrice'] === 'number' ? row['limitPrice'] : 0,
     filledPrice: typeof row['filledPrice'] === 'number' ? row['filledPrice'] : undefined,
     status: normalizeOrderStatus(row['status']),
-    createdAt: String(row['createdAt'] ?? ''),
-    filledAt: nullableString(row['filledAt']) ?? undefined,
-    cancelledAt: nullableString(row['cancelledAt'] ?? row['cancelled_at'] ?? row['stoppedAt'] ?? row['stopped_at']) ?? undefined,
+    createdAt: utcIso(String(row['createdAt'] ?? '')),
+    filledAt: utcIso(nullableString(row['filledAt'])) ?? undefined,
+    cancelledAt: utcIso(nullableString(row['cancelledAt'] ?? row['cancelled_at'] ?? row['stoppedAt'] ?? row['stopped_at'])) ?? undefined,
     cancellationReason: nullableString(row['cancellationReason'] ?? row['cancelReason'] ?? row['cancel_reason'] ?? row['stopReason'] ?? row['stop_reason']) ?? undefined
   };
 }
@@ -271,15 +272,17 @@ function normalizeAuditEvent(value: unknown): TradeAuditEvent {
     ? row['details'] as Record<string, unknown>
     : undefined;
   return {
-    id: String(row['id'] ?? row['auditId'] ?? ''),
+    id: String(row['id'] ?? row['auditLogId'] ?? row['auditId'] ?? ''),
     orderId: String(row['orderId'] ?? ''),
     accountId: String(row['accountId'] ?? ''),
     clientId: String(row['clientId'] ?? ''),
     clientName: String(row['clientName'] ?? ''),
     eventType: String(row['eventType'] ?? row['event_type'] ?? row['action'] ?? 'Order updated'),
-    eventTimestamp: String(row['eventTimestamp'] ?? row['event_timestamp'] ?? row['createdAt'] ?? row['created_at'] ?? ''),
+    // The backend sends eventTime (timestamptz). created_at is only a fallback: in some databases it has no zone,
+    // so it holds the backend's local (New York) time rather than UTC
+    eventTimestamp: utcIso(String(row['eventTime'] ?? row['event_time'] ?? row['eventTimestamp'] ?? row['event_timestamp'] ?? row['createdAt'] ?? row['created_at'] ?? '')),
     reason: nullableString(row['reason'] ?? row['cancel_reason'] ?? row['cancellationReason'] ?? row['stop_reason']) ?? undefined,
-    createdAt: String(row['createdAt'] ?? row['created_at'] ?? row['eventTimestamp'] ?? row['event_timestamp'] ?? ''),
+    createdAt: utcIso(String(row['createdAt'] ?? row['created_at'] ?? row['eventTime'] ?? row['eventTimestamp'] ?? row['event_timestamp'] ?? '')),
     details,
     actor: nullableString(row['actor'] ?? row['performedBy'] ?? row['performed_by'] ?? row['username']) ?? undefined
   };

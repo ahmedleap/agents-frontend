@@ -12,7 +12,7 @@ async function stubLogin(page: import('@playwright/test').Page, role: 'CLIENT' |
   const email = 'jane@example.com';
   if (role === 'CLIENT') {
     // Loaded after a client logs in (GET /dashboard?clientId=...&period=30D)
-    await page.route(url => url.pathname === '/dashboard' && url.searchParams.has('clientId'), route => route.fulfill({
+    await page.route(url => url.pathname === '/api/dashboard' && url.searchParams.has('clientId'), route => route.fulfill({
       json: { accounts: [], marketMovers: [], watchlist: [], recentTrades: [], portfolioHistory: [], todayProfitLoss: 0, todayProfitLossPercent: 0 }
     }));
   }

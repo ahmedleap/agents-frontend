@@ -6,7 +6,7 @@
 
   @if (mode() === 'candles' && readout(); as c) {
     <div class="readout" aria-live="polite">
-      @if (c.timestamp) { <span class="date">{{ c.timestamp | date: dateFormat() }}</span> }
+      @if (c.timestamp) { <span class="date">{{ c.timestamp | date: dateFormat() : dateZone() }}</span> }
       <dl>
       <div><dt>O</dt><dd>{{ c.open | currency }}</dd></div>
       <div><dt>H</dt><dd>{{ c.high | currency }}</dd></div>

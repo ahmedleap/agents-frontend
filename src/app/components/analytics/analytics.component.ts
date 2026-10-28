@@ -32,6 +32,7 @@ import {
   isoDate
 } from '../../core/services/analytics.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { serverDate } from '../../core/server-time';
 import { TickerLogoDirective } from '../../core/ticker-logo.directive';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
@@ -50,11 +51,8 @@ const usdCompact = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1
 });
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
-const centralHour = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'America/Chicago',
-  hour: 'numeric',
-  hour12: true
-});
+/** Hour labels in the computer's time zone */
+const localHour = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: true });
 
 /** Rates may arrive as 0-1 or 0-100; always show them as 0-100. */
 function asPercent(v: number): number {
@@ -240,7 +238,7 @@ export class AnalyticsComponent {
     const rows = [...(this.volumeTrend.value() ?? [])].sort((a, b) => a.date.localeCompare(b.date));
     this.theme();
     return {
-      labels: rows.map(r => this.preset() === 'today' ? centralHour.format(parseISO(r.date)) : shortDate(r.date)),
+      labels: rows.map(r => this.preset() === 'today' ? localHour.format(serverDate(r.date)) : shortDate(r.date)),
       series: [{ label: 'Value traded', data: rows.map(r => r.totalValueTraded), color: token('--pf-chart') }],
       format: v => usdCompact.format(v)
     };

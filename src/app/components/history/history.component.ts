@@ -7,6 +7,7 @@ import { ActivityAccountsService } from '../../core/services/activity-accounts.s
 import { OrderHistoryService } from '../../core/services/order-history.service';
 import { OrderDetailDto, TradingApiService } from '../../core/services/trading-api.service';
 import { downloadCsv } from '../../core/utils/csv-export';
+import { localTime as formatLocalTime } from '../../core/server-time';
 
 type SortKey = 'side' | 'kind' | 'quantity' | 'limitPrice' | 'status' | 'createdAt';
 
@@ -106,13 +107,9 @@ export class HistoryComponent {
     if (accountId) this.router.navigate(['/history', accountId]);
   }
 
-  protected centralTime(value: string): string {
-    const timestamp = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : `${value}Z`;
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(new Date(timestamp));
+  /** In the computer's time zone */
+  protected localTime(value: string | null | undefined): string {
+    return formatLocalTime(value);
   }
 
   protected cancelOrder(orderId: string): void {
@@ -140,7 +137,7 @@ export class HistoryComponent {
         order.orderId,
         this.account()?.name ?? '',
         order.instrument,
-        this.centralTime(order.createdAt),
+        this.localTime(order.createdAt),
         order.orderType,
         order.limitPrice === null ? 'Market' : 'Limit',
         order.quantity,
