@@ -43,7 +43,18 @@ h2, h3, p { margin: 0; }
   flex-wrap: wrap;
   gap: 1rem;
 
-  .eyebrow { color: var(--pf-green); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; }
+  .eyebrow { color: var(--pf-green); font-size: 0.85rem; font-weight: 800; letter-spacing: 0.12em; }
+  .greeting {
+    margin: 0.4rem 0 0.2rem;
+    font-family: 'Fredoka', 'Baloo 2', sans-serif;
+    font-size: 2.75rem;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  .greeting-text { color: var(--pf-green); }
+  // The app green is too dark to read on the dark background; use the brighter gain green there
+  :host-context(html[data-theme="dark"]) & .greeting-text { color: var(--pf-gain); }
   h2 {
     margin-top: 0.25rem;
     font-family: 'Fredoka', 'Baloo 2', sans-serif;
@@ -52,8 +63,8 @@ h2, h3, p { margin: 0; }
     letter-spacing: -0.01em;
     color: var(--pf-text);
   }
-  .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 0.95rem; }
-  .asof { color: var(--pf-muted); font-size: 0.75rem; }
+  .intro { margin-top: 0.3rem; color: var(--pf-muted); font-size: 1.05rem; }
+  .asof { color: var(--pf-muted); font-size: 0.9rem; }
 }
 
 .alert {
@@ -121,7 +132,7 @@ h2, h3, p { margin: 0; }
 
   &.down { border-left-color: var(--pf-loss); }
 
-  .acct-name { font-size: 0.75rem; color: var(--pf-muted); }
+  .acct-name { font-size: 0.9rem; color: var(--pf-muted); }
   .acct-value {
     font-size: 1.5rem;
     font-weight: 700;
@@ -129,7 +140,7 @@ h2, h3, p { margin: 0; }
     font-variant-numeric: tabular-nums;
   }
   .acct-pl {
-    font-size: 0.85rem;
+    font-size: 0.98rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 
@@ -159,7 +170,7 @@ h2, h3, p { margin: 0; }
       linear-gradient(135deg, #c0392b 0%, #962d22 100%);
   }
 
-  .label { font-size: 0.75rem; opacity: 0.78; }
+  .label { font-size: 0.9rem; opacity: 0.78; }
   .value {
     font-size: clamp(1.6rem, 2.4vw, 2.1rem); // same as the account page's headline numbers
     font-weight: 700;
@@ -172,11 +183,11 @@ h2, h3, p { margin: 0; }
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.18);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1.05rem;
   }
   .hero-total {
     margin-top: 0.4rem;
-    font-size: 0.8rem;
+    font-size: 0.92rem;
     opacity: 0.78;
     font-variant-numeric: tabular-nums;
   }
@@ -193,8 +204,8 @@ h2, h3, p { margin: 0; }
   padding: 1rem 1.25rem 0.85rem;
 
   h3 { font-size: 1.08rem; font-weight: 700; letter-spacing: -0.005em; }
-  .sub { font-size: 0.8rem; color: var(--pf-muted); margin-top: 0.2rem; }
-  strong { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+  .sub { font-size: 0.92rem; color: var(--pf-muted); margin-top: 0.2rem; }
+  strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
 }
 
 /* ---------- Chart ---------- */
@@ -216,7 +227,7 @@ h2, h3, p { margin: 0; }
   place-items: center;
   padding: 1rem 2rem;
   color: var(--pf-muted);
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   font-weight: 600;
   text-align: center;
 }
@@ -252,7 +263,7 @@ h2, h3, p { margin: 0; }
   background: var(--pf-inset);
   color: var(--pf-accent);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
 
@@ -262,7 +273,7 @@ h2, h3, p { margin: 0; }
 
 .watch-pager { display: block; padding: 0.55rem 1rem; border-top: 1px solid var(--pf-border); }
 
-.watch-note, .watch-error { padding: 0 1.1rem 0.6rem; font-size: 0.8rem; }
+.watch-note, .watch-error { padding: 0 1.1rem 0.6rem; font-size: 0.92rem; }
 .watch-note { color: var(--pf-muted); }
 .watch-error { color: var(--pf-loss); font-weight: 700; }
 .watchlist a { color: var(--pf-accent); font-weight: 700; }
@@ -278,7 +289,7 @@ h2, h3, p { margin: 0; }
   border-radius: var(--radius-sm);
   background: var(--pf-card);
   color: var(--pf-loss);
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   cursor: pointer;
 
   &:hover { border-color: var(--pf-loss); background: var(--pf-sell-bg); }
@@ -290,7 +301,7 @@ h2, h3, p { margin: 0; }
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 1.02rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -298,7 +309,7 @@ table {
 th {
   padding: 0.5rem 1rem;
   text-align: right;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -348,7 +359,7 @@ tbody tr:hover { background: var(--pf-hover); }
   flex-direction: column;
   line-height: 1.2;
 
-  small { font-weight: 400; color: var(--pf-muted); font-size: 0.75rem; }
+  small { font-weight: 400; color: var(--pf-muted); font-size: 0.9rem; }
 }
 
 .side {
@@ -356,7 +367,7 @@ tbody tr:hover { background: var(--pf-hover); }
   margin-right: 0.5rem;
   padding: 0.15rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
 
   &.buy { color: var(--pf-gain); background: var(--pf-buy-bg); }
@@ -364,7 +375,7 @@ tbody tr:hover { background: var(--pf-hover); }
 }
 
 .empty { padding: 3.5rem 1rem; color: var(--pf-muted); text-align: center; }
-td.empty { padding: 1.25rem 1rem; text-align: center; }
+td.empty { padding: 1.25rem 1rem; text-align: center; white-space: normal; }
 
 /* ---------- Responsive ---------- */
 
