@@ -12,9 +12,13 @@ test.beforeEach(async ({ page }) => {
     sessionStorage.setItem('stash-auth-session', JSON.stringify({ user, accessToken, refreshToken: 'test-refresh-token' }));
   }, clientId);
 
-  await page.route('**/dashboard?**', route => route.fulfill({ status: 404, body: 'Not found' }));
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
+    // The dashboard endpoint is unavailable in these tests
+    if (url.pathname === '/api/dashboard') {
+      await route.fulfill({ status: 404, body: 'Not found' });
+      return;
+    }
     let body: unknown = [];
     if (url.pathname === `/api/portfolio/v1/${clientId}`) {
       body = { accounts: [
