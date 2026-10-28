@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 
 export interface InstrumentSearchResult {
@@ -161,10 +161,14 @@ export class TradingApiService {
     return this.api.get<QuoteDto>(`instruments/${encodeURIComponent(ticker)}/quote`);
   }
 
+  /** Price bars oldest first (the backend can send them newest first), so charts read left to right */
   getHistory(ticker: string, period = '1M'): Observable<HistoryResponseDto> {
     return this.api.get<HistoryResponseDto>(`instruments/${encodeURIComponent(ticker)}/history`, {
       params: { period }
-    });
+    }).pipe(map(history => ({
+      ...history,
+      bars: [...(history.bars ?? [])].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
+    })));
   }
 
   createOrder(request: CreateOrderRequest): Observable<CreateOrderResponse> {

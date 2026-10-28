@@ -114,6 +114,29 @@ test.describe('Trades', () => {
     await expect(page.getByRole('dialog').getByRole('img', { name: 'Price history line chart with candlesticks' })).toBeVisible();
   });
 
+  test('the chart runs oldest to newest, left to right, even when the backend sends newest first', async ({ page }) => {
+    await loginAsClient(page, [account]);
+    await fakeMarket(page);
+    await page.route(/\/api\/instruments\/[^/]+\/history/, route => route.fulfill({
+      json: { ticker: 'X', period: '1M', barCount: bars.length, bars: [...bars].reverse() }
+    }));
+    await page.goto(`/trades/${account.accountId}`);
+
+    const firstCard = page.locator('.instrument-card').first();
+    await expect(firstCard).toContainText('$110.00');
+    await firstCard.getByRole('button', { name: /Trade/ }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('group', { name: 'Chart type' }).getByRole('button', { name: 'Line + Candles' }).click();
+    const candles = dialog.getByRole('img', { name: 'Price history line chart with candlesticks' });
+
+    // With nothing hovered the readout is the latest day; the leftmost candle is the oldest
+    await expect(dialog.locator('.readout')).toContainText('Oct 23, 2026');
+    await expect(dialog.locator('.readout')).toContainText('C$110.00');
+    await candles.locator('rect.slot').first().hover();
+    await expect(dialog.locator('.readout')).toContainText('Oct 19, 2026');
+    await expect(dialog.locator('.readout')).toContainText('C$103.00');
+  });
+
   test('filters the instruments by stocks, crypto or forex', async ({ page }) => {
     await loginAsClient(page, [account]);
     await fakeMarket(page);
