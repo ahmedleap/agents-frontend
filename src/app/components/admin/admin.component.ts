@@ -62,7 +62,7 @@ export class AdminComponent {
   protected readonly accounts = computed(() => {
     const rows = this.data.value()?.accounts ?? [];
     const query = this.search().trim().toLowerCase();
-    return rows.filter(account => (!query || [account.id, account.clientId, account.clientName].some(value => value.toLowerCase().includes(query)))
+    return rows.filter(account => (!query || [account.name, account.id, account.clientId, account.clientName].some(value => value.toLowerCase().includes(query)))
       && (this.accountStatus() === 'ALL' || account.status === this.accountStatus()));
   });
 
