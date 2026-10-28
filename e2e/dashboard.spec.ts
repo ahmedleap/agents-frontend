@@ -105,3 +105,16 @@ test.describe('Dashboard after switching clients', () => {
     await expect(page.locator('.movers thead th')).toHaveText(['Stock', 'Price', 'Change']);
   });
 });
+
+test.describe('Dashboard greeting', () => {
+  for (const [hour, part] of [[9, 'morning'], [14, 'afternoon'], [20, 'evening']] as const) {
+    test(`says good ${part} with the client's first name at ${hour}:00`, async ({ page }) => {
+      await page.clock.setFixedTime(new Date(2026, 9, 28, hour, 0));
+      await loginAsClient(page, [account]);
+      await fakeHistory(page, []);
+      await page.goto('/home');
+
+      await expect(page.locator('.toolbar .greeting-text')).toHaveText(`Good ${part}, Jane!`);
+    });
+  }
+});

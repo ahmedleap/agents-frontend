@@ -25,6 +25,7 @@ import {
 
 import { catchError, forkJoin, of } from 'rxjs';
 
+import { AuthService } from '../../core/services/auth.service';
 import { DashboardService, WatchItem } from '../../core/services/dashboard.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { HistoryResponseDto, TradingApiService } from '../../core/services/trading-api.service';
@@ -79,9 +80,19 @@ function todayIso(): string {
 })
 export class DashboardComponent {
   private readonly data = inject(DashboardService);
+  private readonly auth = inject(AuthService);
   private readonly theme = inject(ThemeService);
 
   protected readonly asOf = new Date();
+
+  /** The computer's clock, ticked each minute so the greeting changes at noon and 6 PM */
+  private readonly now = signal(new Date());
+  protected readonly greeting = computed(() => {
+    const hour = this.now().getHours();
+    const part = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+    const name = this.auth.currentUser()?.firstName?.trim();
+    return name ? `Good ${part}, ${name}` : `Good ${part}`;
+  });
 
   protected readonly accounts = this.data.accounts;
   private readonly watchlistApi = inject(WatchlistService);
@@ -235,7 +246,11 @@ export class DashboardComponent {
       if (!this.watchlist().length) this.editingWatchlist.set(false);
     });
 
-    inject(DestroyRef).onDestroy(() => this.chart?.destroy());
+    const clock = setInterval(() => this.now.set(new Date()), 60_000);
+    inject(DestroyRef).onDestroy(() => {
+      clearInterval(clock);
+      this.chart?.destroy();
+    });
   }
 
   protected toggleWatchlistEdit(): void {
