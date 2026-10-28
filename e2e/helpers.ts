@@ -16,7 +16,7 @@ function isServiceRequest(url: URL): boolean {
   if (url.host !== 'localhost:4200') return false;
   return url.pathname.startsWith('/api/')
     || url.pathname.startsWith('/users/')
-    || (url.pathname === '/dashboard' && url.searchParams.has('clientId'));
+    || (url.pathname === '/api/dashboard' && url.searchParams.has('clientId'));
 }
 
 /**
@@ -60,8 +60,8 @@ export async function loginAsClient(page: Page, accounts: FakeAccount[]): Promis
       user: { clientId: CLIENT_ID, email, firstName: 'Jane', lastName: 'Trader', role: 'CLIENT' }
     }
   }));
-  // Client home page (GET /dashboard?clientId=...&period=30D)
-  await page.route(url => url.pathname === '/dashboard' && url.searchParams.has('clientId'), route => route.fulfill({
+  // Client home page (GET /api/dashboard?clientId=...&period=30D)
+  await page.route(url => url.pathname === '/api/dashboard' && url.searchParams.has('clientId'), route => route.fulfill({
     json: {
       accounts: accounts.map(listItem), marketMovers: [], watchlist: [], recentTrades: [],
       portfolioHistory: [], todayProfitLoss: 0, todayProfitLossPercent: 0

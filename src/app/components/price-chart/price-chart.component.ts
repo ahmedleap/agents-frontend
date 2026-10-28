@@ -119,6 +119,8 @@ export class PriceChartComponent {
     const days = new Set(this.candles().map(c => c.timestamp?.slice(0, 10)));
     return days.size <= 1 ? 'h:mm a' : 'MMM d, y';
   });
+  /** A day's times in the computer's time zone; daily bars are stamped midnight UTC, so their dates stay in UTC */
+  protected readonly dateZone = computed(() => this.dateFormat() === 'h:mm a' ? undefined : 'UTC');
 
   protected volumeLabel(volume: number): string {
     return compactVolume.format(volume);

@@ -7,6 +7,7 @@ import { AccountApiService } from '../../core/services/account-api.service';
 import { ActivityAccountsService } from '../../core/services/activity-accounts.service';
 import { TransactionService } from '../../core/services/transaction.service';
 import { downloadCsv } from '../../core/utils/csv-export';
+import { localTime as formatLocalTime } from '../../core/server-time';
 
 type SortKey = 'createdAt' | 'amount' | 'type';
 type TransactionAction = 'DEPOSIT' | 'WITHDRAWAL';
@@ -139,17 +140,13 @@ export class TransactionsComponent {
         this.account()?.name ?? '',
         transaction.txnType,
         currency.format(transaction.amount),
-        this.centralTime(transaction.createdAt)
+        this.localTime(transaction.createdAt)
       ])
     );
   }
 
-  protected centralTime(value: string): string {
-    const timestamp = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : `${value}Z`;
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(new Date(timestamp));
+  /** In the computer's time zone */
+  protected localTime(value: string | null | undefined): string {
+    return formatLocalTime(value);
   }
 }

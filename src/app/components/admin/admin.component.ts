@@ -6,6 +6,7 @@ import { catchError, forkJoin, map, of } from 'rxjs';
 import { AdminAccount, AdminClient, AdminOrder, AdminService, TradeAuditEvent } from '../../core/services/admin.service';
 import { PagerComponent } from '../pager/pager.component';
 import { SIZE_OPTIONS } from '../../core/client-profile-options';
+import { fromNewYorkClock, serverDate } from '../../core/server-time';
 
 type View = 'clients' | 'accounts' | 'orders';
 
@@ -61,7 +62,7 @@ export class AdminComponent {
   protected readonly accounts = computed(() => {
     const rows = this.data.value()?.accounts ?? [];
     const query = this.search().trim().toLowerCase();
-    return rows.filter(account => (!query || [account.id, account.clientId, account.clientName].some(value => value.toLowerCase().includes(query)))
+    return rows.filter(account => (!query || [account.name, account.id, account.clientId, account.clientName].some(value => value.toLowerCase().includes(query)))
       && (this.accountStatus() === 'ALL' || account.status === this.accountStatus()));
   });
 
@@ -138,7 +139,7 @@ export class AdminComponent {
     this.auditError.set(null);
     this.auditLoading.set(true);
     this.admin.audit(order.id).subscribe({
-      next: events => { this.auditEvents.set(events); this.auditLoading.set(false); },
+      next: events => { this.auditEvents.set(events.map(event => withRealTime(event, order))); this.auditLoading.set(false); },
       error: () => { this.auditError.set('Audit history is unavailable for this order.'); this.auditLoading.set(false); }
     });
   }
@@ -168,4 +169,19 @@ export class AdminComponent {
 
   protected percent(value: number | undefined): number { return value ?? 0; }
   protected bar(value: number, total: number): number { return total ? Math.min(100, (value / total) * 100) : 0; }
+}
+
+/** An hour's leeway: audit events are written within seconds of their order */
+const CLOCK_SLACK_MS = 60 * 60 * 1000;
+
+/**
+ * Some audit rows were saved in New York clock time but come back labelled UTC, so they read hours before their own
+ * order was created, which can't happen. Those are corrected to the real time; rows that are already right are left alone.
+ */
+function withRealTime(event: TradeAuditEvent, order: AdminOrder): TradeAuditEvent {
+  const created = serverDate(order.createdAt).getTime();
+  const fix = (value: string) => value && Number.isFinite(created) && serverDate(value).getTime() < created - CLOCK_SLACK_MS
+    ? fromNewYorkClock(value)
+    : value;
+  return { ...event, eventTimestamp: fix(event.eventTimestamp), createdAt: fix(event.createdAt) };
 }

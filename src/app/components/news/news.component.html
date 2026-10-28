@@ -35,7 +35,7 @@
             <img class="news-image" [src]="article.imageUrl" [alt]="''" loading="lazy" />
           }
           <div class="news-card-body">
-            <p class="published">{{ article.source || 'MarketAux' }} · {{ article.publishedAt | date: 'MMM d, y, h:mm a': 'America/Chicago' }}</p>
+            <p class="published">{{ article.source || 'MarketAux' }} · {{ article.publishedAt | date: 'MMM d, y, h:mm a' }}</p>
             <h3>{{ article.title }}</h3>
             @if (article.relevanceScore) {
               <span class="relevance">Relevance {{ article.relevanceScore | number: '1.0-2' }}</span>

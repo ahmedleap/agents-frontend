@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
+import { utcIso } from '../server-time';
 
 export interface InstrumentSearchResult {
   instrumentId: string;
@@ -154,17 +155,26 @@ export class TradingApiService {
   }
 
   getNews(ticker: string, limit = 10, sort: 'latest' | 'popular' = 'latest'): Observable<NewsItemDto[]> {
-    return this.api.get<NewsItemDto[]>('news', { params: { ticker, limit, sort } });
+    return this.api.get<NewsItemDto[]>('news', { params: { ticker, limit, sort } }).pipe(
+      map(items => items.map(item => ({ ...item, publishedAt: utcIso(item.publishedAt) })))
+    );
   }
 
   getQuote(ticker: string): Observable<QuoteDto> {
     return this.api.get<QuoteDto>(`instruments/${encodeURIComponent(ticker)}/quote`);
   }
 
+  /** Price bars oldest first (the backend can send them newest first), so charts read left to right.
+   *  Their timestamps come without a zone, and are UTC. */
   getHistory(ticker: string, period = '1M'): Observable<HistoryResponseDto> {
     return this.api.get<HistoryResponseDto>(`instruments/${encodeURIComponent(ticker)}/history`, {
       params: { period }
-    });
+    }).pipe(map(history => ({
+      ...history,
+      bars: (history.bars ?? [])
+        .map(bar => ({ ...bar, timestamp: utcIso(bar.timestamp) }))
+        .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
+    })));
   }
 
   createOrder(request: CreateOrderRequest): Observable<CreateOrderResponse> {

@@ -12,7 +12,7 @@ function isoDaysAgo(daysAgo: number): string {
 
 /** Replaces the dashboard response's value history (accounts are worth $100 in total today) */
 async function fakeHistory(page: Page, history: { date: string; totalValue: number }[]) {
-  await page.route(url => url.pathname === '/dashboard' && url.searchParams.has('clientId'), route => route.fulfill({
+  await page.route(url => url.pathname === '/api/dashboard' && url.searchParams.has('clientId'), route => route.fulfill({
     json: {
       accounts: [{ ...account, status: 'ACTIVE', cashBalance: 100, availableBalance: 100, totalValue: 100 }],
       marketMovers: [], watchlist: [], recentTrades: [],
@@ -65,7 +65,7 @@ test.describe('Dashboard after switching clients', () => {
       return route.fulfill({ json: { accessToken, refreshToken: 'r', expiresIn: 900, user: { clientId, email, firstName: 'Test', lastName: 'Client', role: 'CLIENT' } } });
     });
     await page.route('**/api/v1/auth/logout', route => route.fulfill({ json: {} }));
-    await page.route(url => url.pathname === '/dashboard' && url.searchParams.has('clientId'), route => {
+    await page.route(url => url.pathname === '/api/dashboard' && url.searchParams.has('clientId'), route => {
       const client = Object.values(clients).find(c => c.clientId === new URL(route.request().url()).searchParams.get('clientId'))!;
       return route.fulfill({ json: {
         accounts: [{ accountId: `${client.clientId.slice(0, 8)}-acct`, name: client.accountName, status: 'ACTIVE', cashBalance: 100, availableBalance: 100, totalValue: 100 }],
