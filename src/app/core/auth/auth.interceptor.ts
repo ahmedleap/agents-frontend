@@ -8,10 +8,8 @@ import { environment } from '../../../environments/environment';
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  const serverUrl = environment.backendUrl.replace(/\/api\/?$/, '');
   const isServiceRequest = request.url.startsWith(environment.backendUrl)
-    || request.url.startsWith(environment.middlewareUrl)
-    || request.url.startsWith(`${serverUrl}/`);
+    || request.url.startsWith(environment.middlewareUrl);
   const isAuthFlowRequest = /\/auth\/(?:admin\/)?(?:login|signup|refresh|logout)$/.test(request.url);
   const token = auth.getToken();
   const outgoing = isServiceRequest && !isAuthFlowRequest && token

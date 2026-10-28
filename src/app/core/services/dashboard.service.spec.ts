@@ -14,11 +14,17 @@ describe('DashboardService market movers', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: AuthService, useValue: { clientId: () => 'client-123', getToken: () => 'test-token' } }
+        { provide: AuthService, useValue: {
+          clientId: () => 'client-123',
+          currentUser: () => ({ clientId: 'client-123', role: 'CLIENT' }),
+          getToken: () => 'test-token'
+        } }
       ]
     });
     service = TestBed.inject(DashboardService);
     http = TestBed.inject(HttpTestingController);
+    // Run effects so toObservable(clientId) emits and the dashboard request is sent
+    TestBed.tick();
   });
 
   afterEach(() => http.verify());
@@ -40,7 +46,7 @@ describe('DashboardService market movers', () => {
       refreshedAt: '2026-10-22T21:14:28.125416Z',
       isStale: false
     });
-    http.expectOne(request => request.url === '/dashboard').flush({ marketMovers: [] });
+    http.expectOne(request => request.url === `${environment.backendUrl}/dashboard`).flush({ marketMovers: [] });
 
     expect(service.movers().length).toBe(5);
     expect(service.movers()[0]).toEqual({ ticker: 'A', price: 173.755, changePct: -5 });
@@ -52,7 +58,7 @@ describe('DashboardService market movers', () => {
   it('keeps the dashboard usable when the movers endpoint fails', () => {
     http.expectOne(`${environment.backendUrl}/instruments/market-movers`)
       .flush({}, { status: 503, statusText: 'Service Unavailable' });
-    http.expectOne(request => request.url === '/dashboard').flush({});
+    http.expectOne(request => request.url === `${environment.backendUrl}/dashboard`).flush({});
 
     expect(service.movers()).toEqual([]);
     expect(service.moversLoading()).toBeFalse();
@@ -63,7 +69,7 @@ describe('DashboardService market movers', () => {
 
   it('handles an empty market movers response', () => {
     http.expectOne(`${environment.backendUrl}/instruments/market-movers`).flush({ marketMovers: [] });
-    http.expectOne(request => request.url === '/dashboard').flush({});
+    http.expectOne(request => request.url === `${environment.backendUrl}/dashboard`).flush({});
 
     expect(service.movers()).toEqual([]);
     expect(service.moversLoading()).toBeFalse();
